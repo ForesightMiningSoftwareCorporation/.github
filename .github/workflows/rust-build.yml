@@ -61,11 +61,10 @@ jobs:
         shell: bash
 
       - name: Access private repos
-        if: env.SSH_PRIVATE_KEYS != ''
         uses: webfactory/ssh-agent@v0.5.4
         with:
           ssh-private-key: |
-            ${{ env.SSH_PRIVATE_KEYS }}
+            ${{ secrets.PRIVATE_KEYS }}
 
       - uses: SebRollen/toml-action@v1.0.0
         name: Read Cargo version
