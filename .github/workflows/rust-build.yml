@@ -101,6 +101,7 @@ jobs:
           registry: ${{ matrix.docker_registry }}
           username: ${{ secrets.DOCKER_USERNAME }}
           version: ${{ steps.read_cargo_toml_version.outputs.value }}
+          ssh: ${{ env.SSH_PRIVATE_KEYS != '' && 'default' || '' }}
 
       - name: Build and push to private npm registry
         if: matrix.bin.npm == true

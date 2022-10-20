@@ -24,6 +24,8 @@ inputs:
   password:
     required: true
     description: "ACR Repository Password"
+  ssh:
+    description: "SSH Auth Sock"
 runs:
   using: "composite"
   steps:
@@ -58,4 +60,4 @@ runs:
         tags: |
           ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
           ${{ inputs.registry }}/${{ inputs.image }}:latest
-        ssh: default
+        ssh: ${{ inputs.ssh }}
