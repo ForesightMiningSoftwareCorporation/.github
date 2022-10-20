@@ -58,6 +58,6 @@ runs:
         push: true
         file: ${{ inputs.dockerfile }}
         tags: |
-          ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
+          ${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.version }}
           ${{ inputs.registry }}/${{ inputs.image }}:latest
         ssh: ${{ inputs.ssh }}
