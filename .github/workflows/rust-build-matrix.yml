@@ -1,7 +1,5 @@
 on:
   workflow_call:
-    inputs:
-    secrets:
     outputs:
       matrix:
         description: "Usable matrix"
@@ -9,7 +7,6 @@ on:
 
 jobs:
   matrix:
-    if: ${{ github.event_name == 'push' }}
     name: Build Matrix for next jobs
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
