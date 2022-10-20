@@ -35,7 +35,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          github-token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           ref: ${{ inputs.source_ref }}
 
       - name: Access private repos

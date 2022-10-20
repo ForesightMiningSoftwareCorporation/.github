@@ -16,5 +16,4 @@ jobs:
       - name: Create and set Build Matrix from matrix.json
         id: set-matrix
         run: |
-          TASKS=$(jq -c . < ${{ github.workspace }}/.github/workflows/matrix.json | tr -d '^J')
-          echo "{matrix}={$TASKS}" >> $GITHUB_OUTPUT
+          echo "{matrix}={$(jq -c . < ${{ github.workspace }}/.github/workflows/matrix.json | tr -d '^J')}" >> $GITHUB_OUTPUT
