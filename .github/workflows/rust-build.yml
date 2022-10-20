@@ -67,6 +67,13 @@ jobs:
           ssh-private-key: |
             ${{ env.SSH_PRIVATE_KEYS }}
 
+      - uses: SebRollen/toml-action@v1.0.0
+        name: Read Cargo version
+        if: matrix.bin.bs == true || matrix.bin.docker == true
+        id: read_cargo_toml_version
+        with:
+          file: ${{ matrix.bin.root_crate == true && 'Cargo.toml' || 'crates/${{ inputs.bin }}/Cargo.toml' }}
+          field: 'package.version'
 
       - name: Build and push to Blob Storage
         if: matrix.bin.bs == true
@@ -81,6 +88,7 @@ jobs:
           runner_arch: ${{ matrix.os.arch }}
           runner_extension: ${{ matrix.os.extension }}
           runner_os: ${{ matrix.os.name }}
+          version: ${{ steps.read_cargo_toml_version.outputs.value }}
 
       - name: Build and push to Docker
         if: matrix.bin.docker == true && matrix.os.name == 'ubuntu-latest' && steps.extract_branch.outputs.release_channel == 'nightly'
@@ -92,6 +100,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: ${{ matrix.docker_registry }}
           username: ${{ secrets.DOCKER_USERNAME }}
+          version: ${{ steps.read_cargo_toml_version.outputs.value }}
 
       - name: Build and push to private npm registry
         if: matrix.bin.npm == true

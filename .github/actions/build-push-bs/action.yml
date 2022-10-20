@@ -8,6 +8,9 @@ inputs:
   runner_arch:
     required: true
     description: "The architecture of the runner"
+  version:
+    required: true
+    description: Docker image version
   runner_extension:
     required: true
     description: "The extension of the runner"
@@ -35,20 +38,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Read Cargo.toml package version
-      id: read_version
-      uses: SebRollen/toml-action@v1.0.0
-      with:
-        file: 'crates/${{ inputs.bin }}/Cargo.toml'
-        field: 'package.version'
-
     - name: Check BS version
       id: check_bs_version_exists
       uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
       with:
         container_name: ${{ inputs.container_name }}
         connection_string: ${{ inputs.connection_string }}
-        blob_name: ${{ inputs.bin }}/${{ inputs.release_channel }}/${{ inputs.bin }}-${{ inputs.runner_arch }}-${{ inputs.build_toolchain }}-v${{ steps.read_version.outputs.value }}${{ inputs.runner_extension }}
+        blob_name: ${{ inputs.bin }}/${{ inputs.release_channel }}/${{ inputs.bin }}-${{ inputs.runner_arch }}-${{ inputs.build_toolchain }}-v${{ inputs.version }}${{ inputs.runner_extension }}
 
     - name: Install Linux Dependencies
       if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'ubuntu-latest' }}

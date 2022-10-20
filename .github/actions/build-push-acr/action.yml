@@ -9,6 +9,9 @@ inputs:
     required: false
     description: "The path to the Dockerfile to use"
     default: Dockerfile
+  version:
+    required: true
+    description: Docker image version
   image:
     required: true
     description: "Docker image name"
@@ -44,7 +47,7 @@ runs:
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
         image_name: ${{ inputs.image }}
-        version: ${{ steps.read_version.outputs.value }}
+        version: ${{ inputs.version }}
     # Setup the runner to use Docker Buildkit
     - name: Set up Docker Buildx
       if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
