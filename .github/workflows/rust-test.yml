@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
-          ref: ${{ inputs/source_ref }}
+          ref: ${{ inputs.source_ref }}
 
       - name: Access private repos
         if: env.SSH_PRIVATE_KEYS != ''
