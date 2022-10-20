@@ -1,0 +1,105 @@
+name: "Build and Push executable to Azure Storage"
+description: "Build and push an executable to Azure Storage"
+
+inputs:
+  runner_os:
+    required: true
+    description: "The OS of the runner"
+  runner_arch:
+    required: true
+    description: "The architecture of the runner"
+  runner_extension:
+    required: true
+    description: "The extension of the runner"
+  build_profile:
+    required: false
+    description: "The build profile to use"
+    default: "release-opt"
+  build_toolchain:
+    required: false
+    description: "The build toolchain to use"
+    default: "stable"
+  bin:
+    required: true
+    description: "The binary to build"
+  container_name:
+    required: true
+    description: "The name of the container to push to"
+  connection_string:
+    required: true
+    description: "The connection string for the storage account"
+  release_channel:
+    required: true
+    description: "The release channel to use"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Read Cargo.toml package version
+      id: read_version
+      uses: SebRollen/toml-action@v1.0.0
+      with:
+        file: 'crates/${{ inputs.bin }}/Cargo.toml'
+        field: 'package.version'
+
+    - name: Check BS version
+      id: check_bs_version_exists
+      uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
+      with:
+        container_name: ${{ inputs.container_name }}
+        connection_string: ${{ inputs.connection_string }}
+        blob_name: ${{ inputs.bin }}/${{ inputs.release_channel }}/${{ inputs.bin }}-${{ inputs.runner_arch }}-${{ inputs.build_toolchain }}-v${{ steps.read_version.outputs.value }}${{ inputs.runner_extension }}
+
+    - name: Install Linux Dependencies
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'ubuntu-latest' }}
+      run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends libudev-dev libasound2-dev libxcb-composite0-dev libgtk-3-dev
+      shell: bash
+
+    - name: Install
+      uses: actions-rs/toolchain@v1
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false }}
+      with:
+        profile: minimal
+        override: true
+        toolchain: stable
+        target: ${{ inputs.runner_arch }}
+
+    - name: Install CUDA toolkit
+      uses: Jimver/cuda-toolkit@v0.2.6
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false }}
+      id: cuda-toolkit
+      with:
+        cuda: '11.5.0'
+        linux-local-args: '["--toolkit"]'
+
+    - name: Cache Dependencies
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false }}
+      uses: Swatinem/rust-cache@v1
+
+    - name: Build binaries
+      uses: actions-rs/cargo@v1
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false }}
+      with:
+        command: build
+        args: "--profile ${{ inputs.build_profile }} --features \"cuda, production, underground_ui\" --bin ${{ inputs.bin }} --target=${{ inputs.runner_arch }}"
+
+    - name: Copy to bin folder linux
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'ubuntu-latest' }}
+      shell: bash
+      run: |
+        mkdir -p bin_output/${{ inputs.bin }}/${{ inputs.release_channel }}
+        cp target/${{ inputs.runner_arch }}/${{ inputs.build_profile }}/${{ inputs.bin }} bin_output/${{ inputs.bin }}/${{ inputs.release_channel }}/${{ inputs.bin }}-${{ inputs.runner_arch }}-${{ inputs.build_toolchain }}-v${{ steps.read_version.outputs.value }}${{ inputs.runner_extension }}
+
+    - name: Copy to bin folder windows
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'windows-latest' }}
+      shell: pwsh
+      run: |
+        $Out = New-Item -Name "bin_output\${{ inputs.bin }}\${{ inputs.release_channel }}" -ItemType "directory"
+        Copy-Item target\${{ inputs.runner_arch }}\${{ inputs.build_profile }}\${{ inputs.bin }}${{ inputs.runner_extension }} $Out\${{ inputs.bin }}-${{ inputs.runner_arch }}-${{ inputs.build_toolchain }}-v${{ steps.read_version.outputs.value }}${{ inputs.runner_extension }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false }}
+      with:
+        name: release-binaries
+        path: bin_output

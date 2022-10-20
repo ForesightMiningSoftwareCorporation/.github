@@ -30,7 +30,7 @@ jobs:
     name: Rust Test (fmt and clippy)
     runs-on: ubuntu-latest
     env:
-      SSH_PRIVATE_KEYS: ${{secrets.SSH_PRIVATE_KEYS}}
+      SSH_PRIVATE_KEYS: ${{secrets.PRIVATE_KEYS }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3

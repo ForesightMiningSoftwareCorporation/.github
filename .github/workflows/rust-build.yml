@@ -1,0 +1,109 @@
+on:
+  workflow_call:
+    inputs:
+      matrix:
+        required: true
+        type: string
+        description: Json build matrix
+      block_storage_container_name:
+        default: "fse-update"
+        type: string
+        description: Name of the container where to upload to binaries file
+    secrets:
+      PAT_TOKEN:
+        required: true
+      GH_REGISTRY_PACKAGES:
+        required: false
+        description: Private NPM Registry token
+      PRIVATE_KEYS:
+        required: false
+        description: Private keys that need to be added to the ssh-agent
+      BLOCK_STORAGE_CONNECTION_STRING:
+        required: false
+        description: Connection string for the block storage
+      DOCKER_USERNAME:
+        required: false
+        description: Username for the docker registry
+      DOCKER_PASSWORD:
+        required: false
+        description: Password for the docker registry
+
+jobs:
+  build:
+    name: Build Steps
+    strategy:
+      matrix:
+        bin: ${{ fromJson(inputs.matrix).bin }}
+        docker_registry: ${{ fromJson(inputs.matrix).docker_registry }}
+        os: ${{ fromJson(inputs.matrix).os }}
+        profile: ${{ fromJson(inputs.matrix).profile }}
+        toolchain: ${{ fromJson(inputs.matrix).toolchain }}
+    runs-on: ${{ matrix.os.name }}
+    env:
+      SSH_PRIVATE_KEYS: ${{ secrets.PRIVATE_KEYS }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Extract branch name and map to release channel
+        id: extract_branch
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          RELEASE_CHANNEL=nightly
+          if [ "$BRANCH_NAME" == "alpha" ] ; then
+            RELEASE_CHANNEL=alpha
+          elif [ "$BRANCH_NAME" == "beta" ] ; then
+            RELEASE_CHANNEL=beta
+          elif [ "$BRANCH_NAME" == "prod" ] ; then
+            RELEASE_CHANNEL=prod
+          fi
+          echo "##[set-output name=release_channel;]$(echo $RELEASE_CHANNEL)"
+        shell: bash
+
+      - name: Access private repos
+        if: env.SSH_PRIVATE_KEYS != ''
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: |
+            ${{ env.SSH_PRIVATE_KEYS }}
+
+
+      - name: Build and push to Blob Storage
+        if: matrix.bin.bs == true
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-push-bs@main
+        with:
+          bin: ${{ matrix.bin.name }}
+          build_profile: ${{ matrix.profile }}
+          build_toolchain: ${{ matrix.toolchain }}
+          connection_string: ${{ secrets.BLOCK_STORAGE_CONNECTION_STRING }}
+          container_name: ${{ inputs.block_storage_container_name }}
+          release_channel: ${{ steps.extract_branch.outputs.release_channel }}
+          runner_arch: ${{ matrix.os.arch }}
+          runner_extension: ${{ matrix.os.extension }}
+          runner_os: ${{ matrix.os.name }}
+
+      - name: Build and push to Docker
+        if: matrix.bin.docker == true && matrix.os.name == 'ubuntu-latest' && steps.extract_branch.outputs.release_channel == 'nightly'
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-push-acr@main
+        with:
+          bin: ${{ matrix.bin.name }}
+          dockerfile: ${{ matrix.bin.dockerfile }}
+          image: ${{ matrix.bin.docker_image }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ matrix.docker_registry }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+
+      - name: Build and push to private npm registry
+        if: matrix.bin.npm == true
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-push-npm-registry@main
+        with:
+          bin: ${{ matrix.bin.name }}
+          docker_build: ${{ matrix.bin.npm_docker_build }}
+          docker: ${{ matrix.bin.npm_docker }}
+          node_auth_token: ${{ secrets.PAT_TOKEN }}
+          npm_token: ${{ secrets.GH_REGISTRY_PACKAGES }}
+          runner_arch: ${{ matrix.os.arch }}
+          runner_extension: ${{ matrix.os.extension }}
+          runner_os: ${{ matrix.os.name }}
+          with_cuda: ${{ matrix.bin.npm_with_cuda }}
+          with_rust: ${{ matrix.bin.npm_with_rust }}

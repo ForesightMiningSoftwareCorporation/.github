@@ -1,0 +1,23 @@
+on:
+  workflow_call:
+    inputs:
+    secrets:
+    outputs:
+      matrix:
+        description: "Usable matrix"
+        value: ${{ jobs.matrix.outputs.matrix }}
+
+jobs:
+  matrix:
+    if: ${{ github.event_name == 'push' }}
+    name: Build Matrix for next jobs
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create and set Build Matrix from matrix.json
+        id: set-matrix
+        run: |
+          TASKS=$(jq -c . < ${{ github.workspace }}/.github/workflows/matrix.json | tr -d '^J')
+          echo "::set-output name=matrix::$TASKS"

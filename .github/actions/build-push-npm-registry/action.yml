@@ -1,0 +1,112 @@
+name: "Build and Push packages to npm registry"
+description: "Build and push an packages to npm registry"
+
+inputs:
+  runner_os:
+    required: true
+    description: "The OS of the runner"
+  runner_arch:
+    required: true
+    description: "The architecture of the runner"
+  runner_extension:
+    required: true
+    description: "The extension of the runner"
+  docker:
+    description: "Docker Image to use"
+  docker_build:
+    description: "Docker command that will run in the container"
+  with_rust:
+    description: "Should we setup Rust for this bin"
+  with_cuda:
+    description: "Should we setup cuda"
+  node_auth_token:
+    description: "node auth token"
+  npm_token:
+    description: "npm token"
+  bin:
+    required: true
+    description: "The binary to build"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get version in package.json
+      id: read_package_json_version
+      run: |
+        VERSION=$(cat package.json | jq -r '.version' )
+        echo "##[set-output name=current-version;]$(echo $VERSION)"
+      shell: bash
+      working-directory: crates/${{ inputs.bin }}
+    - name: Setup node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        check-latest: true
+        registry-url: https://npm.pkg.github.com/
+        scope: '@ForesightMiningSoftwareCorporation'
+    - name: Check if package with same version exists
+      id: check-version-exists
+      shell: bash
+      working-directory: crates/${{ inputs.bin }}
+      run: |
+        if npm view @foresightminingsoftwarecorporation/${{ inputs.bin }} --json > package_info.json ; then
+          EXISTS=$(cat package_info.json | jq '.time | has("${{ steps.read_package_json_version.outputs.current-version }}")')
+        else
+          EXISTS="false"
+        fi
+        echo "::set-output name=exists::$EXISTS"
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.node_auth_token }}
+        NPM_TOKEN: ${{ inputs.npm_token }}
+    - name: Install rust toolchain
+      uses: actions-rs/toolchain@v1
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.runner_os == 'windows-latest' && inputs.with_rust == 'true' }}
+      with:
+        profile: minimal
+        override: true
+        toolchain: stable
+        target: ${{ inputs.runner_arch }}
+    - name: Install CUDA toolkit
+      uses: Jimver/cuda-toolkit@v0.2.6
+      id: cuda-toolkit
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.runner_os == 'windows-latest' && inputs.with_rust == 'true' && inputs.with_cuda == 'true' }}
+      with:
+        cuda: '11.5.0'
+        linux-local-args: '["--toolkit"]'
+
+    - name: Build On Agent (native build)
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.runner_os == 'windows-latest' }}
+      run: |-
+        yarn install
+        if [ "${{ inputs.with_rust }}" == "true" ]; then
+          EXTRA_ARGS="--target ${{ inputs.runner_arch }} "
+        else
+          EXTRA_ARGS=""
+        fi
+        yarn build $EXTRA_ARGS
+      shell: bash
+      working-directory: crates/${{ inputs.bin }}
+
+    - name: Build in docker
+      uses: addnab/docker-run-action@v3
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.runner_os != 'windows-latest' }}
+      with:
+        image: ${{ inputs.docker }}
+        options: --user 0:0 -w /build/crates/${{ inputs.bin }} -v ${{ github.workspace }}:/build  -v ${{ env.SSH_AUTH_SOCK}}:/ssh-agent -v ${{ github.workspace }}/.github/workflows/gitconfig:/root/.gitconfig -e SSH_AUTH_SOCK=/ssh-agent  -e CARGO_NET_GIT_FETCH_WITH_CLI=true
+        run: ${{ inputs.docker_build }}
+
+    - name: Upload artifact
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.runner_os == 'windows-latest' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: bindings-${{ inputs.bin }}-x86_64-pc-windows-msvc
+        path: crates/${{ inputs.bin }}/${{ inputs.bin }}.*.node
+        if-no-files-found: error
+
+    - name: Upload artifact
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.runner_os != 'windows-latest'  }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: bindings-${{ inputs.bin }}-x86_64-unknown-linux-musl
+        path: crates/${{ inputs.bin }}/${{ inputs.bin }}.*.node
+        if-no-files-found: error
