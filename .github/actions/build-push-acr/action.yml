@@ -34,11 +34,6 @@ runs:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
-    - uses: SebRollen/toml-action@v1.0.0
-      id: read_version
-      with:
-        file: 'crates/${{ inputs.bin }}/Cargo.toml'
-        field: 'package.version'
     - name: Check Docker version exists
       id: check_version_exists
       uses: ForesightMiningSoftwareCorporation/docker-check-exists@v1
