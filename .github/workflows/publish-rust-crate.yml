@@ -74,5 +74,5 @@ jobs:
         run: cargo login --registry ${{ inputs.private-registry-name }} ${{ secrets.private-registry-token }}
       - name: Publish to private registry
         shell: bash
-        run: cargo publish
+        run: cargo publish --registry ${{ inputs.private-registry-name }}
       - run: git push -u origin HEAD:${{ inputs.branch }}
