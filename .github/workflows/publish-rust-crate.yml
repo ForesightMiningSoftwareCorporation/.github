@@ -1,0 +1,78 @@
+name: Publish Release to Private Registry
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to publish'
+        type: string
+        default: 'main'
+      private-registry-host:
+        required: true
+        type: string
+      private-registry-name:
+        required: true
+        type: string
+    secrets:
+      private-registry-private-key:
+        required: true
+      private-registry-token:
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+jobs:
+  test:
+    name: Test (fmt and clippy)
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: clippy, rustfmt
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: fmt
+        run: cargo fmt --all -- --check
+      - name: check
+        run: cargo check --no-default-features
+      - name: run clippy
+        run: cargo clippy --no-default-features -- -D warnings
+  set_version:
+    needs: test
+    name: Set Version in config.toml
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: clippy, rustfmt
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Set Version
+        shell: bash
+        run: |
+          echo "Setting version to ${{ github.ref }}"
+          export VERSION=${GITHUB_REF#refs/tags/v}
+          sed -i "s/version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$VERSION\"/g" Cargo.toml
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - run: git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com" && git config --global user.name "$GITHUB_ACTOR"
+      - run: git add Cargo.toml && git commit -m "Set version to $VERSION"
+      - name: Access private registry
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.private-registry-private-key }}
+      - name: Keyscan
+        shell: bash
+        run: ssh-keyscan -t rsa ${{ inputs.private-registry-host }} >> ~/.ssh/known_hosts
+      - name: Login to private registry
+        shell: bash
+        run: cargo login --registry ${{ inputs.private-registry-name }} ${{ secrets.private-registry-token }}
+      - name: Publish to private registry
+        shell: bash
+        run: cargo publish
+      - run: git push -u origin HEAD:${{ inputs.branch }}
