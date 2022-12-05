@@ -24,6 +24,10 @@ on:
       private-registry-name:
         required: true
         type: string
+      skip-test:
+        type: boolean
+        default: false
+        description: Skip the test step
     secrets:
       github-token:
         required: true
@@ -42,6 +46,7 @@ env:
 jobs:
   test:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.0.0
+    if: ${{ inputs.skip-test == false }}
     with:
       runner: ${{ inputs.runner }}
       toolchain: ${{ inputs.toolchain }}
