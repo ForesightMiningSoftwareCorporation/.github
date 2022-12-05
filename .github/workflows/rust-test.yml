@@ -41,6 +41,8 @@ jobs:
   test:
     name: Rust Test (fmt and clippy)
     runs-on: ubuntu-latest
+    env:
+      GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
     steps:
       - name: Git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
@@ -55,10 +57,10 @@ jobs:
 
       - name: Access private repos
         uses: webfactory/ssh-agent@v0.5.4
-        if: ${{ secrets.github-private-keys != '' }}
+        if: ${{ env.GITHUB_PRIVATE_KEYS != '' }}
         with:
           ssh-private-key: |
-            ${{ secrets.github-private-keys }}
+            ${{ env.GITHUB_PRIVATE_KEYS }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
