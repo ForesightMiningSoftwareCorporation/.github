@@ -7,6 +7,13 @@ on:
         description: 'Branch to publish'
         type: string
         default: 'main'
+      runner:
+        type: string
+        default: "ubuntu-latest"
+      initial_event_name:
+        type: string
+        default: "push"
+        description: Event that triggered the workflow
       private-registry-host:
         required: true
         type: string
@@ -25,30 +32,17 @@ env:
 
 jobs:
   test:
-    name: Test (fmt and clippy)
-    runs-on: "ubuntu-latest"
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly
-          components: clippy, rustfmt
-
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
-        with:
-          host: ${{ inputs.private-registry-host }}
-          name: ${{ inputs.private-registry-name }}
-          private_key: ${{ secrets.private-registry-private-key }}
-          token: ${{ secrets.private-registry-token }}
-
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: fmt
-        run: cargo fmt --all -- --check
-      - name: check
-        run: cargo check --no-default-features
-      - name: run clippy
-        run: cargo clippy --no-default-features -- -D warnings
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.0.0
+    with:
+      runner: ${{ inputs.runner }}
+      initial_event_name: ${{ inputs.initial_event_name }}
+      private-registry-host: ${{ inputs.private-registry-host }}
+      private-registry-name: ${{ inputs.private-registry-name }}
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      PRIVATE_KEYS: ${{ secrets.PRIVATE_KEYS }}
+      private-registry-private-key: ${{ secrets.private-registry-private-key }}
+      private-registry-token: ${{ secrets.private-registry-token }}
   set_version:
     needs: test
     name: Set Version in config.toml

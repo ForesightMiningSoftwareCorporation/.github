@@ -13,19 +13,34 @@ on:
         type: string
         default: "push"
         description: Event that triggered the workflow
+      runner:
+        type: string
+        default: "ubuntu-latest"
+      private-registry-host:
+        required: true
+        type: string
+      private-registry-name:
+        required: true
+        type: string
+      additional_args:
+        type: string
+        default: ""
+        description: Additional arguments to pass to the cargo command
     secrets:
       PAT_TOKEN:
         required: true
       PRIVATE_KEYS:
         required: false
         description: Private keys that need to be added to the ssh-agent
+      private-registry-private-key:
+        required: true
+      private-registry-token:
+        required: true
 
 jobs:
   test:
     name: Rust Test (fmt and clippy)
     runs-on: ubuntu-latest
-    env:
-      SSH_PRIVATE_KEYS: ${{secrets.PRIVATE_KEYS }}
     steps:
       - name: Git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
@@ -43,6 +58,13 @@ jobs:
         with:
           ssh-private-key: |
             ${{ secrets.PRIVATE_KEYS }}
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
+        with:
+          host: ${{ inputs.private-registry-host }}
+          name: ${{ inputs.private-registry-name }}
+          private_key: ${{ secrets.private-registry-private-key }}
+          token: ${{ secrets.private-registry-token }}
 
       - name: Update Packages
         if: inputs.required_packages != ''
@@ -63,7 +85,7 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: check
-        run: cargo check --no-default-features
+        run: cargo check ${{ inputs.additional_args }}
 
       - name: run clippy
-        run: cargo clippy --no-default-features -- -D warnings
+        run: cargo clippy ${{ inputs.additional_args }} -- -D warnings
