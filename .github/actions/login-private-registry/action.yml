@@ -4,7 +4,6 @@ description: "Composite action to login to a private Cargo Registry"
 inputs:
   private_key:
     required: false
-    default: ""
     description: "Private Key to use for the registry index"
   host:
     required: true
