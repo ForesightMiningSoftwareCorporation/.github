@@ -55,7 +55,7 @@ jobs:
       private-registry-token: ${{ secrets.private-registry-token }}
   set_version:
     needs: test
-    name: Set Version in config.toml
+    name: Release new version to private registry
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v3
