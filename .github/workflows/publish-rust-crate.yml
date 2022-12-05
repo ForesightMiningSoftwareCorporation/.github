@@ -33,6 +33,14 @@ jobs:
         with:
           toolchain: nightly
           components: clippy, rustfmt
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
+        with:
+          private_key: ${{ secrets.private-registry-private-key }}
+          host: ${{ inputs.private-registry-host }}
+          name: ${{ inputs.private-registry-name }}
+          token: ${{ secrets.private-registry-token }}
+
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
       - name: fmt
@@ -62,16 +70,12 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - run: git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com" && git config --global user.name "$GITHUB_ACTOR"
       - run: git add Cargo.toml && git commit -m "Set version to $VERSION"
-      - name: Access private registry
-        uses: webfactory/ssh-agent@v0.5.4
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
-          ssh-private-key: ${{ secrets.private-registry-private-key }}
-      - name: Keyscan
-        shell: bash
-        run: ssh-keyscan -t rsa ${{ inputs.private-registry-host }} >> ~/.ssh/known_hosts
-      - name: Login to private registry
-        shell: bash
-        run: cargo login --registry ${{ inputs.private-registry-name }} ${{ secrets.private-registry-token }}
+          private_key: ${{ secrets.private-registry-private-key }}
+          host: ${{ inputs.private-registry-host }}
+          name: ${{ inputs.private-registry-name }}
+          token: ${{ secrets.private-registry-token }}
       - name: Publish to private registry
         shell: bash
         run: cargo publish --registry ${{ inputs.private-registry-name }}
