@@ -19,7 +19,7 @@ runs:
   steps:
     - name: Access private registry
       uses: webfactory/ssh-agent@v0.5.4
-      if: ${{ inputs.private_key != '' }}
+      if: ${{ inputs.private_key != '' && inputs.private_key != null }}
       with:
         ssh-private-key: ${{ inputs.private_key }}
     - name: Keyscan
