@@ -10,6 +10,10 @@ on:
       runner:
         type: string
         default: "ubuntu-latest"
+      toolchain:
+        type: string
+        default: "1.65"
+        description: Rust toolchain to install
       initial_event_name:
         type: string
         default: "push"
@@ -41,6 +45,7 @@ jobs:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.0.0
     with:
       runner: ${{ inputs.runner }}
+      toolchain: ${{ inputs.toolchain }}
       initial_event_name: ${{ inputs.initial_event_name }}
       private-registry-host: ${{ inputs.private-registry-host }}
       private-registry-name: ${{ inputs.private-registry-name }}
@@ -57,8 +62,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly
-          components: clippy, rustfmt
+          toolchain: ${{ inputs.toolchain }}
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
       - name: Set Version
