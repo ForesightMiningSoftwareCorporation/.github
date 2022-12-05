@@ -11,13 +11,8 @@ on:
         description: Package that needs to be installed before Rust compilation can happens
       toolchain:
         type: string
-        default: "stable"
+        default: "stable 1.65"
         description: Rust toolchain to install
-      additional_args:
-        type: string
-        default: ""
-        description: Additional argument to pass to cargo
-
     secrets:
       PAT_TOKEN:
         required: true
@@ -38,52 +33,33 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           ref: ${{ inputs.source_ref }}
 
+
       - name: Access private repos
-        if: env.SSH_PRIVATE_KEYS != ''
         uses: webfactory/ssh-agent@v0.5.4
         with:
           ssh-private-key: |
-            ${{ env.SSH_PRIVATE_KEYS }}
+            ${{ secrets.PRIVATE_KEYS }}
 
       - name: Update Packages
         if: inputs.required_packages != ''
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ inputs.toolchain }}
-          override: true
-          components: rustfmt, clippy
+          components: clippy, rustfmt
 
-      - name: Set up cargo cache
-        uses: actions/cache@v3
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install fmt
+        run: rustup component add rustfmt
 
       - name: fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: ${{ inputs.additional_args }}
+        run: cargo check --no-default-features
 
       - name: run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: ${{ inputs.additional_args }} -- -D warnings
+        run: cargo clippy --no-default-features -- -D warnings
