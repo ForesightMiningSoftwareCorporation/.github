@@ -3,7 +3,8 @@ description: "Composite action to login to a private Cargo Registry"
 
 inputs:
   private_key:
-    required: true
+    required: false
+    default: ""
     description: "Private Key to use for the registry index"
   host:
     required: true
@@ -19,6 +20,7 @@ runs:
   steps:
     - name: Access private registry
       uses: webfactory/ssh-agent@v0.5.4
+      if: ${{ inputs.private_key != "" }}
       with:
         ssh-private-key: ${{ inputs.private_key }}
     - name: Keyscan
