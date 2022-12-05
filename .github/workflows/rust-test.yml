@@ -27,9 +27,9 @@ on:
         default: ""
         description: Additional arguments to pass to the cargo command
     secrets:
-      PAT_TOKEN:
+      github-token:
         required: true
-      PRIVATE_KEYS:
+      github-private-keys:
         required: false
         description: Private keys that need to be added to the ssh-agent
       private-registry-private-key:
@@ -50,14 +50,14 @@ jobs:
         if: ${{ github.initial_event_name == 'pull_request_target' }}
         uses: actions/checkout@v3
         with:
-          github-token: ${{ secrets.PAT_TOKEN }}
+          github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Access private repos
         uses: webfactory/ssh-agent@v0.5.4
         with:
           ssh-private-key: |
-            ${{ secrets.PRIVATE_KEYS }}
+            ${{ secrets.github-private-keys }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:

@@ -21,6 +21,11 @@ on:
         required: true
         type: string
     secrets:
+      github-token:
+        required: true
+      github-private-keys:
+        required: false
+        description: Private keys that need to be added to the ssh-agent
       private-registry-private-key:
         required: true
       private-registry-token:
@@ -39,8 +44,8 @@ jobs:
       private-registry-host: ${{ inputs.private-registry-host }}
       private-registry-name: ${{ inputs.private-registry-name }}
     secrets:
-      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-      PRIVATE_KEYS: ${{ secrets.PRIVATE_KEYS }}
+      github-token: ${{ secrets.github-token }}
+      github-private-keys: ${{ secrets.github-private-keys }}
       private-registry-private-key: ${{ secrets.private-registry-private-key }}
       private-registry-token: ${{ secrets.private-registry-token }}
   set_version:
