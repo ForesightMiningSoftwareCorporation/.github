@@ -55,7 +55,7 @@ jobs:
 
       - name: Access private repos
         uses: webfactory/ssh-agent@v0.5.4
-        if: ${{ secrets.github-private-keys != ''}}
+        if: ${{ secrets.github-private-keys != '' }}
         with:
           ssh-private-key: |
             ${{ secrets.github-private-keys }}
