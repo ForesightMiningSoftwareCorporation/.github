@@ -37,11 +37,6 @@ on:
       private-registry-token:
         required: true
 
-env:
-  CARGO_TERM_COLOR: always
-  CARGO_NET_GIT_FETCH_WITH_CLI: true
-  CARGO_UNSTABLE_REGISTRY_AUTH: true
-
 jobs:
   test:
     name: Rust Test (fmt and clippy)
@@ -79,7 +74,6 @@ jobs:
         with:
           toolchain: ${{ inputs.toolchain }}
           components: clippy, rustfmt
-
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
