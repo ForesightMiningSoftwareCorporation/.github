@@ -59,7 +59,11 @@ jobs:
       private-registry-private-key: ${{ secrets.private-registry-private-key }}
       private-registry-token: ${{ secrets.private-registry-token }}
   set_version:
-    needs: test
+    needs:
+      - test
+    if: |
+      always() && 
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
     steps:
