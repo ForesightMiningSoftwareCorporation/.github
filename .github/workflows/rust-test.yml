@@ -31,7 +31,6 @@ on:
         required: true
       github-private-keys:
         required: false
-        default: ""
         description: Private keys that need to be added to the ssh-agent
       private-registry-private-key:
         required: true

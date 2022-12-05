@@ -32,7 +32,6 @@ on:
         description: Private keys that need to be added to the ssh-agent
       private-registry-private-key:
         required: false
-        default: ""
       private-registry-token:
         required: true
 
