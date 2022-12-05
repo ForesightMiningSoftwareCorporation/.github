@@ -7,7 +7,7 @@ on:
         description: Package that needs to be installed before Rust compilation can happens
       toolchain:
         type: string
-        default: "stable 1.65"
+        default: "1.65"
         description: Rust toolchain to install
       initial_event_name:
         type: string
