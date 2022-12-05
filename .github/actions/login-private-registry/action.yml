@@ -20,7 +20,7 @@ runs:
     - name: Access private registry
       uses: webfactory/ssh-agent@v0.5.4
       with:
-        ssh-private-key: ${{ inputs.private-key }}
+        ssh-private-key: ${{ inputs.private_key }}
     - name: Keyscan
       shell: bash
       run: ssh-keyscan -t rsa ${{ inputs.host }} >> ~/.ssh/known_hosts

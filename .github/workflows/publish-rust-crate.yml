@@ -36,9 +36,9 @@ jobs:
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
-          private_key: ${{ secrets.private-registry-private-key }}
           host: ${{ inputs.private-registry-host }}
           name: ${{ inputs.private-registry-name }}
+          private_key: ${{ secrets.private-registry-private-key }}
           token: ${{ secrets.private-registry-token }}
 
       - name: Cache Dependencies
