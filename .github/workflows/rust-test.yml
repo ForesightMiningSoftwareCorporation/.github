@@ -26,6 +26,10 @@ on:
         type: string
         default: ""
         description: Additional arguments to pass to the cargo command
+      additional_script:
+        type: string
+        default: ""
+        description: Additional script to run before the additional packages
     secrets:
       github-token:
         required: true
@@ -72,6 +76,10 @@ jobs:
           name: ${{ inputs.private-registry-name }}
           private_key: ${{ secrets.private-registry-private-key }}
           token: ${{ secrets.private-registry-token }}
+
+      - name: Additional Script
+        run: ${{ inputs.additional_script }}
+        shell: bash
 
       - name: Update Packages
         if: inputs.required_packages != ''
