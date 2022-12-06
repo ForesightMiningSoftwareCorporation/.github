@@ -79,15 +79,41 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v2
+          components: cargo-index
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
           private_key: ${{ secrets.private-registry-private-key }}
           host: ${{ inputs.private-registry-host }}
           name: ${{ inputs.private-registry-name }}
           token: ${{ secrets.private-registry-token }}
+      - name: Read Cargo.toml package version
+        id: read_version
+        uses: SebRollen/toml-action@v1.0.0
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.version'
+      - name: Read Cargo.toml package name
+        id: read_package_name
+        uses: SebRollen/toml-action@v1.0.0
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.name'
+      - name: Check if version exists
+        shell: bash
+        id: check_exists
+        run: |
+          git clone git@${{ inputs.private-registry-host }}:${{ inputs.private-registry-name }}/crate-index.git .crate_index
+          if cargo index list --index . --package ${{ steps.read_package_name.outputs.value }} --version ${{ steps.read_version.outputs.value }}; then
+            export PACKAGE_EXISTS=yes
+          else
+            export PACKAGE_EXISTS=no
+          fi
+          echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
+      - name: Cache Dependencies
+        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
+        uses: Swatinem/rust-cache@v2
       - name: Publish to private registry
+        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ inputs.private-registry-name }}
