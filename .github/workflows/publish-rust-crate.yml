@@ -3,10 +3,6 @@ name: Publish Release to Private Registry
 on:
   workflow_call:
     inputs:
-      branch:
-        description: 'Branch to publish'
-        type: string
-        default: 'main'
       runner:
         type: string
         default: "ubuntu-latest"
@@ -28,6 +24,10 @@ on:
         type: boolean
         default: false
         description: Skip the test step
+      working-directory:
+        type: string
+        default: "."
+        description: Working directory to run the cargo command
     secrets:
       github-token:
         required: true
@@ -67,26 +67,20 @@ jobs:
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
+      - name: Git Checkout
+        if: ${{ inputs.initial_event_name != 'pull_request_target' }}
+        uses: actions/checkout@v3
+      - name: Git Checkout
+        if: ${{ github.initial_event_name == 'pull_request_target' }}
+        uses: actions/checkout@v3
+        with:
+          github-token: ${{ secrets.github-token }}
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
-      - name: Set Version
-        shell: bash
-        run: |
-          echo "Setting version to ${{ github.ref }}"
-          export VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - name: Update Cargo.toml
-        uses: ciiiii/toml-editor@1.0.0
-        with:
-          file: "Cargo.toml"
-          key: "package.version"
-          value: "${{ env.VERSION }}"
-      - run: git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com" && git config --global user.name "$GITHUB_ACTOR"
-      - run: git add Cargo.toml && git commit -m "Set version to $VERSION"
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
           private_key: ${{ secrets.private-registry-private-key }}
@@ -95,5 +89,5 @@ jobs:
           token: ${{ secrets.private-registry-token }}
       - name: Publish to private registry
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ inputs.private-registry-name }}
-      - run: git push -u origin HEAD:${{ inputs.branch }}
