@@ -103,7 +103,7 @@ jobs:
         run: rustup component add rustfmt
 
       - name: fmt
-        run: cargo fmt --verbose --verbose --all -- --check
+        run: cargo fmt --verbose --all -- --check
 
       - name: check
         run: cargo check ${{ inputs.additional_args }}
