@@ -119,13 +119,13 @@ jobs:
             export PACKAGE_EXISTS=no
           fi
           echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
-      - name: Additional Script
-        run: ${{ inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
-        shell: bash
-
-      - name: Update Packages
-        if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
-        run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
+#      - name: Additional Script
+#        run: ${{ inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
+#        shell: bash
+#
+#      - name: Update Packages
+#        if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
+#        run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
       - name: Publish to private registry
         if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
         shell: bash
