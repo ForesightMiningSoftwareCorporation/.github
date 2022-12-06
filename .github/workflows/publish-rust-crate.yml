@@ -76,10 +76,15 @@ jobs:
         with:
           github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v2
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
-          components: cargo-index
+      - name: Install cargo-index
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo install cargo-index
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
           private_key: ${{ secrets.private-registry-private-key }}
@@ -102,16 +107,13 @@ jobs:
         shell: bash
         id: check_exists
         run: |
-          git clone git@${{ inputs.private-registry-host }}:${{ inputs.private-registry-name }}/crate-index.git .crate_index
-          if cargo index list --index . --package ${{ steps.read_package_name.outputs.value }} --version ${{ steps.read_version.outputs.value }}; then
+          git clone git@${{ inputs.private-registry-host }}:${{ inputs.private-registry-name }}/crate-index.git ${{ runner.temp }}/crate_index
+          if cargo index list --index ${{ runner.temp }}/crate_index --package ${{ steps.read_package_name.outputs.value }} --version ${{ steps.read_version.outputs.value }}; then
             export PACKAGE_EXISTS=yes
           else
             export PACKAGE_EXISTS=no
           fi
           echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
-      - name: Cache Dependencies
-        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
-        uses: Swatinem/rust-cache@v2
       - name: Publish to private registry
         if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
         shell: bash
