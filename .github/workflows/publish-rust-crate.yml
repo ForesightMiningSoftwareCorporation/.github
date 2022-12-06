@@ -28,6 +28,10 @@ on:
         type: string
         default: "."
         description: Working directory to run the cargo command
+      additional_script:
+        type: string
+        default: ""
+        description: Additional script to run before the additional packages
     secrets:
       github-token:
         required: true
@@ -53,6 +57,7 @@ jobs:
       initial_event_name: ${{ inputs.initial_event_name }}
       private-registry-host: ${{ inputs.private-registry-host }}
       private-registry-name: ${{ inputs.private-registry-name }}
+      additional_script: ${{ inputs.additional_script }}
     secrets:
       github-token: ${{ secrets.github-token }}
       github-private-keys: ${{ secrets.github-private-keys }}
@@ -114,6 +119,13 @@ jobs:
             export PACKAGE_EXISTS=no
           fi
           echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
+      - name: Additional Script
+        run: ${{ inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
+        shell: bash
+
+      - name: Update Packages
+        if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
+        run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
       - name: Publish to private registry
         if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
         shell: bash
