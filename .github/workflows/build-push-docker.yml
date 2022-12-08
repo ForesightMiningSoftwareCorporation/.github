@@ -13,9 +13,6 @@ on:
       registry:
         required: true
         description: "Docker Repository name"
-      username:
-        required: true
-        description: "Docker Repository Username"
 
     secrets:
       github-token:
@@ -27,6 +24,9 @@ on:
         required: true
       private-registry-token:
         required: true
+      username:
+        required: true
+        description: "Docker Repository Username"
       password:
         required: true
         description: "Docker Repository Password"
@@ -46,7 +46,7 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ${{ inputs.registry }}
-          username: ${{ inputs.username }}
+          username: ${{ secrets.username }}
           password: ${{ secrets.password }}
       - uses: SebRollen/toml-action@v1.0.0
         id: read_version
@@ -58,7 +58,7 @@ jobs:
         uses: foresightminingsoftwarecorporation/docker-check-exists@v1
         with:
           repository: ${{ inputs.registry }}
-          username: ${{ inputs.username }}
+          username: ${{ secrets.username }}
           password: ${{ secrets.password }}
           image_name: ${{ inputs.image }}
           version: ${{ steps.read_version.outputs.value }}
