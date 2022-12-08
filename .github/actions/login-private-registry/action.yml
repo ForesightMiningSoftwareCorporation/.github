@@ -25,7 +25,9 @@ runs:
         ssh-private-key: ${{ inputs.private_key }}
     - name: Keyscan
       shell: bash
-      run: ssh-keyscan -t rsa ${{ inputs.host }} >> ~/.ssh/known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -t rsa ${{ inputs.host }} >> ~/.ssh/known_hosts
     - name: Login to private registry
       shell: bash
       run: cargo login --registry ${{ inputs.name }} ${{ inputs.token }}
