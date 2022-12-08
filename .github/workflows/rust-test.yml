@@ -100,9 +100,6 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Install fmt
-        run: rustup component add rustfmt
-
       - name: fmt
         run: cargo fmt --verbose --all -- --check
 
