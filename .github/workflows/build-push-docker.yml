@@ -2,15 +2,19 @@ on:
   workflow_call:
     inputs:
       working-directory:
+        type: string
         description: "Binary to build"
         default: "."
       dockerfile:
+        type: string
         description: "The path to the Dockerfile to use"
         default: Dockerfile
       image:
+        type: string
         required: true
         description: "Docker image name"
       registry:
+        type: string
         required: true
         description: "Docker Repository name"
 
