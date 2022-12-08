@@ -74,8 +74,10 @@ jobs:
         if: ${{ env.GITHUB_PRIVATE_KEYS != '' }}
         shell: bash
         run: |
-          echo '[url "ssh://git@github.com/"]' >> ~/.gitconfig
-          echo "  insteadOf = https://github.com/" >> ~/.gitconfig
+          echo '[url "ssh://git@github.com/ForesightMiningSoftwareCorporation/"]' >> ~/.gitconfig
+          echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> ~/.gitconfig
+          echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> ~/.gitconfig
+          echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> ~/.gitconfig
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
