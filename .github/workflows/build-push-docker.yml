@@ -104,7 +104,7 @@ jobs:
         shell: bash
         run: |
           mkdir root-config
-          cp -r ~/.gitconfig  ~/.ssh ~/.cargo root-config/
+          cp -r ~/.gitconfig  ~/.ssh ~/.cargo root-config/ 2>/dev/null || :
 
       - name: Build & Push
         uses: docker/build-push-action@v2
