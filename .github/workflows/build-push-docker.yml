@@ -97,8 +97,10 @@ jobs:
         if: ${{ env.GITHUB_PRIVATE_KEYS != '' && fromJSON(steps.check_version_exists.outputs.exists) == false }}
         shell: bash
         run: |
-          echo '[url "ssh://git@github.com/"]' >> ~/.gitconfig
-          echo "  insteadOf = https://github.com/" >> ~/.gitconfig
+          echo '[url "ssh://git@github.com/ForesightMiningSoftwareCorporation/"]' >> ~/.gitconfig
+          echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> ~/.gitconfig
+          echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> ~/.gitconfig
+          echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> ~/.gitconfig
       - name: Prepare git and ssh config for build context
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         shell: bash
