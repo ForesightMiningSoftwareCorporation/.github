@@ -17,7 +17,12 @@ on:
         type: string
         required: true
         description: "Docker Repository name"
-
+      private-registry-host:
+        required: true
+        type: string
+      private-registry-name:
+        required: true
+        type: string
     secrets:
       github-token:
         required: true
