@@ -2,10 +2,9 @@ on:
   workflow_call:
     inputs:
       working-directory:
-        required: true
         description: "Binary to build"
+        default: "."
       dockerfile:
-        required: false
         description: "The path to the Dockerfile to use"
         default: Dockerfile
       image:
