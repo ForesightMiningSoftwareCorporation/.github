@@ -120,7 +120,7 @@ jobs:
           fi
           echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
       - name: Additional Script
-        if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
+        if: inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         run: ${{ inputs.additional_script }}
         shell: bash
 
