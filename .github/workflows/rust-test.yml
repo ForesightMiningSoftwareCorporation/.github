@@ -76,6 +76,7 @@ jobs:
         run: |
           echo '[url "ssh://git@github.com/"]' >> ~/.gitconfig
           echo "  insteadOf = https://github.com/" >> ~/.gitconfig
+
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         with:
           host: ${{ inputs.private-registry-host }}
