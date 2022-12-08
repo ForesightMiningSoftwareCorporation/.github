@@ -62,6 +62,15 @@ jobs:
           password: ${{ secrets.password }}
           image_name: ${{ inputs.image }}
           version: ${{ steps.read_version.outputs.value }}
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
+        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
+        with:
+          host: ${{ inputs.private-registry-host }}
+          name: ${{ inputs.private-registry-name }}
+          private_key: ${{ secrets.private-registry-private-key }}
+          token: ${{ secrets.private-registry-token }}
+
       # Setup the runner to use Docker Buildkit
       - name: Set up Docker Buildx
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
@@ -84,7 +93,7 @@ jobs:
         shell: bash
         run: |
           mkdir root-config
-          cp -r ~/.gitconfig  ~/.ssh root-config/
+          cp -r ~/.gitconfig  ~/.ssh ~/.cargo root-config/
 
       - name: Build & Push
         uses: docker/build-push-action@v2
