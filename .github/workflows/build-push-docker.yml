@@ -45,6 +45,8 @@ jobs:
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
     steps:
+      - name: Git Checkout
+        uses: actions/checkout@v3
       # Login to registry (ACR)
       - name: Login to ACR
         uses: docker/login-action@v1
