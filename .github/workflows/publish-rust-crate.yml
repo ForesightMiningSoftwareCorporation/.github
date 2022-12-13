@@ -136,6 +136,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ inputs.private-registry-name }}
       - name: Send Discord Notification
+        if: ssteps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord-webhook }}
