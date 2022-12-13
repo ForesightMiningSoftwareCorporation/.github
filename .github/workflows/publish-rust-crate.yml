@@ -133,10 +133,9 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ inputs.private-registry-name }}
       - name: Send Discord Notification
-        uses: appleboy/discord-action@master
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: '{"title": "Documentation", "url": "https://shipyard.rs/${{ inputs.private-registry-name }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}'
         with:
-          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
-          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-          color: "#48f442"
-          username: "Blib Bloup Blop"
-          message: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_package_name.outputs.value }} has been published to the private registry\n Documentation: https://shipyard.rs/${{ inputs.private-registry-name }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"
+          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_package_name.outputs.value }} has been published to the private registry"
