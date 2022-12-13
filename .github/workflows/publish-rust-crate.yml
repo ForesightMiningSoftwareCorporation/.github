@@ -98,13 +98,13 @@ jobs:
           token: ${{ secrets.private-registry-token }}
       - name: Read Cargo.toml package version
         id: read_version
-        uses: SebRollen/toml-action@v1.0.0
+        uses: SebRollen/toml-action@v1.0.2
         with:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.version'
       - name: Read Cargo.toml package name
         id: read_package_name
-        uses: SebRollen/toml-action@v1.0.0
+        uses: SebRollen/toml-action@v1.0.2
         with:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.name'
