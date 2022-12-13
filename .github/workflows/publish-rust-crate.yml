@@ -139,6 +139,6 @@ jobs:
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord-webhook }}
-          DISCORD_EMBEDS: '{"title": "Documentation", "url": "https://shipyard.rs/${{ inputs.private-registry-name }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}'
+          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ inputs.private-registry-name }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}]'
         with:
           args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_package_name.outputs.value }} has been published to the private registry"
