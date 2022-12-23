@@ -49,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
+      PRIVATE_REGISTRY_TOKEN: ${{ secrets.private-registry-token }}
     outputs:
       version: ${{ steps.read_version.outputs.value }}
     steps:
@@ -111,7 +112,13 @@ jobs:
           cp -r ~/.gitconfig  root-config/.gitconfig || :
           cp -r ~/.ssh root-config/.ssh || :
           cp -r ~/.cargo root-config/.cargo || :
-
+      - name: Use user-agent for private registry
+        if: ${{ env.PRIVATE_REGISTRY_TOKEN != '' && fromJSON(steps.check_version_exists.outputs.exists) == false }}
+        shell: bash
+        run: |
+          echo "" >> ./shipyard_token
+          echo "[http]" >> ./shipyard_token
+          echo "user-agent = \"shipyard ${{ env.PRIVATE_REGISTRY_TOKEN }}\"" >> ./shipyard_token
       - name: Build & Push
         uses: docker/build-push-action@v2
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
@@ -121,6 +128,8 @@ jobs:
           file: "${{ inputs.working-directory }}/${{ inputs.dockerfile }}"
           ssh: |
             default=${{ env.SSH_AUTH_SOCK }}
+          secret-files: |
+            shipyard_token=./shipyard_token
           tags: |
             ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
             ${{ inputs.registry }}/${{ inputs.image }}:latest
