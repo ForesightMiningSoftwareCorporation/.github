@@ -1,0 +1,329 @@
+name: Predict E2E Testing
+
+on:
+  workflow_call:
+    inputs:
+      orica_server_version:
+        type: string
+        default: latest
+        description: Version of the orica-server to test
+      orica_server_chart_version:
+        type: string
+        default: 1.0.0
+        description: Version of the orica-server chart to use
+      orica_predict_version:
+        type: string
+        default: latest
+        description: Version of the orica-redict to test
+      orica_predict_chart_version:
+        type: string
+        default: 1.0.0
+        description: Version of the orica-redict chart to use
+      storage_account_name:
+        type: string
+        default: oreprohubussa
+        description: Name of the storage account to use for the test
+      storage_container_name:
+        type: string
+        default: predict-test
+        description: Name of the storage account container to use for the test
+      docker_registry:
+        type: string
+        default: oreprohub
+        description: Name of the docker registry to use
+      docker_registry_username:
+        type: string
+        default: oreprohub
+        description: Username of the docker registry to use
+      azure_tenant_id:
+        type: string
+        description: Azure tenant id to use
+      azure_subscription_id:
+        type: string
+        description: Azure subscription id to use
+      azure_resource_group:
+        type: string
+        description: Azure resource group to use
+    secrets:
+      storage_account_key:
+        description: Key for the storage account
+      azure_client_id:
+        description: Azure client id
+      azure_client_secret:
+        description: Azure client secret
+      docker_registry_password:
+        description: Password of the docker registry to use
+      GH_PAT:
+        description: Token to pull other repos
+
+env:
+  TF_BRANCH: preprod
+  ARM_CLIENT_ID: ${{ secrets.azure_client_id }}
+  ARM_CLIENT_SECRET: ${{ secrets.azure_client_secret }}
+  ARM_SUBSCRIPTION_ID: ${{ inputs.azure_subscription_id }}
+  ARM_RESOURCE_GROUP: ${{ inputs.azure_resource_group }}
+  ARM_TENANT_ID: ${{ inputs.azure_tenant_id }}
+
+
+jobs:
+  setup-k8s-cluster:
+    name: Setup Kubernetes Cluster
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/infrastructure
+          ref: ${{ env.TF_BRANCH }}
+          token: ${{ secrets.GH_PAT }}
+      - uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init
+        shell: bash
+        working-directory: deploy/predict_testing
+        run: terraform init
+      - name: Terraform Apply
+        working-directory: deploy/predict_testing
+        shell: bash
+        run: |
+          terraform apply \
+            -auto-approve \
+            -var="resource_group"="${{ env.ARM_RESOURCE_GROUP }}" \
+            -var="subscription_id"="${{ env.ARM_SUBSCRIPTION_ID }}" \
+            -var="kubeconfig_path"="kubeconfig"
+      - uses: actions/upload-artifact@v3
+        name: Store Kubeconfig in Artifacts
+        with:
+          name: kubeconfig
+          path: deploy/predict_testing/kubeconfig
+      - uses: actions/upload-artifact@v3
+        name: Store TF State in Artifacts
+        with:
+          name: terraform.tfstate
+          path: deploy/predict_testing/terraform.tfstate
+  setup-rmq:
+    name: Setup Rabbitmq on the K8S Cluster
+    needs:
+      - setup-k8s-cluster
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/predict-testing
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubeconfig
+          path: .
+      - name: Create Rabbitmq Secret
+        shell: bash
+        run: |
+          kubectl --kubeconfig ./kubeconfig create secret generic rabbitmq-secret --from-file="load_definition.json"="./charts/rabbitmq/definition.json"
+      - name: Install Bitnami Repo
+        shell: bash
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+      - name: Install Rabbitmq
+        shell: bash
+        run: |
+          helm install --kubeconfig ./kubeconfig rabbitmq \
+            bitnami/rabbitmq \
+            --wait \
+            -n default \
+            --set loadDefinition.enabled=true,loadDefinition.existingSecret=rabbitmq-secret
+  setup-docker-secrets:
+    name: Setup docker-secrets on the K8S Cluster
+    needs:
+      - setup-k8s-cluster
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/predict-testing
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubeconfig
+          path: .
+      - name: Create Docker Secret
+        shell: bash
+        run: |
+          kubectl --kubeconfig ./kubeconfig create secret docker-registry regcred --docker-server="https://${{ inputs.docker_registry }}.azurecr.io" --docker-username="${{ inputs.docker_registry_username }}" --docker-password="${{ secrets.docker_registry_password }}"
+  deploy-orica-server:
+    name: Deploy orica-server on the K8S Cluster
+    needs:
+      - setup-docker-secrets
+    runs-on: ubuntu-latest
+    outputs:
+      node_ip: ${{ steps.install.outputs.node_ip }}
+      node_port: ${{ steps.install.outputs.node_port }}
+      client_id: ${{ steps.install.outputs.client_id }}
+      client_secret: ${{ steps.install.outputs.client_secret }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/predict-testing
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubeconfig
+          path: .
+      - name: Login to container registries
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Create Orica Server Secrets
+        shell: bash
+        run: |
+          kubectl --kubeconfig ./kubeconfig create secret generic orica-server-htpasswd --from-file="htpasswd"="./charts/orica-server/htpasswd"
+      - name: Install Orica Server
+        id: install
+        shell: bash
+        run: |
+          helm --kubeconfig ./kubeconfig install server \
+            oci://ghcr.io/foresightminingsoftwarecorporation/charts/orica-server \
+            -n default \
+            --version ${{ inputs.orica_server_chart_version }} \
+            --wait \
+            --timeout 60m0s \
+            --values ./charts/orica-server/values.yaml \
+            --set image.tag=${{ inputs.orica_server_version }},storage.azure.storage_account_name=${{ inputs.storage_account_name }},storage.azure.storage_account_key="${{ secrets.storage_account_key }}",storage.azure.storage_container_name=${{ inputs.storage_container_name }}
+          echo "node_ip=$(kubectl get svc --kubeconfig ./kubeconfig --namespace default server-orica-server --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")" >> $GITHUB_OUTPUT
+          echo "node_port=80" >> $GITHUB_OUTPUT
+          echo "client_id=server" >> $GITHUB_OUTPUT
+          echo "client_secret=server" >> $GITHUB_OUTPUT
+  deploy-predict-simulation:
+    name: Deploy predict-simulation on the K8S Cluster
+    needs:
+      - setup-docker-secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/predict-testing
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubeconfig
+          path: .
+      - name: Login to container registries
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Install Predict Simulation
+        shell: bash
+        run: |
+          helm --kubeconfig ./kubeconfig install simulation \
+          oci://ghcr.io/foresightminingsoftwarecorporation/charts/orica-predict \
+          -n default \
+          --version ${{ inputs.orica_predict_chart_version }} \
+          --wait \
+          --timeout 60m0s \
+          --values ./charts/orica-predict/values.yaml \
+          --set image.tag=${{ inputs.orica_predict_version }},storage.azure.storage_account_name=${{ inputs.storage_account_name }},storage.azure.storage_account_key="${{ secrets.storage_account_key }}",storage.azure.storage_container_name=${{ inputs.storage_container_name }},rabbitmq.queue=predict_simulation
+  deploy-predict-tuning:
+    name: Deploy predict-tuning on the K8S Cluster
+    needs:
+      - setup-docker-secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/predict-testing
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubeconfig
+          path: .
+      - name: Login to container registries
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Install Orica Server
+        shell: bash
+        run: |
+          helm --kubeconfig ./kubeconfig install tuning \
+          oci://ghcr.io/foresightminingsoftwarecorporation/charts/orica-predict \
+          -n default \
+          --version ${{ inputs.orica_predict_chart_version }} \
+          --wait \
+          --timeout 60m0s \
+          --values ./charts/orica-predict/values.yaml \
+          --set image.tag=${{ inputs.orica_predict_version }},storage.azure.storage_account_name=${{ inputs.storage_account_name }},storage.azure.storage_account_key="${{ secrets.storage_account_key }}",storage.azure.storage_container_name=${{ inputs.storage_container_name }},rabbitmq.queue=predict_tuning
+  tests:
+    name: Tests
+    needs:
+      - deploy-orica-server
+      - deploy-predict-simulation
+      - deploy-predict-tuning
+      - setup-rmq
+    runs-on: ubuntu-latest
+    env:
+      NODE_IP: ${{ needs.deploy-orica-server.outputs.node_ip }}
+      NODE_PORT: ${{ needs.deploy-orica-server.outputs.node_port }}
+      CLIENT_ID: ${{ needs.deploy-orica-server.outputs.client_id }}
+      CLIENT_SECRET: ${{ needs.deploy-orica-server.outputs.client_secret }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/predict-testing
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+      - name: Install Node
+        uses: actions/setup-node@v1
+      - name: Install newman
+        shell: bash
+        run: |
+          npm install -g newman newman-reporter-htmlextra
+      - name: Substitute env
+        shell: bash
+        run: |
+          envsubst < newman-env.json.tmpl > newman-env.json
+      - name: Make Directory for results
+        shell: bash
+        run: mkdir -p testResults
+
+      - name: Run POSTMAN collection
+        shell: bash
+        run: |
+          newman run postman_collection.json -e newman-env.json -d request.json -r htmlextra --reporter-htmlextra-export testResults/htmlreport.html --reporter-htmlextra-darkTheme
+
+      - name: Output the run Details
+        uses: actions/upload-artifact@v2
+        with:
+          name: RunReports
+          path: testResults
+  teardown-k8s-cluster:
+    name: Tear down Kubernetes Cluster
+    needs:
+      - tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ForesightMiningSoftwareCorporation/infrastructure
+          ref: ${{ env.TF_BRANCH }}
+          token: ${{ secrets.GH_PAT }}
+      - uses: hashicorp/setup-terraform@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: terraform.tfstate
+          path: deploy/predict_testing
+      - name: Terraform Init
+        shell: bash
+        working-directory: deploy/predict_testing
+        run: terraform init
+      - name: Terraform destroy
+        working-directory: deploy/predict_testing
+        if: always()
+        shell: bash
+        run: |
+          terraform destroy \
+            -auto-approve \
+            -var="resource_group"="${{ env.ARM_RESOURCE_GROUP }}" \
+            -var="subscription_id"="${{ env.ARM_SUBSCRIPTION_ID }}" \
+            -var="kubeconfig_path"="$GITHUB_WORKSPACE/kubeconfig"
