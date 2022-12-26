@@ -39,6 +39,10 @@ on:
       password:
         required: true
         description: "Docker Repository Password"
+    outputs:
+      version:
+        description: "The version of the image that was built"
+        value: ${{ jobs.release.outputs.version }}
 
 env:
   CARGO_TERM_COLOR: always
