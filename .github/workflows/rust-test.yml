@@ -97,7 +97,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
-          components: clippy, rustfmt
+          components: clippy, rustfmt, cargo-udeps
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
@@ -107,6 +107,9 @@ jobs:
 
       - name: check
         run: cargo check ${{ inputs.additional_args }}
+
+      - name: unused dependencies
+        run: cargo +nightly udeps ${{ inputs.additional_args }}
 
       - name: run clippy
         run: cargo clippy ${{ inputs.additional_args }} -- -D warnings
