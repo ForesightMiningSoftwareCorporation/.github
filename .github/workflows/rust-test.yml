@@ -114,7 +114,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-          components: cargo-udeps
+
+      - name: Install udeps
+        run: cargo install cargo-udeps
 
       - name: unused dependencies
         run: cargo +nightly udeps ${{ inputs.additional_args }}
