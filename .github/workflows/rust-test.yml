@@ -120,3 +120,6 @@ jobs:
 
       - name: unused dependencies
         run: cargo +nightly udeps ${{ inputs.additional_args }}
+
+      - name: Tests
+        run: cargo test ${{ inputs.additional_args }}
