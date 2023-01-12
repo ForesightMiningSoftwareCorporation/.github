@@ -100,7 +100,7 @@ jobs:
         run: cargo install cargo-index
       - name: Login to public Registry
         shell: bash
-        if: ${{ inputs.public-registry == "true"}}
+        if: ${{ inputs.public-registry == 'true' }}
         run: |
           cargo login ${{ secrets.public-registry-token }}
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
@@ -124,12 +124,12 @@ jobs:
           field: 'package.name'
       - name: Clone Private Registry with ssh
         shell: base
-        if: ${{ inputs.public-registry != "true"}}
+        if: ${{ inputs.public-registry != 'true' }}
         run: |
           git clone git@${{ inputs.private-registry-host }}:${{ inputs.private-registry-name }}/crate-index.git ${{ runner.temp }}/crate_index
       - name: Clone Public Registry
         shell: base
-        if: ${{ inputs.public-registry == "true"}}
+        if: ${{ inputs.public-registry == 'true' }}
         run: |
           git clone https://github.com/rust-lang/crates.io.git ${{ runner.temp }}/crate_index
       - name: Check if version exists
@@ -151,12 +151,12 @@ jobs:
         if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
       - name: Publish to private registry
-        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry != "true" }}
+        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry != 'true' }}
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ inputs.private-registry-name }}
       - name: Publish to public registry
-        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == "true" }}
+        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true' }}
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish
