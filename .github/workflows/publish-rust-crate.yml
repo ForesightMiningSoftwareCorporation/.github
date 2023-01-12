@@ -104,7 +104,7 @@ jobs:
         run: |
           cargo login ${{ secrets.public-registry-token }}
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
-        if: ${{ inputs.public-registry != "true"}}
+        if: ${{ inputs.public-registry != 'true' }}
         with:
           private_key: ${{ secrets.private-registry-private-key }}
           host: ${{ inputs.private-registry-host }}
