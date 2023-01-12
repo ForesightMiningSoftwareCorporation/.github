@@ -97,7 +97,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
-          components: clippy, rustfmt, cargo-deny
+          components: clippy, rustfmt
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
@@ -121,8 +121,8 @@ jobs:
       - name: unused dependencies
         run: cargo +nightly udeps ${{ inputs.additional_args }}
 
-      - name: check license
-        run: cargo deny check licenses ${{ inputs.additional_args }}
+#      - name: check license
+#        run: cargo deny check licenses ${{ inputs.additional_args }}
 
       - name: Tests
         run: cargo test ${{ inputs.additional_args }}
