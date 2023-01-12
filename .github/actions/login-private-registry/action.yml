@@ -15,9 +15,6 @@ inputs:
   token:
     required: true
     description: "Token to use for the registry login"
-  use_http:
-    default: "false"
-    description: "Use HTTP instead of SSH for the registry"
 runs:
   using: "composite"
   steps:
@@ -28,7 +25,6 @@ runs:
         ssh-private-key: ${{ inputs.private_key }}
     - name: Keyscan
       shell: bash
-      if: ${{ inputs.use_http == false }}
       run: |
         mkdir -p ~/.ssh
         ssh-keyscan -t rsa ${{ inputs.host }} >> ~/.ssh/known_hosts

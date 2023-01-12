@@ -15,14 +15,14 @@ on:
         default: "push"
         description: Event that triggered the workflow
       private-registry-host:
-        required: true
         type: string
+        default: ""
       private-registry-name:
-        required: true
         type: string
-      private-registry-http:
+        default: ""
+      public-registry:
+        type: string
         default: "false"
-        type: string
       skip-test:
         type: boolean
         default: false
@@ -44,7 +44,9 @@ on:
       private-registry-private-key:
         required: false
       private-registry-token:
-        required: true
+        required: false
+      public-registry-token:
+        required: false
       discord-webhook:
         required: false
         description: Discord webhook to send a message to
@@ -96,13 +98,18 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo install cargo-index
+      - name: Login to public Registry
+        shell: bash
+        if: ${{ inputs.public-registry == "true"}}
+        run: |
+          cargo login ${{ secrets.public-registry-token }}
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
+        if: ${{ inputs.public-registry != "true"}}
         with:
           private_key: ${{ secrets.private-registry-private-key }}
           host: ${{ inputs.private-registry-host }}
           name: ${{ inputs.private-registry-name }}
           token: ${{ secrets.private-registry-token }}
-          use_http: ${{ inputs.private-registry-http }}
       - name: Read Cargo.toml package version
         id: read_version
         uses: SebRollen/toml-action@v1.0.2
@@ -115,16 +122,16 @@ jobs:
         with:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.name'
-      - name: Clone Index Registry with ssh
+      - name: Clone Private Registry with ssh
         shell: base
-        if: ${{ inputs.private-registry-http == 'false' }}
+        if: ${{ inputs.public-registry != "true"}}
         run: |
           git clone git@${{ inputs.private-registry-host }}:${{ inputs.private-registry-name }}/crate-index.git ${{ runner.temp }}/crate_index
-      - name: Clone Index Registry with http
+      - name: Clone Public Registry
         shell: base
-        if: ${{ inputs.private-registry-http == 'true' }}
+        if: ${{ inputs.public-registry == "true"}}
         run: |
-          git clone ${{ inputs.private-registry-host }} ${{ runner.temp }}/crate_index
+          git clone https://github.com/rust-lang/crates.io.git ${{ runner.temp }}/crate_index
       - name: Check if version exists
         shell: bash
         id: check_exists
@@ -144,10 +151,15 @@ jobs:
         if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
       - name: Publish to private registry
-        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' }}
+        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry != "true" }}
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ inputs.private-registry-name }}
+      - name: Publish to public registry
+        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == "true" }}
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo publish
       - name: Send Discord Notification
         if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         uses: Ilshidur/action-discord@master
