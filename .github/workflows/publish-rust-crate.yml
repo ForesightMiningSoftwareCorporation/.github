@@ -84,7 +84,7 @@ jobs:
     needs:
       - test
     if: |
-      always()
+      always() &&
       (needs.test.result == 'success' || needs.test.result == 'skipped')
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
