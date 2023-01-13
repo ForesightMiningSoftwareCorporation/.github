@@ -1,7 +1,7 @@
 [licenses]
 allow-osi-fsf-free = "neither"
 copyleft = "warn"
-default = "warn"
+default = "deny"
 unlicensed = "allow"
 allow = [
     "Apache-2.0",
