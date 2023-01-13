@@ -167,7 +167,7 @@ jobs:
           app_id: ${{ secrets.approval_app_id }}
           private_key: ${{ secrets.approval_app_private_key }}
       - name: Approve Release
-        uses: peter-evans/repository-dispatch@v1
+        uses: trstringer/manual-approval@v1
         if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true'
         with:
           token: ${{ steps.generate_token.outputs.token }}
