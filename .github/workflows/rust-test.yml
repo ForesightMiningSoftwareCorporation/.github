@@ -16,6 +16,9 @@ on:
       runner:
         type: string
         default: "ubuntu-latest"
+      public-registry:
+        type: string
+        default: "false"
       private-registry-host:
         required: true
         type: string
@@ -65,13 +68,13 @@ jobs:
 
       - name: Access private repos
         uses: webfactory/ssh-agent@v0.5.4
-        if: ${{ env.GITHUB_PRIVATE_KEYS != '' }}
+        if: ${{ inputs.public_registry != 'true' && env.GITHUB_PRIVATE_KEYS != '' }}
         with:
           ssh-private-key: |
             ${{ env.GITHUB_PRIVATE_KEYS }}
 
       - name: Use ssh for github dep
-        if: ${{ env.GITHUB_PRIVATE_KEYS != '' }}
+        if: ${{ inputs.public_registry != 'true' && env.GITHUB_PRIVATE_KEYS != '' }}
         shell: bash
         run: |
           echo '[url "ssh://git@github.com/ForesightMiningSoftwareCorporation/"]' >> ~/.gitconfig
@@ -80,6 +83,7 @@ jobs:
           echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> ~/.gitconfig
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
+        if: ${{ inputs.public_registry != 'true'}}
         with:
           host: ${{ inputs.private-registry-host }}
           name: ${{ inputs.private-registry-name }}

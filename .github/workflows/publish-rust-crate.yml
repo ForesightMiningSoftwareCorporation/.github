@@ -75,6 +75,7 @@ jobs:
       private-registry-host: ${{ inputs.private-registry-host }}
       private-registry-name: ${{ inputs.private-registry-name }}
       additional_script: ${{ inputs.additional_script }}
+      public_registry: ${{ inputs.public_registry }}
     secrets:
       github-token: ${{ secrets.github-token }}
       github-private-keys: ${{ secrets.github-private-keys }}
