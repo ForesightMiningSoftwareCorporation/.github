@@ -50,10 +50,19 @@ on:
       discord-webhook:
         required: false
         description: Discord webhook to send a message to
+      approval_app_id:
+        required: false
+        description: ID of the approval app
+      approval_app_private_key:
+        required: false
+        description: Private key of the approval app
 
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+permissions:
+  issues: write
 
 jobs:
   test:
@@ -75,7 +84,7 @@ jobs:
     needs:
       - test
     if: |
-      always() && 
+      always()
       (needs.test.result == 'success' || needs.test.result == 'skipped')
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
@@ -123,12 +132,12 @@ jobs:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.name'
       - name: Clone Private Registry with ssh
-        shell: base
+        shell: bash
         if: ${{ inputs.public-registry != 'true' }}
         run: |
           git clone git@${{ inputs.private-registry-host }}:${{ inputs.private-registry-name }}/crate-index.git ${{ runner.temp }}/crate_index
       - name: Clone Public Registry
-        shell: base
+        shell: bash
         if: ${{ inputs.public-registry == 'true' }}
         run: |
           git clone https://github.com/rust-lang/crates.io.git ${{ runner.temp }}/crate_index
@@ -142,11 +151,26 @@ jobs:
             export PACKAGE_EXISTS=no
           fi
           echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
+
+      - name: Generate token
+        id: generate_token
+        if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true'
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.approval_app_id }}
+          private_key: ${{ secrets.approval_app_private_key }}
+      - name: Approve Release
+        uses: peter-evans/repository-dispatch@v1
+        if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true'
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          approvers: "Publishers"
+          issue-title: "Publish new version to *public* registry of ${{ steps.read_package_name.outputs.value }}: ${{ steps.read_version.outputs.value }}"
+          client-payload: '{"version": "${{ github.event.inputs.version }}"}'
       - name: Additional Script
         if: inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         run: ${{ inputs.additional_script }}
         shell: bash
-
       - name: Update Packages
         if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
