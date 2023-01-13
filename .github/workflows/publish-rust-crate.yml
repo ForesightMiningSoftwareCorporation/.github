@@ -6,6 +6,10 @@ on:
       runner:
         type: string
         default: "ubuntu-latest"
+      required_packages:
+        type: string
+        default: ""
+        description: Package that needs to be installed before Rust compilation can happens
       toolchain:
         type: string
         default: "1.65"
@@ -76,6 +80,7 @@ jobs:
       private-registry-host: ${{ inputs.private-registry-host }}
       private-registry-name: ${{ inputs.private-registry-name }}
       additional_script: ${{ inputs.additional_script }}
+      required_packages: ${{ inputs.required_packages }}
       public-registry: ${{ inputs.public-registry }}
     secrets:
       github-token: ${{ secrets.github-token }}
