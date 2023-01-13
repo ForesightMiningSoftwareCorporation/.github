@@ -63,6 +63,7 @@ env:
 
 permissions:
   issues: write
+  contents: read
 
 jobs:
   test:
