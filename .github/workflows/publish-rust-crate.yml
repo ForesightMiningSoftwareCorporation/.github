@@ -172,6 +172,7 @@ jobs:
         with:
           secret: ${{ steps.generate_token.outputs.token }}
           approvers: "Publishers"
+          minimum-approvals: 1
           issue-title: "Publish new version to *public* registry of ${{ steps.read_package_name.outputs.value }}: ${{ steps.read_version.outputs.value }}"
       - name: Additional Script
         if: inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
