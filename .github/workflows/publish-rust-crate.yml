@@ -170,10 +170,9 @@ jobs:
         uses: trstringer/manual-approval@v1
         if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true'
         with:
-          token: ${{ steps.generate_token.outputs.token }}
+          secret: ${{ steps.generate_token.outputs.token }}
           approvers: "Publishers"
           issue-title: "Publish new version to *public* registry of ${{ steps.read_package_name.outputs.value }}: ${{ steps.read_version.outputs.value }}"
-          client-payload: '{"version": "${{ github.event.inputs.version }}"}'
       - name: Additional Script
         if: inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
         run: ${{ inputs.additional_script }}
