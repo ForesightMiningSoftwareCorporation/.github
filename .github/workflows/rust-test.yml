@@ -55,6 +55,11 @@ jobs:
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
     steps:
+      - name: Checkout Github Wide
+        uses: actions/checkout@v2
+        with:
+          repository: "ForesightMiningSoftwareCorporation/github"
+          path: "./github-wide-resource"
       - name: Git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
         uses: actions/checkout@v3
@@ -115,6 +120,19 @@ jobs:
       - name: run clippy
         run: cargo clippy ${{ inputs.additional_args }} -- -D warnings
 
+      - name: Install cargo deny
+        run: cargo install +locked cargo-deny
+
+      - name: Copy Default deny if not exists
+        shell: bash
+        run: |
+          if [ ! -f deny.yml ]; then
+            cp github-wide-resource/deny.yml deny.yml
+          fi
+
+      - name: check license
+        run: cargo deny check licenses ${{ inputs.additional_args }}
+
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
@@ -124,9 +142,6 @@ jobs:
 
       - name: unused dependencies
         run: cargo +nightly udeps ${{ inputs.additional_args }}
-
-#      - name: check license
-#        run: cargo deny check licenses ${{ inputs.additional_args }}
 
       - name: Tests
         run: cargo test ${{ inputs.additional_args }}
