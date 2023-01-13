@@ -55,11 +55,6 @@ jobs:
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
     steps:
-      - name: Checkout Github Wide
-        uses: actions/checkout@v2
-        with:
-          repository: "ForesightMiningSoftwareCorporation/github"
-          path: "./github-wide-resource"
       - name: Git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
         uses: actions/checkout@v3
@@ -70,6 +65,12 @@ jobs:
         with:
           github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout Github Wide
+        uses: actions/checkout@v2
+        with:
+          repository: "ForesightMiningSoftwareCorporation/github"
+          path: "./github-wide-resource"
 
       - name: Access private repos
         uses: webfactory/ssh-agent@v0.5.4
