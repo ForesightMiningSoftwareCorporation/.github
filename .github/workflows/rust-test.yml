@@ -33,6 +33,10 @@ on:
         type: string
         default: ""
         description: Additional script to run before the additional packages
+      working-directory:
+        type: string
+        default: "."
+        description: Working directory to run the cargo command
     secrets:
       github-token:
         required: true
@@ -93,6 +97,7 @@ jobs:
       - name: Additional Script
         run: ${{ inputs.additional_script }}
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
 
       - name: Update Packages
         if: inputs.required_packages != ''
@@ -107,25 +112,36 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: fmt
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo fmt --verbose --all -- --check
 
       - name: check
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo check ${{ inputs.additional_args }}
 
       - name: run clippy
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo clippy ${{ inputs.additional_args }} -- -D warnings
 
       - name: Install cargo deny
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo install --locked cargo-deny
 
       - name: Copy Default deny if not exists
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: |
           if [ ! -f deny.yml ]; then
             wget https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
 
       - name: check license
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo deny check licenses ${{ inputs.additional_args }}
 
       - uses: dtolnay/rust-toolchain@master
@@ -133,10 +149,16 @@ jobs:
           toolchain: nightly
 
       - name: Install udeps
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo install cargo-udeps
 
       - name: unused dependencies
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo +nightly udeps ${{ inputs.additional_args }}
 
       - name: Tests
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: cargo test ${{ inputs.additional_args }}

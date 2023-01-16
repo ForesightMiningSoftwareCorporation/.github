@@ -82,6 +82,7 @@ jobs:
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
       public-registry: ${{ inputs.public-registry }}
+      working-directory: ${{ inputs.working-directory }}
     secrets:
       github-token: ${{ secrets.github-token }}
       github-private-keys: ${{ secrets.github-private-keys }}
