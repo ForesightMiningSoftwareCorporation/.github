@@ -142,7 +142,7 @@ jobs:
       - name: check license
         shell: bash
         working-directory: ${{ inputs.working-directory }}
-        run: cargo deny check licenses ${{ inputs.additional_args }}
+        run: cargo deny check licenses
 
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -156,7 +156,7 @@ jobs:
       - name: unused dependencies
         shell: bash
         working-directory: ${{ inputs.working-directory }}
-        run: cargo +nightly udeps ${{ inputs.additional_args }}
+        run: cargo +nightly udeps
 
       - name: Tests
         shell: bash
