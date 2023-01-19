@@ -34,5 +34,5 @@ runs:
     - name: Add HTTP-AGent to Cargo
       shell: bash
       run: |
-        echo "[http]" >> ~/.cargo/config.toml
-        echo 'user-agent = "shipyard ${{ inputs.token }}"' >> ~/.cargo/config.toml
+        grep -qxF '[http]' ~/.cargo/config.toml || echo "[http]" >> ~/.cargo/config.toml
+        grep -qxF 'user-agent = "shipyard ${{ inputs.token }}"' ~/.cargo/config.toml || echo 'user-agent = "shipyard ${{ inputs.token }}"' >> ~/.cargo/config.toml
