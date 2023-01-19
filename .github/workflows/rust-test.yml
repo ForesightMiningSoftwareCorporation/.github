@@ -58,6 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
+      CARGO_HTTP_USER_AGENT_REGISTRY_TOKEN: "shipyard ${{ secrets.private-registry-token }}"
     steps:
       - name: Git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}

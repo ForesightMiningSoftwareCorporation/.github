@@ -31,9 +31,3 @@ runs:
     - name: Login to private registry
       shell: bash
       run: cargo login --registry ${{ inputs.name }} ${{ inputs.token }}
-    - name: Add HTTP-AGent to Cargo
-      shell: bash
-      run: |
-        touch ~/.cargo/config.toml 
-        grep -qxF '[http]' ~/.cargo/config.toml || echo "[http]" >> ~/.cargo/config.toml
-        grep -qxF 'user-agent = "shipyard ${{ inputs.token }}"' ~/.cargo/config.toml || echo 'user-agent = "shipyard ${{ inputs.token }}"' >> ~/.cargo/config.toml
