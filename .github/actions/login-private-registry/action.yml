@@ -28,6 +28,15 @@ runs:
         ssh-private-key: |
           ${{ inputs.private_key }}
           ${{ inputs.additional_private_keys }}
+
+    - name: Use ssh for github dep
+      shell: bash
+      run: |
+        echo '[url "ssh://git@github.com/ForesightMiningSoftwareCorporation/"]' >> ~/.gitconfig
+        echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> ~/.gitconfig
+        echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> ~/.gitconfig
+        echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> ~/.gitconfig
+
     - name: Keyscan
       shell: bash
       run: |

@@ -71,21 +71,6 @@ jobs:
           github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Access private repos
-        uses: webfactory/ssh-agent@v0.5.4
-        if: ${{ inputs.public-registry != 'true' && env.GITHUB_PRIVATE_KEYS != '' }}
-        with:
-          ssh-private-key: |
-            ${{ env.GITHUB_PRIVATE_KEYS }}
-
-      - name: Use ssh for github dep
-        if: ${{ inputs.public-registry != 'true' && env.GITHUB_PRIVATE_KEYS != '' }}
-        shell: bash
-        run: |
-          echo '[url "ssh://git@github.com/ForesightMiningSoftwareCorporation/"]' >> ~/.gitconfig
-          echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> ~/.gitconfig
-          echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> ~/.gitconfig
-          echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> ~/.gitconfig
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         if: ${{ inputs.public-registry != 'true'}}
@@ -94,6 +79,7 @@ jobs:
           name: ${{ inputs.private-registry-name }}
           private_key: ${{ secrets.private-registry-private-key }}
           token: ${{ secrets.private-registry-token }}
+          additional_private_keys: ${{ env.GITHUB_PRIVATE_KEYS }}
 
       - name: Additional Script
         run: ${{ inputs.additional_script }}
