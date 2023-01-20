@@ -28,7 +28,10 @@ runs:
         ssh-private-key: |
           ${{ inputs.private_key }}
           ${{ inputs.additional_private_keys }}
-
+    - name: Add Private Reg Index Config
+      shell: bash
+      run: |
+        echo "CARGO_REGISTRIES_${{ inputs.name }}_INDEX=ssh://git@${{ inputs.host }}/${{ inputs.name }}/crate-index.git" >> $GITHUB_ENV
     - name: Use ssh for github dep
       shell: bash
       run: |
