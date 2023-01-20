@@ -51,6 +51,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
 
 jobs:
   test:

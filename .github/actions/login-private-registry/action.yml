@@ -36,7 +36,6 @@ runs:
         echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> ~/.gitconfig
         echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> ~/.gitconfig
         echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> ~/.gitconfig
-
     - name: Keyscan
       shell: bash
       run: |

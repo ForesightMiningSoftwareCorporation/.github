@@ -64,6 +64,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
 
 permissions:
   issues: write
@@ -95,8 +96,6 @@ jobs:
       always() &&
       (needs.test.result == 'success' || needs.test.result == 'skipped')
     name: Release new version to private registry
-    env:
-      CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
     runs-on: "ubuntu-latest"
     steps:
       - name: Git Checkout
