@@ -15,14 +15,19 @@ inputs:
   token:
     required: true
     description: "Token to use for the registry login"
+  additional_private_keys:
+    default: ""
+    description: "Additional private keys to add to the ssh-agent"
 runs:
   using: "composite"
   steps:
     - name: Access private registry
       uses: webfactory/ssh-agent@v0.5.4
-      if: ${{ inputs.private_key != ''}}
+      if: ${{ inputs.private_key != '' || inputs.additional_private_keys != '' }}
       with:
-        ssh-private-key: ${{ inputs.private_key }}
+        ssh-private-key: |
+          ${{ inputs.private_key }}
+          ${{ inputs.additional_private_keys }}
     - name: Keyscan
       shell: bash
       run: |
