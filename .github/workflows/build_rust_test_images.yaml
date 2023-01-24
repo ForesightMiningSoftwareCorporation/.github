@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-rust-test-image:
-    runs-on: ${{ matrix.os.name }}
+    runs-on: ubuntu-latest
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v3
