@@ -31,10 +31,10 @@ runs:
     - name: Add Shipyard and github known hosts
       shell: bash
       run: |
-        if [ "$HOME" == "/github/home" ]; then
+        if [ "$HOME" == "/github/home" && "$USER" ==]; then
           SSH_DIR="/root/.ssh"
         else
-          SSH_DIR=$HOME."/.ssh"
+          SSH_DIR="$HOME"/.ssh"
         fi
         mkdir -p $SSH_DIR
         echo "ssh.shipyard.rs ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC5aiwcgf06U4PYEEzl/k1H3n3SXCMRiH/TOvy9thWJhMdk52DgscOxmeyy5uW7FDYMYZkXyCVLWZR8lB6K1LoIyRfwQrklBOo7BU7gut3mRbnG+Lrginl2vgzClfHspqtcOBaDLslE5RH69mWZB6YnsPhYlW3GsLnrNNlzcfFCAKFA24ysRF6FKgfhHRixQIU396Lk+5U0hMiQgFmRrVAkVSDGeWE+LxQUThiafTLnc+YtuM10GDikuo8tgYjWfTvH3jDRLJp3MClLe7KqmosMuNwp0OfF510LOLxxRu3wqSjOj6IFuYz46dBQa4dojRGFnvtEyENPbDbPM6Ef1HH+Ayse8JLPiJKR1egcpGCYaSurdRSFeZ2ZU1Te9k5b7CKVDDEFSclDWgDgj5KVLV3/EG5MNHI9gBA6AvEb76IdjXETanhL7/p94w698FLDJnmRgR4x1zoqQDac9ZYtyXFEt7nMcVkg1sbEeoMM3o9oqjnGvR1jCDNUwJ6oFnHhIEU=" >> $SSH_DIR/known_hosts
