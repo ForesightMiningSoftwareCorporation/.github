@@ -160,12 +160,12 @@ jobs:
             const output = `
             |    | required | step                                                                 | result                             | 
             | --- | -------- | -------------------------------------------------------------------- | ---------------------------------- |
-            | 🖌 |    ✅    | `cargo fmt --verbose --all -- --check`                               | `${{ steps.fmt.outcome }}`         |
-            | 🛂 |    ✅    | `cargo check ${{ inputs.additional_args }}`                          | `${{ steps.check.outcome}}`         |
-            | 🦀 |    ✅    | `cargo clippy ${{ inputs.additional_args }} -- -D warnings`          | `${{ steps.clippy.outcome}}`        |
-            | 🪪 |    ✅    | `cargo deny check licenses`                                          | `${{ steps.deny-license.outcome }}` |
-            | 🌴 |    ✅    | `cargo machete`                                                      | `${{ steps.dependencies.outcome }}` |
-            | 🧪 |    ✅    | `cargo test ${{ inputs.additional_args }}`                           | `${{ steps.tests.outcome }}`        |
+            | 🖌 |    ✅    | \`cargo fmt --verbose --all -- --check\`                               | \`${{ steps.fmt.outcome }}\`         |
+            | 🛂 |    ✅    | \`cargo check ${{ inputs.additional_args }}\`                          | \`${{ steps.check.outcome}}\`         |
+            | 🦀 |    ✅    | \`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`          | \`${{ steps.clippy.outcome}}\`        |
+            | 🪪 |    ✅    | \`cargo deny check licenses\`                                          | \`${{ steps.deny-license.outcome }}\` |
+            | 🌴 |    ✅    | \`cargo machete\`                                                      | \`${{ steps.dependencies.outcome }}\` |
+            | 🧪 |    ✅    | \`cargo test ${{ inputs.additional_args }}\`                           | \`${{ steps.tests.outcome }}\`        |
 
             
             Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
