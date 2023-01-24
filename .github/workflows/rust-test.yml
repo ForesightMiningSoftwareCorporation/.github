@@ -128,7 +128,6 @@ jobs:
             wget https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
 
-
       - name: check license
         shell: bash
         id: deny-license
@@ -136,6 +135,30 @@ jobs:
         if: success()
         working-directory: ${{ inputs.working-directory }}
         run: cargo deny check licenses
+
+      - name: check bans
+        shell: bash
+        id: deny-bans
+        continue-on-error: true
+        if: success()
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo deny check bans
+
+      - name: check advisories
+        shell: bash
+        id: deny-advisories
+        continue-on-error: true
+        if: success()
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo deny check advisories
+
+      - name: check sources
+        shell: bash
+        id: deny-sources
+        continue-on-error: true
+        if: success()
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo deny check sources
 
       - name: unused dependencies
         shell: bash
@@ -158,14 +181,17 @@ jobs:
         with:
           script: |
             const output = `
-            |    | required | step                                                                 | result                             | 
-            | --- | -------- | -------------------------------------------------------------------- | ---------------------------------- |
-            | 🖌 |    ✅    | \`cargo fmt --verbose --all -- --check\`                               | \`${{ steps.fmt.outcome }}\`         |
-            | 🛂 |    ✅    | \`cargo check ${{ inputs.additional_args }}\`                          | \`${{ steps.check.outcome}}\`         |
-            | 🦀 |    ✅    | \`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`          | \`${{ steps.clippy.outcome}}\`        |
-            | 🪪 |    ✅    | \`cargo deny check licenses\`                                          | \`${{ steps.deny-license.outcome }}\` |
-            | 🌴 |    ✅    | \`cargo machete\`                                                      | \`${{ steps.dependencies.outcome }}\` |
-            | 🧪 |    ✅    | \`cargo test ${{ inputs.additional_args }}\`                           | \`${{ steps.tests.outcome }}\`        |
+            | required | step                                                                 | result                             | 
+            | -------- | -------------------------------------------------------------------- | ---------------------------------- |
+            |    ✅    | \`cargo fmt --verbose --all -- --check\`                               | \`${{ steps.fmt.outcome }}\`         |
+            |    ✅    | \`cargo check ${{ inputs.additional_args }}\`                          | \`${{ steps.check.outcome}}\`         |
+            |    ✅    | \`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`          | \`${{ steps.clippy.outcome}}\`        |
+            |    ✅    | \`cargo deny check licenses\`                                          | \`${{ steps.deny-license.outcome }}\` |
+            |    ❌    | \`cargo deny check bans\`                                          | \`${{ steps.deny-bans.outcome }}\` |
+            |    ❌    | \`cargo deny check advisories\`                                          | \`${{ steps.deny-advisories.outcome }}\` |
+            |    ❌    | \`cargo deny check sources\`                                          | \`${{ steps.deny-sources.outcome }}\` |
+            |    ✅    | \`cargo machete\`                                                      | \`${{ steps.dependencies.outcome }}\` |
+            |    ✅    | \`cargo test ${{ inputs.additional_args }}\`                           | \`${{ steps.tests.outcome }}\`        |
 
             
             Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
