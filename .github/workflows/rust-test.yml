@@ -107,9 +107,9 @@ jobs:
           exitcode=$?
           stderr=$(<&3)
           echo "STDOUT"
-          echo $output
+          echo $stdout
           echo "STDERR"
-          echo $output
+          echo $stderr
           echo "stdout=$stdout" >> $GITHUB_OUTPUT
           echo "stderr=$stderr" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
@@ -194,17 +194,17 @@ jobs:
         with:
           script: |
             const output = `
-            | required | step                                                                 | result                             | stdout | stderr |
-            | -------- | -------------------------------------------------------------------- | ---------------------------------- | --- | --- |
-            |    ✅    | \`cargo fmt --verbose --all -- --check\`                               | \`${{ steps.fmt.outcome }}\`         | <details><summary>stdout</summary>\`\`\`\n${{ steps.fmt.outputs.stdout }}\`\`\`\</details> | <details><summary>stderr</summary>\`\`\`\n${{ steps.fmt.outputs.stderr }}\`\`\`\</details> | 
-            |    ✅    | \`cargo check ${{ inputs.additional_args }}\`                          | \`${{ steps.check.outcome}}\`         | | | 
-            |    ✅    | \`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`          | \`${{ steps.clippy.outcome}}\`        | | | 
-            |    ✅    | \`cargo deny check licenses\`                                          | \`${{ steps.deny-license.outcome }}\` | | | 
-            |    ❌    | \`cargo deny check bans\`                                          | \`${{ steps.deny-bans.outcome }}\` | | | 
-            |    ❌    | \`cargo deny check advisories\`                                          | \`${{ steps.deny-advisories.outcome }}\` | | | 
-            |    ❌    | \`cargo deny check sources\`                                          | \`${{ steps.deny-sources.outcome }}\` | | | 
-            |    ✅    | \`cargo machete\`                                                      | \`${{ steps.dependencies.outcome }}\` | | | 
-            |    ✅    | \`cargo test ${{ inputs.additional_args }}\`                           | \`${{ steps.tests.outcome }}\`        | | | 
+            | required | step                                                          | result                                   | stdout | stderr |
+            | -------- | ------------------------------------------------------------- | ---------------------------------------- | --- | --- |
+            |    ✅    | \`cargo fmt --verbose --all -- --check\`                      | \`${{ steps.fmt.outcome }}\`             | <details><summary>stdout</summary>\`\`\`\n${{ steps.fmt.outputs.stdout }}\`\`\`\</details> | <details><summary>stderr</summary>\`\`\`\n${{ steps.fmt.outputs.stderr }}\`\`\`\</details> | 
+            |    ✅    | \`cargo check ${{ inputs.additional_args }}\`                 | \`${{ steps.check.outcome}}\`            | | | 
+            |    ✅    | \`cargo clippy ${{ inputs.additional_args }} -- -D warnings\` | \`${{ steps.clippy.outcome}}\`           | | | 
+            |    ✅    | \`cargo deny check licenses\`                                 | \`${{ steps.deny-license.outcome }}\`    | | | 
+            |    ❌    | \`cargo deny check bans\`                                     | \`${{ steps.deny-bans.outcome }}\`       | | | 
+            |    ❌    | \`cargo deny check advisories\`                               | \`${{ steps.deny-advisories.outcome }}\` | | | 
+            |    ❌    | \`cargo deny check sources\`                                  | \`${{ steps.deny-sources.outcome }}\`    | | | 
+            |    ✅    | \`cargo machete\`                                             | \`${{ steps.dependencies.outcome }}\`    | | | 
+            |    ✅    | \`cargo test ${{ inputs.additional_args }}\`                  | \`${{ steps.tests.outcome }}\`           | | | 
 
             
             Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
