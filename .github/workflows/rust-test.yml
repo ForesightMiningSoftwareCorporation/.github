@@ -159,7 +159,7 @@ jobs:
           script: |
             const output = `
             |    | required | step                                                                 | result                             | 
-            | -- | -------- | -------------------------------------------------------------------- | ---------------------------------- |
+            | --- | -------- | -------------------------------------------------------------------- | ---------------------------------- |
             | 🖌 |    ✅    | `cargo fmt --verbose --all -- --check`                               | `${{ steps.fmt.outcome }}`         |
             | 🛂 |    ✅    | `cargo check ${{ inputs.additional_args }}`                          | `${{ steps.check.outcome}}`         |
             | 🦀 |    ✅    | `cargo clippy ${{ inputs.additional_args }} -- -D warnings`          | `${{ steps.clippy.outcome}}`        |
