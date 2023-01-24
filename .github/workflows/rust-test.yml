@@ -158,12 +158,15 @@ jobs:
         with:
           script: |
             const output = `
-            #### Cargo Fmt 🖌\`${{ steps.fmt.outcome }}\`
-            #### Cargo Check 🛂\`${{ steps.fmt.outcome }}\`
-            #### Cargo Clippy 🦀\`${{ steps.clippy.outcome }}\`
-            #### Only accepted licenses 🪪\`${{ steps.deny-license.outcome }}\`
-            #### No unused dependencies 🌴\`${{ steps.dependencies.outcome }}\`
-            #### Cargo tests🧪\`${{ steps.tests.outcome }}\`
+            |    | step                                                                 | result                                                                                                                | 
+            | -- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+            | 🖌 | `cargo fmt --verbose --all -- --check`                               | ${{ steps.fmt.outcome == "success" && ✅ || (${{ steps.fmt.outcome == "failure" && ❌ || 🟧️️) }}                       |
+            | 🛂 | `cargo check ${{ inputs.additional_args }}`                          | ${{ steps.check.outcome == "success" && ✅ || (${{ steps.check.outcome == "failure" && ❌ || 🟧️️) }}                   |
+            | 🦀 | `cargo clippy ${{ inputs.additional_args }} -- -D warnings`          | ${{ steps.clippy.outcome == "success" && ✅ || (${{ steps.clippy.outcome == "failure" && ❌ || 🟧️️) }}                 |
+            | 🪪 | `cargo deny check licenses`                                          | ${{ steps.deny-license.fmt.outcome == "success" && ✅ || (${{ steps.deny-license.outcome == "failure" && ❌ || 🟧️️) }} |
+            | 🌴 | `cargo machete`                                                      | ${{ steps.dependencies.outcome == "success" && ✅ || (${{ steps.dependencies.outcome == "failure" && ❌ || 🟧️️) }}     |
+            | 🧪 | `cargo test ${{ inputs.additional_args }}`                           | ${{ steps.tests.outcome == "success" && ✅ || (${{ steps.tests.outcome == "failure" && ❌ || 🟧️️) }}                   |
+
             
             Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
             Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>`
