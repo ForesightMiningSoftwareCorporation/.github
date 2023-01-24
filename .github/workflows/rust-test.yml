@@ -74,7 +74,7 @@ jobs:
           github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@beta
         if: ${{ inputs.public-registry != 'true'}}
         with:
           host: ${{ inputs.private-registry-host }}
