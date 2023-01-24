@@ -57,6 +57,8 @@ jobs:
   test:
     name: Rust Test (fmt and clippy)
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
@@ -71,7 +73,6 @@ jobs:
         with:
           github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
-
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         if: ${{ inputs.public-registry != 'true'}}
@@ -91,62 +92,87 @@ jobs:
         if: inputs.required_packages != ''
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ inputs.toolchain }}
-          components: clippy, rustfmt
-
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
 
       - name: fmt
         shell: bash
+        id: fmt
+        continue-on-error: true
+        if: success()
         working-directory: ${{ inputs.working-directory }}
         run: cargo fmt --verbose --all -- --check
 
       - name: check
         shell: bash
+        id: check
+        continue-on-error: true
+        if: success()
         working-directory: ${{ inputs.working-directory }}
         run: cargo check ${{ inputs.additional_args }}
 
       - name: run clippy
         shell: bash
+        id: clippy
+        continue-on-error: true
+        if: success()
         working-directory: ${{ inputs.working-directory }}
         run: cargo clippy ${{ inputs.additional_args }} -- -D warnings
 
-      - name: Install cargo deny
-        shell: bash
-        working-directory: ${{ inputs.working-directory }}
-        run: cargo install --locked cargo-deny
-
       - name: Copy Default deny if not exists
         shell: bash
+        if: success()
         working-directory: ${{ inputs.working-directory }}
         run: |
           if [ ! -f deny.yml ]; then
             wget https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
 
+
       - name: check license
         shell: bash
+        id: deny-license
+        continue-on-error: true
+        if: success()
         working-directory: ${{ inputs.working-directory }}
         run: cargo deny check licenses
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly
-
-      - name: Install udeps
-        shell: bash
-        working-directory: ${{ inputs.working-directory }}
-        run: cargo install cargo-udeps
-
       - name: unused dependencies
         shell: bash
+        id: dependencies
+        continue-on-error: true
+        if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo +nightly udeps
+        run: cargo machete
 
       - name: Tests
         shell: bash
+        id: tests
+        continue-on-error: true
+        if: success()
         working-directory: ${{ inputs.working-directory }}
         run: cargo test ${{ inputs.additional_args }}
+
+      - uses: actions/github-script@v6
+        name: Report status on PR
+        with:
+          script: |
+            const output = `
+            #### Cargo Fmt 🖌\`${{ steps.fmt.outcome }}\`
+            #### Cargo Check 🛂\`${{ steps.fmt.outcome }}\`
+            #### Cargo Clippy 🦀\`${{ steps.clippy.outcome }}\`
+            #### Only accepted licenses 🪪\`${{ steps.deny-license.outcome }}\`
+            #### No unused dependencies 🌴\`${{ steps.dependencies.outcome }}\`
+            #### Cargo tests🧪\`${{ steps.tests.outcome }}\`
+            
+            Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
+            Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>`
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      - name: Rust Test status
+        if: failure()
+        run: exit 1
