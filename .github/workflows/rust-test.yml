@@ -121,7 +121,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo check ${{ inputs.additional_args }}
+        run: |
+          if result=$(cargo check ${{ inputs.additional_args }} 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - name: run clippy
         shell: bash
@@ -129,7 +142,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo clippy ${{ inputs.additional_args }} -- -D warnings
+        run: |
+          if result=$(cargo clippy ${{ inputs.additional_args }} -- -D warnings 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - name: Copy Default deny if not exists
         shell: bash
@@ -146,7 +172,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo deny check licenses
+        run: |
+          if result=$(cargo deny check licenses 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - name: check bans
         shell: bash
@@ -154,7 +193,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo deny check bans
+        run: |
+          if result=$(cargo deny check bans 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - name: check advisories
         shell: bash
@@ -162,7 +214,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo deny check advisories
+        run: |
+          if result=$(cargo deny check advisories 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - name: check sources
         shell: bash
@@ -170,7 +235,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo deny check sources
+        run: |
+          if result=$(cargo deny check sources 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - name: unused dependencies
         shell: bash
@@ -178,7 +256,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo machete
+        run: |
+          if result=$(cargo machete 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - name: Tests
         shell: bash
@@ -186,7 +277,20 @@ jobs:
         continue-on-error: true
         if: success()
         working-directory: ${{ inputs.working-directory }}
-        run: cargo test ${{ inputs.additional_args }}
+        run: |
+          if result=$(cargo test ${{ inputs.additional_args }} 2>&1); then
+            stdout=$result
+            rc=0
+          else
+            rc=$?
+            stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
+          echo "stdout=$stdout" >> $GITHUB_OUTPUT
+          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit $exitcode
 
       - uses: actions/github-script@v6
         name: Report status on PR
@@ -202,18 +306,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.fmt.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.fmt.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
@@ -225,18 +329,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.check.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.check.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
@@ -248,18 +352,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.clippy.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.clippy.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
@@ -271,18 +375,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-license.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-license.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
@@ -294,18 +398,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-bans.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-bans.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
@@ -317,18 +421,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-advisories.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-advisories.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
@@ -340,18 +444,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-sources.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.deny-sources.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
               
                 </td>
@@ -363,18 +467,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.dependencies.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
             
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.dependencies.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
             
                 </td>
@@ -386,18 +490,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.tests.outputs.stdout }}
-                    \`\`\`
+                    </pre>
                   </details>
             
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`n
+                    <pre>
                     ${{ steps.tests.outputs.stderr }}
-                    \`\`\`
+                    </pre>
                   </details>
             
                 </td>
