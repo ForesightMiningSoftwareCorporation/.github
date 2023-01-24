@@ -111,8 +111,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
       - name: check
@@ -131,8 +135,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -152,8 +160,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -182,8 +194,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -203,8 +219,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -224,8 +244,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -245,8 +269,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -266,8 +294,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -287,8 +319,12 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout=$stdout" >> $GITHUB_OUTPUT
-          echo "stderr=$stderr" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          echo "$stdout" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "$stderr" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -304,22 +340,20 @@ jobs:
                 <td>\`cargo fmt --verbose --all -- --check\`</td>
                 <td>\`${{ steps.fmt.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.fmt.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.fmt.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
@@ -329,22 +363,20 @@ jobs:
                 <td>\`cargo check ${{ inputs.additional_args }}\`</td>
                 <td>\`${{ steps.check.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.check.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.check.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
@@ -354,22 +386,20 @@ jobs:
                 <td>\`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`</td>
                 <td>\`${{ steps.clippy.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.clippy.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.clippy.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
@@ -379,22 +409,20 @@ jobs:
                 <td>\`cargo deny check licenses\`</td>
                 <td>\`${{ steps.deny-license.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-license.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-license.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
@@ -404,22 +432,20 @@ jobs:
                 <td>\`cargo deny check bans\`</td>
                 <td>\`${{ steps.deny-bans.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-bans.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-bans.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
@@ -429,22 +455,20 @@ jobs:
                 <td>\`cargo deny check advisories\`</td>
                 <td>\`${{ steps.deny-advisories.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-advisories.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-advisories.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
@@ -454,22 +478,20 @@ jobs:
                 <td>\`cargo deny check sources\`</td>
                 <td>\`${{ steps.deny-sources.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-sources.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.deny-sources.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
               
                 </td>
@@ -479,22 +501,20 @@ jobs:
                 <td>\`cargo machete\`</td>
                 <td>\`${{ steps.dependencies.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.dependencies.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
             
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.dependencies.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
             
                 </td>
@@ -504,22 +524,20 @@ jobs:
                 <td>\`cargo test ${{ inputs.additional_args }}\`</td>
                 <td>\`${{ steps.tests.outcome }}\`</td>
                 <td>
-                  <details>
-                    <summary>stdout</summary>
+                  <details><summary>stdout</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.tests.outputs.stdout }}
-                    </pre>
+                    \`\`\`
                   </details>
             
                 </td>
                 <td>
-                  <details>
-                    <summary>stderr</summary>
+                  <details><summary>stderr</summary>
 
-                    <pre>
+                    \`\`\`
                     ${{ steps.tests.outputs.stderr }}
-                    </pre>
+                    \`\`\`
                   </details>
             
                 </td>
