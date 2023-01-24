@@ -72,12 +72,11 @@ jobs:
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
         uses: actions/checkout@v3
       - name: Git Checkout for Pull Request Target
-        if: ${{ github.initial_event_name == 'pull_request_target' }}
+        if: ${{ inputs.initial_event_name == 'pull_request_target' }}
         uses: actions/checkout@v3
         with:
           github-token: ${{ secrets.github-token }}
           ref: ${{ inputs.revision }}
-
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         if: ${{ inputs.public-registry != 'true'}}
         with:
