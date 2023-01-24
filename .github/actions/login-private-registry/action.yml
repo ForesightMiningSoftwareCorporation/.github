@@ -23,11 +23,17 @@ runs:
   steps:
     - name: Access private registry
       uses: webfactory/ssh-agent@v0.5.4
-      if: ${{ inputs.private_key != '' || inputs.additional_private_keys != '' }}
+      if: inputs.additional_private_keys != '' }}
       with:
         ssh-private-key: |
-          ${{ inputs.private_key }}
           ${{ inputs.additional_private_keys }}
+    - name: Install Private Registry SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ inputs.private_key }}
+        name: id_rsa_private_reg
+        known_hosts: |
+          ssh.shipyard.rs ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC5aiwcgf06U4PYEEzl/k1H3n3SXCMRiH/TOvy9thWJhMdk52DgscOxmeyy5uW7FDYMYZkXyCVLWZR8lB6K1LoIyRfwQrklBOo7BU7gut3mRbnG+Lrginl2vgzClfHspqtcOBaDLslE5RH69mWZB6YnsPhYlW3GsLnrNNlzcfFCAKFA24ysRF6FKgfhHRixQIU396Lk+5U0hMiQgFmRrVAkVSDGeWE+LxQUThiafTLnc+YtuM10GDikuo8tgYjWfTvH3jDRLJp3MClLe7KqmosMuNwp0OfF510LOLxxRu3wqSjOj6IFuYz46dBQa4dojRGFnvtEyENPbDbPM6Ef1HH+Ayse8JLPiJKR1egcpGCYaSurdRSFeZ2ZU1Te9k5b7CKVDDEFSclDWgDgj5KVLV3/EG5MNHI9gBA6AvEb76IdjXETanhL7/p94w698FLDJnmRgR4x1zoqQDac9ZYtyXFEt7nMcVkg1sbEeoMM3o9oqjnGvR1jCDNUwJ6oFnHhIEU=
     - name: Use ssh for github dep
       shell: bash
       run: |
@@ -35,11 +41,6 @@ runs:
         echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> $HOME/.gitconfig
         echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> $HOME/.gitconfig
         echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> $HOME/.gitconfig
-    - name: Keyscan
-      shell: bash
-      run: |
-        mkdir -p $HOME/.ssh
-        ssh-keyscan -t rsa ${{ inputs.host }} >> $HOME/.ssh/known_hosts
     - name: Login to private registry
       shell: bash
       run: cargo login --registry ${{ inputs.name }} ${{ inputs.token }}
