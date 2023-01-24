@@ -5,6 +5,9 @@ inputs:
   command:
     required: true
     description: "The command"
+  working-directory:
+    required: true
+    description: "The working directory"
 outputs:
   stdout:
     description: "Command STDOUT"
@@ -15,12 +18,16 @@ outputs:
   exitcode:
     description: "Command exitcode"
     value: ${{ steps.command.outputs.exitcode }}
+  summary:
+    description: "Command table summary"
+    value: ${{ steps.command.summary.exitcode }}
 runs:
   using: "composite"
   steps:
     - name: Run Command
       shell: bash
       id: command
+      working-directory: ${{ inputs.working-directory }}
       run: |
         if result=$(${{ inputs.command }} 2>&1); then
           stdout="${result//\`/\\\`}"
@@ -31,7 +38,38 @@ runs:
         fi
         echo "$stdout"
         echo "$stderr"
+        if [ ${#stdout} -gt 1000 ]; then stdout="$(echo $stdout | head -c 500)
+
+        ...
+          
+        $(echo $stdout | tail -c 500)
+        
+        INPUT WAS TRUNCATED, check the action log
+        "; fi
+        if [ ${#stderr} -gt 1000 ]; then stderr="$(echo $stderr | head -c 500)
+
+        ...
+          
+        $(echo $stderr | tail -c 500)
+        
+        INPUT WAS TRUNCATED, check the action log
+        "; fi
         echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
         echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
         echo "exitcode=$rc" >> $GITHUB_OUTPUT
+        summary="
+        <details>
+        <summary>More details</summary>
+    
+        ### stdout
+        \`\`\`bash
+        ${{ steps.fmt.outputs.stdout }}
+        \`\`\`
+        ### stderr
+        \`\`\`bash
+        ${{ steps.fmt.outputs.stderr }}
+        \`\`\`
+        </details>
+        "
+        echo "summary<<EOF"$'\n'"summary"$'\n'EOF >> $GITHUB_OUTPUT
         exit $rc
