@@ -247,7 +247,7 @@ jobs:
           echo "stdout<<EOF" >> $GITHUB_OUTPUT
           echo "$stdout" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF>>" >> $GITHUB_OUTPUT
+          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
           echo "$stderr" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
