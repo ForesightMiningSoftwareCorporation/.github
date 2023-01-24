@@ -113,8 +113,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
       - name: check
         shell: bash
         id: check
@@ -133,8 +133,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: run clippy
         shell: bash
@@ -154,8 +154,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: Copy Default deny if not exists
         shell: bash
@@ -184,8 +184,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: check bans
         shell: bash
@@ -205,8 +205,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: check advisories
         shell: bash
@@ -226,8 +226,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: check sources
         shell: bash
@@ -247,8 +247,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: unused dependencies
         shell: bash
@@ -268,8 +268,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: Tests
         shell: bash
@@ -289,8 +289,8 @@ jobs:
           echo "$stderr"
           echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
           echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exit $exitcode
+          echo "exitcode=$rc" >> $GITHUB_OUTPUT
+          exit $rc
 
       - uses: actions/github-script@v6
         name: Report status on PR
