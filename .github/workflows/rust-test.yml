@@ -60,9 +60,9 @@ jobs:
     container:
       image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
       options: --user root
-    env:
-      GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
-      CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
+      env:
+        GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
+        CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
     steps:
       - name: Classic git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
