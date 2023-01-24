@@ -102,7 +102,7 @@ jobs:
         if: success()
         working-directory: ${{ inputs.working-directory }}
         run: |
-          if result=$(cargo fmt --verbose --all -- --check 2>&3); then
+          if result=$(cargo fmt --verbose --all -- --check 2>&1); then
           stdout=$result
           rc=0
           else
@@ -193,19 +193,217 @@ jobs:
         with:
           script: |
             const output = `
-            | required | step                                                          | result                                   | stdout | stderr |
-            | -------- | ------------------------------------------------------------- | ---------------------------------------- | --- | --- |
-            |    ✅    | \`cargo fmt --verbose --all -- --check\`                      | \`${{ steps.fmt.outcome }}\`             | <details><summary>stdout</summary>\`\`\`\n${{ steps.fmt.outputs.stdout }}\`\`\`\</details> | <details><summary>stderr</summary>\`\`\`\n${{ steps.fmt.outputs.stderr }}\`\`\`\</details> | 
-            |    ✅    | \`cargo check ${{ inputs.additional_args }}\`                 | \`${{ steps.check.outcome}}\`            | | | 
-            |    ✅    | \`cargo clippy ${{ inputs.additional_args }} -- -D warnings\` | \`${{ steps.clippy.outcome}}\`           | | | 
-            |    ✅    | \`cargo deny check licenses\`                                 | \`${{ steps.deny-license.outcome }}\`    | | | 
-            |    ❌    | \`cargo deny check bans\`                                     | \`${{ steps.deny-bans.outcome }}\`       | | | 
-            |    ❌    | \`cargo deny check advisories\`                               | \`${{ steps.deny-advisories.outcome }}\` | | | 
-            |    ❌    | \`cargo deny check sources\`                                  | \`${{ steps.deny-sources.outcome }}\`    | | | 
-            |    ✅    | \`cargo machete\`                                             | \`${{ steps.dependencies.outcome }}\`    | | | 
-            |    ✅    | \`cargo test ${{ inputs.additional_args }}\`                  | \`${{ steps.tests.outcome }}\`           | | | 
-
+            <table>
+              <tr><th>required</th><th>step</th><th>result</th><th>stdout</th><th>stderr</th></tr>
+              <tr>
+                <td>✅</td>
+                <td>\`cargo fmt --verbose --all -- --check\`</td>
+                <td>\`${{ steps.fmt.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.fmt.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.fmt.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+              </tr>
+              <tr>
+                <td>✅</td>
+                <td>\`cargo check ${{ inputs.additional_args }}\`</td>
+                <td>\`${{ steps.check.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.check.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.check.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+              </tr>
+              <tr>
+                <td>✅</td>
+                <td>\`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`</td>
+                <td>\`${{ steps.clippy.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.clippy.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.clippy.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+              </tr>
+              <tr>
+                <td>✅</td>
+                <td>\`cargo deny check licenses\`</td>
+                <td>\`${{ steps.deny-license.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-license.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-license.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+              </tr>
+              <tr>
+                <td>❌</td>
+                <td>\`cargo deny check bans\`</td>
+                <td>\`${{ steps.deny-bans.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-bans.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-bans.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+              </tr>
+              <tr>
+                <td>❌</td>
+                <td>\`cargo deny check advisories\`</td>
+                <td>\`${{ steps.deny-advisories.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-advisories.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-advisories.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+              </tr>
+              <tr>
+                <td>❌</td>
+                <td>\`cargo deny check sources\`</td>
+                <td>\`${{ steps.deny-sources.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-sources.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.deny-sources.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+              
+                </td>
+              </tr>
+              <tr>
+                <td>✅</td>
+                <td>\`cargo machete\`</td>
+                <td>\`${{ steps.dependencies.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.dependencies.outputs.stdout }}
+                    \`\`\`\
+                  </details>
             
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.dependencies.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+            
+                </td>
+              </tr>
+              <tr>
+                <td>✅</td>
+                <td>\`cargo test ${{ inputs.additional_args }}\`</td>
+                <td>\`${{ steps.tests.outcome }}\`</td>
+                <td>
+                  <details>
+                    <summary>stdout</summary>
+                    \`\`\`\n
+                    ${{ steps.tests.outputs.stdout }}
+                    \`\`\`\
+                  </details>
+            
+                </td>
+                <td>
+                  <details>
+                    <summary>stderr</summary>
+                    \`\`\`\n
+                    ${{ steps.tests.outputs.stderr }}
+                    \`\`\`\
+                  </details>
+            
+                </td>
+              </tr>
+            </table>
+
             Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
             Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>`
             github.rest.issues.createComment({
