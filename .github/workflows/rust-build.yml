@@ -94,7 +94,6 @@ jobs:
         if: matrix.bin.docker == true && matrix.os.name == 'ubuntu-latest' && steps.extract_branch.outputs.release_channel == 'nightly'
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-push-acr@main
         with:
-          bin: ${{ matrix.bin.name }}
           dockerfile: ${{ matrix.bin.dockerfile }}
           image: ${{ matrix.bin.docker_image }}
           password: ${{ secrets.DOCKER_PASSWORD }}

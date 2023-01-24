@@ -23,23 +23,30 @@ runs:
   steps:
     - name: Access private registry
       uses: webfactory/ssh-agent@v0.5.4
-      if: ${{ inputs.private_key != '' || inputs.additional_private_keys != '' }}
+      if: inputs.private_key != '' || inputs.additional_private_keys != ''
       with:
         ssh-private-key: |
           ${{ inputs.private_key }}
           ${{ inputs.additional_private_keys }}
+    - name: Add Shipyard and github known hosts
+      shell: bash
+      run: |
+        if [ "$HOME" == "/github/home" ]; then
+          SSH_DIR="/root/.ssh"
+        else
+          SSH_DIR=$HOME."/.ssh"
+        fi
+        mkdir -p $SSH_DIR
+        echo "ssh.shipyard.rs ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC5aiwcgf06U4PYEEzl/k1H3n3SXCMRiH/TOvy9thWJhMdk52DgscOxmeyy5uW7FDYMYZkXyCVLWZR8lB6K1LoIyRfwQrklBOo7BU7gut3mRbnG+Lrginl2vgzClfHspqtcOBaDLslE5RH69mWZB6YnsPhYlW3GsLnrNNlzcfFCAKFA24ysRF6FKgfhHRixQIU396Lk+5U0hMiQgFmRrVAkVSDGeWE+LxQUThiafTLnc+YtuM10GDikuo8tgYjWfTvH3jDRLJp3MClLe7KqmosMuNwp0OfF510LOLxxRu3wqSjOj6IFuYz46dBQa4dojRGFnvtEyENPbDbPM6Ef1HH+Ayse8JLPiJKR1egcpGCYaSurdRSFeZ2ZU1Te9k5b7CKVDDEFSclDWgDgj5KVLV3/EG5MNHI9gBA6AvEb76IdjXETanhL7/p94w698FLDJnmRgR4x1zoqQDac9ZYtyXFEt7nMcVkg1sbEeoMM3o9oqjnGvR1jCDNUwJ6oFnHhIEU=" >> $SSH_DIR/known_hosts
+        echo "github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==" >> $SSH_DIR/known_hosts
+
     - name: Use ssh for github dep
       shell: bash
       run: |
-        echo '[url "ssh://git@github.com/ForesightMiningSoftwareCorporation/"]' >> ~/.gitconfig
-        echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> ~/.gitconfig
-        echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> ~/.gitconfig
-        echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> ~/.gitconfig
-    - name: Keyscan
-      shell: bash
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -t rsa ${{ inputs.host }} >> ~/.ssh/known_hosts
+        echo '[url "ssh://git@github.com/ForesightMiningSoftwareCorporation/"]' >> $HOME/.gitconfig
+        echo "  insteadOf = https://github.com/ForesightMiningSoftwareCorporation/" >> $HOME/.gitconfig
+        echo '[url "ssh://git@github.com/foresightminingsoftwarecorporation"]' >> $HOME/.gitconfig
+        echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> $HOME/.gitconfig
     - name: Login to private registry
       shell: bash
       run: cargo login --registry ${{ inputs.name }} ${{ inputs.token }}
