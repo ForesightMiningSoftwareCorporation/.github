@@ -275,7 +275,7 @@ jobs:
         shell: bash
         id: tests
         continue-on-error: true
-        if: success()
+        if: inputs.initial_event_name == "pull_request"
         working-directory: ${{ inputs.working-directory }}
         run: |
           if result=$(cargo test ${{ inputs.additional_args }} 2>&1); then
