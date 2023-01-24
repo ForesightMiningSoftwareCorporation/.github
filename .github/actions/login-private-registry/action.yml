@@ -23,7 +23,7 @@ runs:
   steps:
     - name: Access private registry
       uses: webfactory/ssh-agent@v0.5.4
-      if: inputs.additional_private_keys != '' }}
+      if: inputs.additional_private_keys != ''
       with:
         ssh-private-key: |
           ${{ inputs.additional_private_keys }}
