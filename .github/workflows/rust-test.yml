@@ -103,11 +103,11 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           if result=$(cargo fmt --verbose --all -- --check 2>&1); then
-          stdout=$result
-          rc=0
+            stdout=$result
+            rc=0
           else
-          rc=$?
-          stderr=$result
+            rc=$?
+            stderr=$result
           fi
           echo "$stdout"
           echo "$stderr"
@@ -202,18 +202,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.fmt.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.fmt.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
@@ -225,18 +225,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.check.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.check.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
@@ -248,18 +248,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.clippy.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.clippy.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
@@ -271,18 +271,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-license.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-license.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
@@ -294,18 +294,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-bans.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-bans.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
@@ -317,18 +317,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-advisories.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-advisories.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
@@ -340,18 +340,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-sources.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.deny-sources.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
               
                 </td>
@@ -363,18 +363,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.dependencies.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
             
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.dependencies.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
             
                 </td>
@@ -386,18 +386,18 @@ jobs:
                 <td>
                   <details>
                     <summary>stdout</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.tests.outputs.stdout }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
             
                 </td>
                 <td>
                   <details>
                     <summary>stderr</summary>
-                    \`\`\`\n
+                    \`\`\`n
                     ${{ steps.tests.outputs.stderr }}
-                    \`\`\`\
+                    \`\`\`
                   </details>
             
                 </td>
