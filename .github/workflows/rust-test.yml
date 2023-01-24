@@ -196,7 +196,7 @@ jobs:
             const output = `
             | required | step                                                                 | result                             | stdout | stderr |
             | -------- | -------------------------------------------------------------------- | ---------------------------------- | --- | --- |
-            |    ✅    | \`cargo fmt --verbose --all -- --check\`                               | \`${{ steps.fmt.outcome }}\`         | <details><summary>stdout</summary>\`\`\`\n${{ steps.fmt.outputs.stdout }}\`\`\`\n</details> | <details><summary>stderr</summary>\`\`\`\n${{ steps.fmt.outputs.stderr }}\`\`\`\n</details> | 
+            |    ✅    | \`cargo fmt --verbose --all -- --check\`                               | \`${{ steps.fmt.outcome }}\`         | <details><summary>stdout</summary>\`\`\`\n${{ steps.fmt.outputs.stdout }}\`\`\`\</details> | <details><summary>stderr</summary>\`\`\`\n${{ steps.fmt.outputs.stderr }}\`\`\`\</details> | 
             |    ✅    | \`cargo check ${{ inputs.additional_args }}\`                          | \`${{ steps.check.outcome}}\`         | | | 
             |    ✅    | \`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`          | \`${{ steps.clippy.outcome}}\`        | | | 
             |    ✅    | \`cargo deny check licenses\`                                          | \`${{ steps.deny-license.outcome }}\` | | | 
