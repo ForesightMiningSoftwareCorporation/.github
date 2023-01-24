@@ -75,7 +75,7 @@ jobs:
         if: ${{ inputs.initial_event_name == 'pull_request_target' }}
         uses: actions/checkout@v3
         with:
-          github-token: ${{ secrets.github-token }}
+          token: ${{ secrets.github-token }}
           ref: ${{ inputs.revision }}
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         if: ${{ inputs.public-registry != 'true'}}
@@ -98,26 +98,12 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: fmt
-        shell: bash
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        if: success()
         id: fmt
         continue-on-error: true
-        if: success()
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          if result=$(cargo fmt --verbose --all -- --check 2>&1); then
-            stdout="${result//\`/\\\`}"
-            rc=0
-          else
-            rc=$?
-            stderr="${result//\`/\\\`}"
-          fi
-          echo "$stdout"
-          echo "$stderr"
-          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
-          echo "exitcode=$rc" >> $GITHUB_OUTPUT
-          exit $rc
+        with:
+          command: "cargo fmt --verbose --all -- --check"
       - name: check
         shell: bash
         id: check

@@ -1,0 +1,37 @@
+name: "Run shell script and get the stdout and stderr as outputs"
+description: "Composite action to run shell script with stdout"
+
+inputs:
+  command:
+    required: true
+    description: "The command"
+outputs:
+  stdout:
+    description: "Command STDOUT"
+    value: ${{ steps.command.outputs.stdout }}
+  stderr:
+    description: "Command STDERR"
+    value: ${{ steps.command.outputs.stderr }}
+  exitcode:
+    description: "Command exitcode"
+    value: ${{ steps.command.outputs.exitcode }}
+runs:
+  using: "composite"
+  steps:
+    - name: Run Command
+      shell: bash
+      id: command
+      run: |
+        if result=$(${{ inputs.command }} 2>&1); then
+          stdout="${result//\`/\\\`}"
+          rc=0
+        else
+          rc=$?
+          stderr="${result//\`/\\\`}"
+        fi
+        echo "$stdout"
+        echo "$stderr"
+        echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+        echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
+        echo "exitcode=$rc" >> $GITHUB_OUTPUT
+        exit $rc
