@@ -34,4 +34,4 @@ jobs:
           push: true
           build-args: RUST_VERSION=${{ inputs.rust_version }}
           tags: |
-            ForesightMiningSoftwareCorporation/rust-test:${{ inputs.rust_version }}
+            ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.rust_version }}
