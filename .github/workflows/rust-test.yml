@@ -160,12 +160,12 @@ jobs:
             const output = `
             |    | step                                                                 | result                                                                                                                | 
             | -- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-            | 🖌 | `cargo fmt --verbose --all -- --check`                               | ${{ steps.fmt.outcome == "success" && ✅ || (${{ steps.fmt.outcome == "failure" && ❌ || 🟧️️) }}                       |
-            | 🛂 | `cargo check ${{ inputs.additional_args }}`                          | ${{ steps.check.outcome == "success" && ✅ || (${{ steps.check.outcome == "failure" && ❌ || 🟧️️) }}                   |
-            | 🦀 | `cargo clippy ${{ inputs.additional_args }} -- -D warnings`          | ${{ steps.clippy.outcome == "success" && ✅ || (${{ steps.clippy.outcome == "failure" && ❌ || 🟧️️) }}                 |
-            | 🪪 | `cargo deny check licenses`                                          | ${{ steps.deny-license.fmt.outcome == "success" && ✅ || (${{ steps.deny-license.outcome == "failure" && ❌ || 🟧️️) }} |
-            | 🌴 | `cargo machete`                                                      | ${{ steps.dependencies.outcome == "success" && ✅ || (${{ steps.dependencies.outcome == "failure" && ❌ || 🟧️️) }}     |
-            | 🧪 | `cargo test ${{ inputs.additional_args }}`                           | ${{ steps.tests.outcome == "success" && ✅ || (${{ steps.tests.outcome == "failure" && ❌ || 🟧️️) }}                   |
+            | 🖌 | `cargo fmt --verbose --all -- --check`                               | ${{ steps.fmt.outcome == 'success' && ✅ || (${{ steps.fmt.outcome == 'failure' && ❌ || 🟧️️) }}                       |
+            | 🛂 | `cargo check ${{ inputs.additional_args }}`                          | ${{ steps.check.outcome == 'success' && ✅ || (${{ steps.check.outcome == 'failure' && ❌ || 🟧️️) }}                   |
+            | 🦀 | `cargo clippy ${{ inputs.additional_args }} -- -D warnings`          | ${{ steps.clippy.outcome == 'success' && ✅ || (${{ steps.clippy.outcome == 'failure' && ❌ || 🟧️️) }}                 |
+            | 🪪 | `cargo deny check licenses`                                          | ${{ steps.deny-license.fmt.outcome == 'success' && ✅ || (${{ steps.deny-license.outcome == 'failure' && ❌ || 🟧️️) }} |
+            | 🌴 | `cargo machete`                                                      | ${{ steps.dependencies.outcome == 'success' && ✅ || (${{ steps.dependencies.outcome == 'failure' && ❌ || 🟧️️) }}     |
+            | 🧪 | `cargo test ${{ inputs.additional_args }}`                           | ${{ steps.tests.outcome == 'success' && ✅ || (${{ steps.tests.outcome == 'failure' && ❌ || 🟧️️) }}                   |
 
             
             Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
