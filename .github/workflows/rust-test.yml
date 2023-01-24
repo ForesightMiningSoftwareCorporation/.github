@@ -102,20 +102,19 @@ jobs:
         if: success()
         working-directory: ${{ inputs.working-directory }}
         run: |
-          exec 3>&2
-          stdout=$(cargo fmt --verbose --all -- --check 2>&3)
-          exitcode=$?
-          stderr=$(<&3)
-          echo "STDOUT"
-          echo $stdout
-          echo "STDERR"
-          echo $stderr
+          if result=$(cargo fmt --verbose --all -- --check 2>&3); then
+          stdout=$result
+          rc=0
+          else
+          rc=$?
+          stderr=$result
+          fi
+          echo "$stdout"
+          echo "$stderr"
           echo "stdout=$stdout" >> $GITHUB_OUTPUT
           echo "stderr=$stderr" >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
-          exec 3>&-
           exit $exitcode
-
       - name: check
         shell: bash
         id: check
