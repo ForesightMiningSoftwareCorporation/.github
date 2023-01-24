@@ -380,7 +380,7 @@ jobs:
             </td>
                           </tr>
                           <tr>
-                            <td>❌</td>
+                            <td></td>
                             <td>\`cargo deny check bans\`</td>
                             <td>\`${{ steps.deny-bans.outcome }}\`</td>
             <td>
@@ -400,7 +400,7 @@ jobs:
             </td>
                           </tr>
                           <tr>
-                            <td>❌</td>
+                            <td></td>
                             <td>\`cargo deny check advisories\`</td>
                             <td>\`${{ steps.deny-advisories.outcome }}\`</td>
             <td>
@@ -420,7 +420,7 @@ jobs:
             </td>
                           </tr>
                           <tr>
-                            <td>❌</td>
+                            <td></td>
                             <td>\`cargo deny check sources\`</td>
                             <td>\`${{ steps.deny-sources.outcome }}\`</td>
             <td>
