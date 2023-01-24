@@ -59,15 +59,15 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
+      options: --user root
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
     steps:
-      - name: Git Checkout
+      - name: Classic git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
         uses: actions/checkout@v3
-
-      - name: Git Checkout
+      - name: Git Checkout for Pull Request Target
         if: ${{ github.initial_event_name == 'pull_request_target' }}
         uses: actions/checkout@v3
         with:
