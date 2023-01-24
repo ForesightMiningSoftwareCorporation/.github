@@ -135,12 +135,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -160,12 +156,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -194,12 +186,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -219,12 +207,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -244,12 +228,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -269,12 +249,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -294,12 +270,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
@@ -319,12 +291,8 @@ jobs:
           fi
           echo "$stdout"
           echo "$stderr"
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$stdout" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "stderr=<<EOF" >> $GITHUB_OUTPUT
-          echo "$stderr" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "stdout<<EOF"$'\n'"$stdout"$'\n'EOF >> $GITHUB_OUTPUT
+          echo "stderr<<EOF"$'\n'"$stderr"$'\n'EOF >> $GITHUB_OUTPUT
           echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
           exit $exitcode
 
