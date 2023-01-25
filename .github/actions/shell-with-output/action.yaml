@@ -71,5 +71,5 @@ runs:
         \`\`\`
         </details>
         "
-        echo "summary<<EOF"$'\n'"summary"$'\n'EOF >> $GITHUB_OUTPUT
+        echo "summary<<EOF"$'\n'"$summary"$'\n'EOF >> $GITHUB_OUTPUT
         exit $rc
