@@ -197,69 +197,60 @@ jobs:
             const output =`
             # Ran test in directory: ${{ inputs.working-directory }}
             <table>
-              <tr><th>required</th><th>step</th><th>result</th><th>details</th><th>result</th></tr>
+              <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
               <tr>
                 <td>*</td>
                 <td>\`cargo fmt --verbose --all -- --check\`</td>
-                <td>\`${{ steps.fmt.outcome }}\`</td>
+                <td>\`${{ steps.fmt.outcome == 'success' && ✅ || (steps.fmt.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.fmt.outputs.summary }}</td>
-                <td>${{ steps.fmt.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td>*</td>
                 <td>\`cargo check ${{ inputs.additional_args }}\`</td>
-                <td>\`${{ steps.check.outcome }}\`</td>
+                <td>\`${{ steps.check.outcome == 'success' && ✅ || (steps.check.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.check.outputs.summary }}</td>
-                <td>${{ steps.check.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td>*</td>
                 <td>\`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`</td>
-                <td>\`${{ steps.clippy.outcome }}\`</td>
+                <td>\`${{ steps.clippy.outcome == 'success' && ✅ || (steps.clippy.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.clippy.outputs.summary }}</td>
-                <td>${{ steps.clippy.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td>*</td>
                 <td>\`cargo deny check licenses\`</td>
-                <td>\`${{ steps.deny-license.outcome }}\`</td>
+                <td>\`${{ steps.deny-license.outcome == 'success' && ✅ || (steps.deny-license.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.deny-license.outputs.summary }}</td>
-                <td>${{ steps.deny-license.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td></td>
                 <td>\`cargo deny check bans\`</td>
-                <td>\`${{ steps.deny-bans.outcome }}\`</td>
+                <td>\`${{ steps.deny-bans.outcome == 'success' && ✅ || (steps.deny-bans.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.deny-bans.summary }}</td>
-                <td>${{ steps.deny-bans.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
                 <tr>
                   <td></td>
                   <td>\`cargo deny check advisories\`</td>
-                  <td>\`${{ steps.deny-advisories.outcome }}\`</td>
+                  <td>\`${{ steps.deny-advisories.outcome == 'success' && ✅ || (steps.deny-advisories.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.deny-advisories.outputs.summary }}</td>
-                <td>${{ steps.deny-advisories.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td></td>
                 <td>\`cargo deny check sources\`</td>
-                <td>\`${{ steps.deny-sources.outcome }}\`</td>
+                <td>\`${{ steps.deny-sources.outcome == 'success' && ✅ || (steps.deny-sources.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.deny-sources.summary }}</td>
-                <td>${{ steps.deny-sources.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td>*</td>
                 <td>\`cargo machete\`</td>
-                <td>\`${{ steps.dependencies.outcome }}\`</td>
+                <td>\`${{ steps.dependencies.outcome == 'success' && ✅ || (steps.dependencies.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.dependencies.outputs.summary }}</td>
-                <td>${{ steps.dependencies.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td>*</td>
                 <td>\`cargo test ${{ inputs.additional_args }}\`</td>
-                <td>\`${{ steps.tests.outcome }}\`</td>
+                <td>\`${{ steps.tests.outcome == 'success' && ✅ || (steps.tests.outcome == 'skipped' && 🔶 || ❌) }}}}\`</td>
                 <td>${{ steps.tests.outputs.summary }}</td>
-                <td>${{ steps.tests.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
             </table>
 
