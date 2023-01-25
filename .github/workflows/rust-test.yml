@@ -45,6 +45,10 @@ on:
         type: string
         default: "true"
         description: Should all the test ran or fail early
+      skip-cargo-test:
+        type: string
+        default: "false"
+        description: Should we skip cargo test (useful in there are no tests define)
     secrets:
       github-token:
         required: true
@@ -185,7 +189,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: tests
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
+        if: inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success')
         with:
           command: "cargo test ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
