@@ -149,7 +149,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: deny-bans
         continue-on-error: true
-        if: success()
+        if: inputs.fail-fast == 'false' || steps.deny-license.outcome == 'success'
         with:
           command: "cargo deny check bans"
           working-directory: ${{ inputs.working-directory }}
@@ -158,7 +158,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: deny-advisories
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.deny-license.outcome == 'success'
+        if: inputs.fail-fast == 'false' || steps.deny-bans.outcome == 'success'
         with:
           command: "cargo deny check advisories"
           working-directory: ${{ inputs.working-directory }}
