@@ -207,7 +207,7 @@ jobs:
               <tr>
                 <td>*</td>
                 <td>\`cargo check ${{ inputs.additional_args }}\`</td>
-                <td>\`${{ steps.check.outcome == 'success' && ''✅' || (steps.check.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.check.outcome == 'success' && '✅' || (steps.check.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
                 <td>${{ steps.check.outputs.summary }}</td>
               </tr>
               <tr>
