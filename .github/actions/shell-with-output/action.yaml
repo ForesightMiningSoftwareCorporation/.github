@@ -62,13 +62,13 @@ runs:
         <summary>More details</summary>
     
         ### stdout
-        \\`\\`\\`bash
-        ${{ steps.fmt.outputs.stdout }}
-        \\`\\`\\`
+        <pre>
+         "$stdout"
+        </pre>
         ### stderr
-        \\`\\`\\`bash
-        ${{ steps.fmt.outputs.stderr }}
-        \\`\\`\\`
+        <pre>
+          "$stderr"
+        </pre>
         </details>
         "
         echo "summary<<EOF"$'\n'"$summary"$'\n'EOF >> $GITHUB_OUTPUT
