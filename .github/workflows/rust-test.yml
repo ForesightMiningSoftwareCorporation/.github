@@ -103,7 +103,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: fmt
         continue-on-error: true
         with:
@@ -111,7 +111,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: check
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.fmt.outcome == 'success'
@@ -120,7 +120,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: clippy
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.check.outcome == 'success'
@@ -137,7 +137,7 @@ jobs:
           fi
 
       - name: check license
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: deny-license
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -146,7 +146,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check bans
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: deny-bans
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.deny-license.outcome == 'success'
@@ -155,7 +155,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check advisories
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: deny-advisories
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.deny-bans.outcome == 'success'
@@ -164,7 +164,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check sources
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: deny-sources
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.deny-advisories.outcome == 'success'
@@ -173,7 +173,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: unused dependencies
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: dependencies
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.deny-sources.outcome == 'success'
@@ -182,7 +182,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Tests
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: tests
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.dependencies.outcome == 'success'
