@@ -149,7 +149,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: deny-bans
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.deny-license.outcome == 'success'
+        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo deny check bans"
           working-directory: ${{ inputs.working-directory }}
@@ -158,7 +158,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: deny-advisories
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.deny-bans.outcome == 'success'
+        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo deny check advisories"
           working-directory: ${{ inputs.working-directory }}
@@ -167,7 +167,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: deny-sources
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.deny-advisories.outcome == 'success'
+        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo deny check sources"
           working-directory: ${{ inputs.working-directory }}
@@ -176,7 +176,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: dependencies
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.deny-sources.outcome == 'success'
+        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo machete"
           working-directory: ${{ inputs.working-directory }}
@@ -185,7 +185,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
         id: tests
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.dependencies.outcome == 'success'
+        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo test ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
@@ -217,7 +217,7 @@ jobs:
                 <td>${{ steps.clippy.outputs.summary }}</td>
               </tr>
               <tr>
-                <td>*</td>
+                <td></td>
                 <td>\`cargo deny check licenses\`</td>
                 <td>\`${{ steps.deny-license.outcome == 'success' && '✅' || (steps.deny-license.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
                 <td>${{ steps.deny-license.outputs.summary }}</td>
@@ -241,7 +241,7 @@ jobs:
                 <td>${{ steps.deny-sources.summary }}</td>
               </tr>
               <tr>
-                <td>*</td>
+                <td></td>
                 <td>\`cargo machete\`</td>
                 <td>\`${{ steps.dependencies.outcome == 'success' && '✅' || (steps.dependencies.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
                 <td>${{ steps.dependencies.outputs.summary }}</td>
