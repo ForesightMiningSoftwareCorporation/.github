@@ -196,6 +196,7 @@ jobs:
 
       - uses: actions/github-script@v6
         name: Report status on PR
+        if: context.issue.number != ''
         with:
           script: |
             const output =`
