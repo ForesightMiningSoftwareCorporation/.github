@@ -41,6 +41,10 @@ on:
         type: string
         default: "."
         description: Working directory to run the cargo command
+      fail-fast:
+        type: bool
+        default: true
+        description: Should all the test ran or fail early
     secrets:
       github-token:
         required: true
@@ -99,8 +103,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
-        if: success()
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: fmt
         continue-on-error: true
         with:
@@ -108,26 +111,25 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: check
         continue-on-error: true
-        if: success()
+        if: ${{ !inputs.fail-fast || steps.fmt.outcome != 'failure' }}
         with:
           command: "cargo check ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
 
       - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: clippy
         continue-on-error: true
-        if: success()
+        if: ${{ !inputs.fail-fast || steps.check.outcome != 'failure' }}
         with:
           command: "cargo clippy ${{ inputs.additional_args }} -- -D warnings"
           working-directory: ${{ inputs.working-directory }}
 
       - name: Copy Default deny if not exists
         shell: bash
-        if: success()
         working-directory: ${{ inputs.working-directory }}
         run: |
           if [ ! -f deny.yml ]; then
@@ -135,16 +137,16 @@ jobs:
           fi
 
       - name: check license
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: deny-license
         continue-on-error: true
-        if: success()
+        if: ${{ !inputs.fail-fast || steps.clippy.outcome != 'failure' }}
         with:
           command: "cargo deny check licenses"
           working-directory: ${{ inputs.working-directory }}
 
       - name: check bans
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: deny-bans
         continue-on-error: true
         if: success()
@@ -153,36 +155,37 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check advisories
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: deny-advisories
         continue-on-error: true
-        if: success()
+        if: ${{ !inputs.fail-fast || steps.deny-license.outcome != 'failure' }}
         with:
           command: "cargo deny check advisories"
           working-directory: ${{ inputs.working-directory }}
 
       - name: check sources
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: deny-sources
         continue-on-error: true
-        if: success()
+        if: ${{ !inputs.fail-fast || steps.deny-advisories.outcome != 'failure' }}
         with:
           command: "cargo deny check sources"
           working-directory: ${{ inputs.working-directory }}
 
       - name: unused dependencies
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: dependencies
         continue-on-error: true
-        if: success()
+        if: ${{ !inputs.fail-fast || steps.deny-sources.outcome != 'failure' }}
         with:
           command: "cargo machete"
           working-directory: ${{ inputs.working-directory }}
 
       - name: Tests
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@main
         id: tests
         continue-on-error: true
+        if: ${{ !inputs.fail-fast || steps.dependencies.outcome != 'failure' }}
         with:
           command: "cargo test ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
@@ -192,61 +195,71 @@ jobs:
         with:
           script: |
             const output =`
+            # Ran test in directory: ${{ inputs.working-directory }}
             <table>
-              <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
+              <tr><th>required</th><th>step</th><th>result</th><th>details</th><th>result</th></tr>
               <tr>
-                <td>✅</td>
+                <td>*</td>
                 <td>\`cargo fmt --verbose --all -- --check\`</td>
                 <td>\`${{ steps.fmt.outcome }}\`</td>
                 <td>${{ steps.fmt.outputs.summary }}</td>
+                <td>${{ steps.fmt.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
-                <td>✅</td>
+                <td>*</td>
                 <td>\`cargo check ${{ inputs.additional_args }}\`</td>
                 <td>\`${{ steps.check.outcome }}\`</td>
                 <td>${{ steps.check.outputs.summary }}</td>
+                <td>${{ steps.check.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
-                <td>✅</td>
+                <td>*</td>
                 <td>\`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`</td>
                 <td>\`${{ steps.clippy.outcome }}\`</td>
                 <td>${{ steps.clippy.outputs.summary }}</td>
+                <td>${{ steps.clippy.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
-                <td>✅</td>
+                <td>*</td>
                 <td>\`cargo deny check licenses\`</td>
                 <td>\`${{ steps.deny-license.outcome }}\`</td>
                 <td>${{ steps.deny-license.outputs.summary }}</td>
+                <td>${{ steps.deny-license.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td></td>
                 <td>\`cargo deny check bans\`</td>
                 <td>\`${{ steps.deny-bans.outcome }}\`</td>
                 <td>${{ steps.deny-bans.summary }}</td>
+                <td>${{ steps.deny-bans.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
                 <tr>
                   <td></td>
                   <td>\`cargo deny check advisories\`</td>
                   <td>\`${{ steps.deny-advisories.outcome }}\`</td>
                 <td>${{ steps.deny-advisories.outputs.summary }}</td>
+                <td>${{ steps.deny-advisories.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
                 <td></td>
                 <td>\`cargo deny check sources\`</td>
                 <td>\`${{ steps.deny-sources.outcome }}\`</td>
                 <td>${{ steps.deny-sources.summary }}</td>
+                <td>${{ steps.deny-sources.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
-                <td>✅</td>
+                <td>*</td>
                 <td>\`cargo machete\`</td>
                 <td>\`${{ steps.dependencies.outcome }}\`</td>
                 <td>${{ steps.dependencies.outputs.summary }}</td>
+                <td>${{ steps.dependencies.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
               <tr>
-                <td>✅</td>
+                <td>*</td>
                 <td>\`cargo test ${{ inputs.additional_args }}\`</td>
                 <td>\`${{ steps.tests.outcome }}\`</td>
                 <td>${{ steps.tests.outputs.summary }}</td>
+                <td>${{ steps.tests.outputs.exitcode == 0 && ✅ || ❌ }}</td>
               </tr>
             </table>
 
@@ -259,5 +272,5 @@ jobs:
               body: output
             })
       - name: Rust Test status
-        if: steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.deny-license.outcome == 'failure' || steps.dependencies.outcome == 'failure' || steps.tests.outcome == 'failure'
+        if: steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure'
         run: exit 1

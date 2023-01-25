@@ -20,7 +20,7 @@ outputs:
     value: ${{ steps.command.outputs.exitcode }}
   summary:
     description: "Command table summary"
-    value: ${{ steps.command.summary.exitcode }}
+    value: ${{ steps.command.outputs.summary }}
 runs:
   using: "composite"
   steps:
