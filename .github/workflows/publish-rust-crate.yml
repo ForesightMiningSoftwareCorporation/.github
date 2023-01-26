@@ -10,6 +10,10 @@ on:
         type: string
         default: ""
         description: Package that needs to be installed before Rust compilation can happens
+      additional_args:
+        type: string
+        default: ""
+        description: Additional arguments to pass to the cargo command
       toolchain:
         type: string
         default: "1.65"
@@ -84,6 +88,7 @@ jobs:
       required_packages: ${{ inputs.required_packages }}
       public-registry: ${{ inputs.public-registry }}
       working-directory: ${{ inputs.working-directory }}
+      additional_args: ${{ inputs.additional_args }}
     secrets:
       github-token: ${{ secrets.github-token }}
       github-private-keys: ${{ secrets.github-private-keys }}
