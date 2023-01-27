@@ -76,7 +76,6 @@ jobs:
     needs:
       - test
     with:
-      revision: ${{ inputs.revision }}
       working-directory: ${{ inputs.working-directory }}
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
