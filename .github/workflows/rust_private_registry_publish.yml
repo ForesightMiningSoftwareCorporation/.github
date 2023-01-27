@@ -45,7 +45,7 @@ env:
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
 
 jobs:
-  publish_private_registry_build:
+  cargo_publish_private_registry:
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
     steps:
@@ -79,6 +79,7 @@ jobs:
           toolchain: ${{ inputs.toolchain }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+        if: steps.check_exists.outputs.exists == 'false'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
