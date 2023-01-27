@@ -15,6 +15,10 @@ on:
         type: string
         default: "1.65"
         description: Rust toolchain to install
+      revision:
+        type: string
+        default: ""
+        description: Revision to pull
       initial_event_name:
         type: string
         default: "push"
