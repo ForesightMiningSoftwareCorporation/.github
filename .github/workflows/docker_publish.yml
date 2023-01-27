@@ -66,6 +66,8 @@ jobs:
           context: ${{ inputs.working-directory }}
           push: true
           file: "${{ inputs.working-directory }}/${{ inputs.dockerfile }}"
+          ssh:
+            default=${{ env.SSH_AUTH_SOCK }}
           secret-files: |
             shipyard_token=./shipyard_token
           tags: |
