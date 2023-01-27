@@ -21,6 +21,9 @@ inputs:
   cargo_http_user_agent:
     required: true
     description: "Token to use for the private Docker Registry login"
+  working-directory:
+    default: "."
+    description: Working directory
 runs:
   using: "composite"
   steps:
@@ -34,7 +37,7 @@ runs:
     - uses: SebRollen/toml-action@v1.0.0
       id: read_version
       with:
-        file: 'crates/${{ inputs.bin }}/Cargo.toml'
+        file: '${{ inputs.working-directory }}/Cargo.toml'
         field: 'package.version'
     - name: Check Docker version exists
       id: check_version_exists
@@ -60,7 +63,7 @@ runs:
       uses: docker/build-push-action@v2
       if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
       with:
-        context: .
+        context: ${{ inputs.working-directory }}
         push: true
         file: ${{ inputs.dockerfile }}
         ssh: |
