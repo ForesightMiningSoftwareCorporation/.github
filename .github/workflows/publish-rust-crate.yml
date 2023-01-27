@@ -67,7 +67,7 @@ jobs:
       working-directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
     secrets:
-      inherits: true
+      inherit: true
       github-private-keys: ${{ secrets.github-private-keys }}
   set_version:
     needs:
