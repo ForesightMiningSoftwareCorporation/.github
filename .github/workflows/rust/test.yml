@@ -37,6 +37,10 @@ on:
         type: string
         default: "false"
         description: Should we skip cargo test (useful in there are no tests define)
+      login_private_registry:
+        type: string
+        default: "true"
+        description: Should we login to the private registry
     secrets:
       github-private-keys:
         required: false
