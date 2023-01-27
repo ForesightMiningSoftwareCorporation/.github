@@ -7,7 +7,7 @@ on:
         description: "Should the tests be ran"
       publish:
         type: string
-        default: 'true'
+        default: 'false'
         description: "Should the crate be published"
       publish_private_registry:
         type: string
@@ -45,7 +45,7 @@ on:
 jobs:
   test:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.1.0
-    if: ${{ inputs.skip-test == false }}
+    if: ${{ inputs.skip-test != 'true' }}
     with:
       toolchain: ${{ inputs.toolchain }}
       initial_event_name: ${{ inputs.initial_event_name }}
