@@ -2,9 +2,11 @@ on:
   workflow_call:
     inputs:
       skip-test:
+        type: string
         default: 'false'
         description: "Should the tests be ran"
       publish:
+        type: string
         default: 'true'
         description: "Should the crate be published"
       toolchain:
