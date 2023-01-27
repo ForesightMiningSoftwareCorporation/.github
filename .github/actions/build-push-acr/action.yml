@@ -6,9 +6,6 @@ inputs:
     required: false
     description: "The path to the Dockerfile to use"
     default: Dockerfile
-  version:
-    required: true
-    description: Docker image version
   image:
     required: true
     description: "Docker image name"
@@ -21,8 +18,12 @@ inputs:
   password:
     required: true
     description: "ACR Repository Password"
-  ssh:
-    description: "SSH Auth Sock"
+  cargo_http_user_agent:
+    required: true
+    description: "Token to use for the private Docker Registry login"
+  working-directory:
+    default: "."
+    description: Working directory
 runs:
   using: "composite"
   steps:
@@ -33,28 +34,42 @@ runs:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
+    - uses: SebRollen/toml-action@v1.0.0
+      id: read_version
+      with:
+        file: '${{ inputs.working-directory }}/Cargo.toml'
+        field: 'package.version'
     - name: Check Docker version exists
       id: check_version_exists
-      uses: ForesightMiningSoftwareCorporation/docker-check-exists@v1
+      uses: foresightminingsoftwarecorporation/docker-check-exists@v1
       with:
         repository: ${{ inputs.registry }}
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
         image_name: ${{ inputs.image }}
-        version: ${{ inputs.version }}
+        version: ${{ steps.read_version.outputs.value }}
     # Setup the runner to use Docker Buildkit
     - name: Set up Docker Buildx
       if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
       uses: docker/setup-buildx-action@v1
     # Build and Push Image with Cache
+    - name: Prepare git and ssh config for build context
+      if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
+      shell: bash
+      run: |
+        mkdir root-config
+        cp -r ~/.gitconfig  ~/.ssh root-config/
     - name: Build & Push
       uses: docker/build-push-action@v2
       if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
       with:
-        context: .
+        context: ${{ inputs.working-directory }}
         push: true
         file: ${{ inputs.dockerfile }}
+        ssh: |
+          default=${{ env.SSH_AUTH_SOCK }}
+        secrets: |
+          CARGO_HTTP_USER_AGENT=${{ inputs.cargo_http_user_agent }}
         tags: |
-          ${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.version }}
+          ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
           ${{ inputs.registry }}/${{ inputs.image }}:latest
-        ssh: ${{ inputs.ssh }}

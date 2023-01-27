@@ -1,0 +1,4 @@
+github:
+  cargo_private_registry_url: "UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL"
+  cargo_private_registry_username: "UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME"
+  cargo_private_registry_password: "UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD"
