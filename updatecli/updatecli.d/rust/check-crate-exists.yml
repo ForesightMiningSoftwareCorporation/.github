@@ -3,9 +3,9 @@ scms:
   private-reg:
     kind: git
     spec:
-      url: "{{ requiredEnv .github.cargo-private-registry-url }}"
-      username: "{{ requiredEnv .github.cargo-private-registry-username }}"
-      password: "{{ requiredEnv .github.cargo-private-registry-password }}"
+      url: "{{ requiredEnv .github.cargo_private_registry_url }}"
+      username: "{{ requiredEnv .github.cargo_private_registry_username }}"
+      password: "{{ requiredEnv .github.cargo_private_registry_password }}"
       branch: "master"
 
 sources:
