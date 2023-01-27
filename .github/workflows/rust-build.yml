@@ -37,10 +37,6 @@ on:
         type: string
         default: "true"
         description: Should we login to the private registry
-    secrets:
-      github-private-keys:
-        required: false
-        description: Private keys that need to be added to the ssh-agent
 
 jobs:
   test:
@@ -54,9 +50,7 @@ jobs:
       working-directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
       login_private_registry: ${{ inputs.login_private_registry }}
-    secrets:
-      inherit: true
-      github-private-keys: ${{ secrets.github-private-keys }}
+    secrets: inherit
 #  build:
 #    name: Build Steps
 #    strategy:

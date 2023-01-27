@@ -41,10 +41,6 @@ on:
         type: string
         default: "true"
         description: Should we login to the private registry
-    secrets:
-      github-private-keys:
-        required: false
-        description: Private keys that need to be added to the ssh-agent
 
 env:
   CARGO_TERM_COLOR: never
@@ -56,7 +52,6 @@ jobs:
     name: Rust Test (fmt and clippy)
     runs-on: ubuntu-latest
     env:
-      GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
     container:
       image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
