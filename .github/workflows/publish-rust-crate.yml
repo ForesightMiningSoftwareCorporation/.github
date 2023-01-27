@@ -119,12 +119,6 @@ jobs:
         with:
           github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ inputs.toolchain }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@develop
         name: Check if the package exists
@@ -134,6 +128,15 @@ jobs:
           cargo_private_registry_git_http_url: inputs.private-registry-git-http-url
           cargo_private_registry_git_http_username: secrets.private-registry-git-username
           cargo_private_registry_git_http_password: secrets.private-registry-git-password
+
+      - name: Cache Dependencies
+        if: steps.check_exists.outputs.exists == 'false'
+        uses: Swatinem/rust-cache@v2
+
+      - uses: dtolnay/rust-toolchain@master
+        if: steps.check_exists.outputs.exists == 'false'
+        with:
+          toolchain: ${{ inputs.toolchain }}
 
       - name: Login to public Registry
         shell: bash
