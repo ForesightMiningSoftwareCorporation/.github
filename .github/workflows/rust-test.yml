@@ -162,7 +162,7 @@ jobs:
 
       - uses: actions/github-script@v6
         name: Report status on PR
-        if: inputs.initial_event_name != 'push'
+        if: github.event_name != 'push'
         with:
           script: |
             const output =`
