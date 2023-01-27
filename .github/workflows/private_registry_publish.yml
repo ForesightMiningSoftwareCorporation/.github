@@ -1,0 +1,110 @@
+name: Publish Release to Private Registry
+
+on:
+  workflow_call:
+    inputs:
+      required_packages:
+        type: string
+        default: ""
+        description: Package that needs to be installed before Rust compilation can happens
+      additional_args:
+        type: string
+        default: ""
+        description: Additional arguments to pass to the cargo command
+      toolchain:
+        type: string
+        default: "1.65"
+        description: Rust toolchain to install
+      initial_event_name:
+        type: string
+        default: "push"
+        description: Event that triggered the workflow
+      login_private_registry:
+        type: string
+        default: "true"
+      skip-test:
+        type: boolean
+        default: false
+        description: Skip the test step
+      working-directory:
+        type: string
+        default: "."
+        description: Working directory to run the cargo command
+      additional_script:
+        type: string
+        default: ""
+        description: Additional script to run before the additional packages
+    secrets:
+      github-private-keys:
+        required: false
+        description: Private keys that need to be added to the ssh-agent
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
+
+jobs:
+  publish_private_registry_build:
+    name: Release new version to private registry
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Classic git Checkout
+        if: ${{ inputs.initial_event_name != 'pull_request_target' }}
+        uses: actions/checkout@v3
+
+      - name: Git Checkout for Pull Request Target
+        if: ${{ inputs.initial_event_name == 'pull_request_target' }}
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ inputs.revision }}
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@v1.1.0
+        name: Check if the package exists
+        id: check_exists
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          cargo_private_registry_git_http_url: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL
+          cargo_private_registry_git_http_username: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME
+          cargo_private_registry_git_http_password: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD
+
+      - name: Cache Dependencies
+        if: steps.check_exists.outputs.exists == 'false'
+        uses: Swatinem/rust-cache@v2
+
+      - uses: dtolnay/rust-toolchain@master
+        if: steps.check_exists.outputs.exists == 'false'
+        with:
+          toolchain: ${{ inputs.toolchain }}
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+        with:
+          private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
+          name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
+          token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+
+      - name: Additional Script
+        if: steps.check_exists.outputs.exists == 'false' && inputs.additional_script != ''
+        run: ${{ inputs.additional_script }}
+        shell: bash
+
+      - name: Update Packages
+        if: steps.check_exists.outputs.exists == 'false' && inputs.required_packages != ''
+        run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
+
+      - name: Publish to private registry
+        if: steps.check_exists.outputs.exists == 'false'
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
+
+      - name: Send Discord Notification
+        if: steps.check_exists.outputs.exists == 'false'
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}]'
+        with:
+          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_package_name.outputs.value }} has been published to the private registry"

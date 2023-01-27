@@ -9,6 +9,10 @@ on:
         type: string
         default: 'true'
         description: "Should the crate be published"
+      publish_private_registry:
+        type: string
+        default: 'false'
+        description: "Should the crate be published to the private registry"
       toolchain:
         type: string
         default: "1.65"
@@ -50,6 +54,19 @@ jobs:
       working-directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
       login_private_registry: ${{ inputs.login_private_registry }}
+    secrets: inherit
+  publish_private_registry_build:
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/private_registry_publish.yml@v1.1.0
+    if: inputs.publish == 'true' && inputs.publish_private_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs:
+      - test
+    with:
+      toolchain: ${{ inputs.toolchain }}
+      initial_event_name: ${{ inputs.initial_event_name }}
+      additional_script: ${{ inputs.additional_script }}
+      required_packages: ${{ inputs.required_packages }}
+      working-directory: ${{ inputs.working-directory }}
+      additional_args: ${{ inputs.additional_args }}
     secrets: inherit
 #  build:
 #    name: Build Steps
