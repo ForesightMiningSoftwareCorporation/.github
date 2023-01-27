@@ -22,18 +22,9 @@ on:
         type: string
         default: "push"
         description: Event that triggered the workflow
-      private-registry-host:
+      login_private_registry:
         type: string
-        default: ""
-      private-registry-git-http-url:
-        type: string
-        default: ""
-      private-registry-name:
-        type: string
-        default: ""
-      public-registry:
-        type: string
-        default: "false"
+        default: "true"
       skip-test:
         type: boolean
         default: false
@@ -47,60 +38,37 @@ on:
         default: ""
         description: Additional script to run before the additional packages
     secrets:
-      github-token:
-        required: true
       github-private-keys:
         required: false
         description: Private keys that need to be added to the ssh-agent
-      private-registry-private-key:
-        required: false
-      private-registry-git-username:
-        required: false
-      private-registry-git-password:
-        required: false
-      private-registry-token:
-        required: false
-      public-registry-token:
-        required: false
-      discord-webhook:
-        required: false
-        description: Discord webhook to send a message to
-      approval_app_id:
-        required: false
-        description: ID of the approval app
-      approval_app_private_key:
-        required: false
-        description: Private key of the approval app
 
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
-  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
+  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
 
-permissions:
-  issues: write
-  contents: read
+#permissions:
+#  issues: write
+#  contents: read
 
 jobs:
   test:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.0.0
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.1.0
     if: ${{ inputs.skip-test == false }}
     with:
       runner: ${{ inputs.runner }}
       toolchain: ${{ inputs.toolchain }}
       initial_event_name: ${{ inputs.initial_event_name }}
-      private-registry-host: ${{ inputs.private-registry-host }}
-      private-registry-name: ${{ inputs.private-registry-name }}
+      private-registry-host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
+      private-registry-name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      public-registry: ${{ inputs.public-registry }}
+      login_private_registry: ${{ inputs.login_private_registry }}
       working-directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
     secrets:
-      github-token: ${{ secrets.github-token }}
+      inherits: true
       github-private-keys: ${{ secrets.github-private-keys }}
-      private-registry-private-key: ${{ secrets.private-registry-private-key }}
-      private-registry-token: ${{ secrets.private-registry-token }}
   set_version:
     needs:
       - test
@@ -117,7 +85,7 @@ jobs:
         if: ${{ github.initial_event_name == 'pull_request_target' }}
         uses: actions/checkout@v3
         with:
-          github-token: ${{ secrets.github-token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@v1.1.0
@@ -125,9 +93,9 @@ jobs:
         id: check_exists
         with:
           working-directory: ${{ inputs.working-directory }}
-          cargo_private_registry_git_http_url: inputs.private-registry-git-http-url
-          cargo_private_registry_git_http_username: secrets.private-registry-git-username
-          cargo_private_registry_git_http_password: secrets.private-registry-git-password
+          cargo_private_registry_git_http_url: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL
+          cargo_private_registry_git_http_username: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME
+          cargo_private_registry_git_http_password: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD
 
       - name: Cache Dependencies
         if: steps.check_exists.outputs.exists == 'false'
@@ -140,29 +108,29 @@ jobs:
 
       - name: Login to public Registry
         shell: bash
-        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.login_private_registry == 'true'
         run: |
-          cargo login ${{ secrets.public-registry-token }}
+          cargo login ${{ secrets.CARGO_PUBLIC_REGISTRY_TOKEN }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
-        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry != 'true'
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+        if: inputs.login_private_registry == 'true'
         with:
-          private_key: ${{ secrets.private-registry-private-key }}
-          host: ${{ inputs.private-registry-host }}
-          name: ${{ inputs.private-registry-name }}
-          token: ${{ secrets.private-registry-token }}
+          private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
+          name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
+          token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
       - name: Generate token
         id: generate_token
-        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.login_private_registry == 'true'
         uses: tibdex/github-app-token@v1
         with:
-          app_id: ${{ secrets.approval_app_id }}
-          private_key: ${{ secrets.approval_app_private_key }}
+          app_id: ${{ secrets.ACTIONS_APPROVERS_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_APPROVERS_APP_PRIVATE_KEY }}
 
       - name: Approve Release
         uses: trstringer/manual-approval@v1
-        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.login_private_registry == 'true'
         with:
           secret: ${{ steps.generate_token.outputs.token }}
           approvers: "Publishers"
@@ -179,13 +147,13 @@ jobs:
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Publish to private registry
-        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry != 'true'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.login_private_registry != 'true'
         shell: bash
         working-directory: ${{ inputs.working-directory }}
-        run: cargo publish --registry ${{ inputs.private-registry-name }}
+        run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
 
       - name: Publish to public registry
-        if: steps.check_exists.outputs.exists == 'false' &&  inputs.public-registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false' &&  inputs.login_private_registry == 'true'
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish
@@ -194,7 +162,7 @@ jobs:
         if: steps.check_exists.outputs.exists == 'false'
         uses: Ilshidur/action-discord@master
         env:
-          DISCORD_WEBHOOK: ${{ secrets.discord-webhook }}
-          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ inputs.private-registry-name }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}]'
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}]'
         with:
           args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_package_name.outputs.value }} has been published to the private registry"

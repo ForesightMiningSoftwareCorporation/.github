@@ -34,7 +34,7 @@ runs:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
-    - uses: SebRollen/toml-action@v1.0.0
+    - uses: SebRollen/toml-action@v1.1.0
       id: read_version
       with:
         file: '${{ inputs.working-directory }}/Cargo.toml'

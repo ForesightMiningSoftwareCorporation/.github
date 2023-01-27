@@ -66,7 +66,7 @@ jobs:
           registry: ${{ inputs.registry }}
           username: ${{ secrets.username }}
           password: ${{ secrets.password }}
-      - uses: SebRollen/toml-action@v1.0.0
+      - uses: SebRollen/toml-action@v1.1.0
         id: read_version
         with:
           file: '${{ inputs.working-directory }}/Cargo.toml'
@@ -81,7 +81,7 @@ jobs:
           image_name: ${{ inputs.image }}
           version: ${{ steps.read_version.outputs.value }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
           host: ${{ inputs.private-registry-host }}

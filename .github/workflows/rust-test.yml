@@ -17,18 +17,6 @@ on:
         type: string
         default: ""
         description: Revision to pull
-      runner:
-        type: string
-        default: "ubuntu-latest"
-      public-registry:
-        type: string
-        default: "false"
-      private-registry-host:
-        required: true
-        type: string
-      private-registry-name:
-        required: true
-        type: string
       additional_args:
         type: string
         default: ""
@@ -50,20 +38,14 @@ on:
         default: "false"
         description: Should we skip cargo test (useful in there are no tests define)
     secrets:
-      github-token:
-        required: true
       github-private-keys:
         required: false
         description: Private keys that need to be added to the ssh-agent
-      private-registry-private-key:
-        required: true
-      private-registry-token:
-        required: true
 
 env:
   CARGO_TERM_COLOR: never
   CARGO_NET_GIT_FETCH_WITH_CLI: true
-  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
+  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
 
 jobs:
   test:
@@ -71,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PRIVATE_KEYS: ${{ secrets.github-private-keys }}
-      CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.private-registry-token }}"
+      CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
     container:
       image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
       options: --user root
@@ -79,20 +61,13 @@ jobs:
       - name: Classic git Checkout
         if: ${{ inputs.initial_event_name != 'pull_request_target' }}
         uses: actions/checkout@v3
+
       - name: Git Checkout for Pull Request Target
         if: ${{ inputs.initial_event_name == 'pull_request_target' }}
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.github-token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ inputs.revision }}
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
-        if: ${{ inputs.public-registry != 'true'}}
-        with:
-          host: ${{ inputs.private-registry-host }}
-          name: ${{ inputs.private-registry-name }}
-          private_key: ${{ secrets.private-registry-private-key }}
-          token: ${{ secrets.private-registry-token }}
-          additional_private_keys: ${{ env.GITHUB_PRIVATE_KEYS }}
 
       - name: Additional Script
         run: ${{ inputs.additional_script }}
@@ -103,11 +78,19 @@ jobs:
         if: inputs.required_packages != ''
         run: apt-get update -yq && apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+        if: inputs.login_private_registry == 'true'
+        with:
+          private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
+          name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
+          token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
 
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: fmt
         continue-on-error: true
         with:
@@ -115,7 +98,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: check
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.fmt.outcome == 'success'
@@ -124,7 +107,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: clippy
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.check.outcome == 'success'
@@ -141,7 +124,7 @@ jobs:
           fi
 
       - name: check license
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-license
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -150,7 +133,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check bans
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-bans
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -159,7 +142,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check advisories
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-advisories
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -168,7 +151,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: check sources
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-sources
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -177,7 +160,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: unused dependencies
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: dependencies
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -186,7 +169,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
 
       - name: Tests
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.0.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: tests
         continue-on-error: true
         if: inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success')
