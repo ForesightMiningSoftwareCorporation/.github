@@ -59,6 +59,14 @@ jobs:
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         uses: docker/setup-buildx-action@v2
 
+      - name: Use user-agent for private registry
+        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
+        shell: bash
+        run: |
+          echo "" >> ./shipyard_token
+          echo "[http]" >> ./shipyard_token
+          echo "user-agent = \"shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}\"" >> ./shipyard_token
+
       - name: Build & Push
         uses: docker/build-push-action@v3
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
