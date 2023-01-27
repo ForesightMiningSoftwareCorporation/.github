@@ -23,8 +23,9 @@ runs:
   steps:
     - name: Checkout github wide resources
       uses: actions/checkout@v3
-      ref: 'develop'
-      path: '.github_wide_resources'
+      with:
+        ref: 'develop'
+        path: '.github_wide_resources'
     - name: Install Updatecli in the runner
       uses: updatecli/updatecli-action@v2
     - name: Run UpdateCli with Cargo check package
