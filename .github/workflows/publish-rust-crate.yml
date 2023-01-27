@@ -25,6 +25,9 @@ on:
       private-registry-host:
         type: string
         default: ""
+      private-registry-git-http-url:
+        type: string
+        default: ""
       private-registry-name:
         type: string
         default: ""
@@ -50,6 +53,10 @@ on:
         required: false
         description: Private keys that need to be added to the ssh-agent
       private-registry-private-key:
+        required: false
+      private-registry-git-username:
+        required: false
+      private-registry-git-password:
         required: false
       private-registry-token:
         required: false
@@ -114,92 +121,74 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
+
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
-      - name: Install cargo-index
-        shell: bash
-        working-directory: ${{ inputs.working-directory }}
-        run: cargo install cargo-index
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@develop
+        name: Check if the package exists
+        id: check_exists
+        with:
+          working-directory: inputs.working-directory
+          cargo_private_registry_git_http_url: inputs.private-registry-git-http-url
+          cargo_private_registry_git_http_username: secrets.private-registry-git-username
+          cargo_private_registry_git_http_password: secrets.private-registry-git-password
+
       - name: Login to public Registry
         shell: bash
-        if: ${{ inputs.public-registry == 'true' }}
+        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry == 'true'
         run: |
           cargo login ${{ secrets.public-registry-token }}
+
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
-        if: ${{ inputs.public-registry != 'true' }}
+        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry != 'true'
         with:
           private_key: ${{ secrets.private-registry-private-key }}
           host: ${{ inputs.private-registry-host }}
           name: ${{ inputs.private-registry-name }}
           token: ${{ secrets.private-registry-token }}
-      - name: Read Cargo.toml package version
-        id: read_version
-        uses: SebRollen/toml-action@v1.0.2
-        with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.version'
-      - name: Read Cargo.toml package name
-        id: read_package_name
-        uses: SebRollen/toml-action@v1.0.2
-        with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.name'
-      - name: Clone Private Registry with ssh
-        shell: bash
-        if: ${{ inputs.public-registry != 'true' }}
-        run: |
-          git clone git@${{ inputs.private-registry-host }}:${{ inputs.private-registry-name }}/crate-index.git ${{ runner.temp }}/crate_index
-      - name: Clone Public Registry
-        shell: bash
-        if: ${{ inputs.public-registry == 'true' }}
-        run: |
-          git clone https://github.com/rust-lang/crates.io.git ${{ runner.temp }}/crate_index
-      - name: Check if version exists
-        shell: bash
-        id: check_exists
-        run: |
-          if cargo index list --index ${{ runner.temp }}/crate_index --package ${{ steps.read_package_name.outputs.value }} --version ${{ steps.read_version.outputs.value }}; then
-            export PACKAGE_EXISTS=yes
-          else
-            export PACKAGE_EXISTS=no
-          fi
-          echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
 
       - name: Generate token
         id: generate_token
-        if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry == 'true'
         uses: tibdex/github-app-token@v1
         with:
           app_id: ${{ secrets.approval_app_id }}
           private_key: ${{ secrets.approval_app_private_key }}
+
       - name: Approve Release
         uses: trstringer/manual-approval@v1
-        if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry == 'true'
         with:
           secret: ${{ steps.generate_token.outputs.token }}
           approvers: "Publishers"
           minimum-approvals: 1
           issue-title: "Publish new version to *public* registry of ${{ steps.read_package_name.outputs.value }}: ${{ steps.read_version.outputs.value }}"
+
       - name: Additional Script
-        if: inputs.additional_script != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.additional_script != ''
         run: ${{ inputs.additional_script }}
         shell: bash
+
       - name: Update Packages
-        if: inputs.required_packages != '' && steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
+        if: steps.check_exists.outputs.exists == 'false' && inputs.required_packages != ''
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
+
       - name: Publish to private registry
-        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry != 'true' }}
+        if: steps.check_exists.outputs.exists == 'false' && inputs.public-registry != 'true'
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ inputs.private-registry-name }}
+
       - name: Publish to public registry
-        if: ${{ steps.check_exists.outputs.PACKAGE_EXISTS == 'no' && inputs.public-registry == 'true' }}
+        if: steps.check_exists.outputs.exists == 'false' &&  inputs.public-registry == 'true'
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish
+
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.PACKAGE_EXISTS == 'no'
+        if: steps.check_exists.outputs.exists == 'false' &&
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord-webhook }}

@@ -1,0 +1,44 @@
+name: "Check if Exists"
+scms:
+  private-reg:
+    kind: git
+    spec:
+      url: "{{ .github.cargo-private-registry-url }}"
+      username: "{{ .github.cargo-private-registry-username }}"
+      password: "{{ .github.cargo-private-registry-password }}"
+      branch: "master"
+
+sources:
+  crate_name:
+    name: 'Get crate name'
+    kind: 'toml'
+    spec:
+      file: './Cargo.toml'
+      Key: 'package.name'
+  target_version:
+    name: 'Get current crate version'
+    kind: 'toml'
+    spec:
+      file: './Cargo.toml'
+      Key: 'package.version'
+
+conditions:
+  version_exists:
+    name: 'Check if package exists in registry'
+    kind: 'cargopackage'
+    scmid: 'private-reg'
+    disablesourceinput: true
+    failwhen: true
+    spec:
+      package: '{{ source "crate_name" }}'
+      Version: '{{ source "target_version" }}'
+
+
+targets:
+  setPackageExists:
+    kind: file
+    disablesourceinput: true
+    spec:
+      file: PACKAGE_EXISTS
+      forcecreate: true
+      content: 'false'
