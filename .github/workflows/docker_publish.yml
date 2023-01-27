@@ -73,3 +73,5 @@ jobs:
           tags: |
             oreprohub.azurecr.io/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
             oreprohub.azurecr.io/${{ inputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
