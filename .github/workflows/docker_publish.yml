@@ -5,10 +5,6 @@ on:
         type: string
         description: "Binary to build"
         default: "."
-      revision:
-        type: string
-        default: ""
-        description: Revision to pull
       dockerfile:
         type: string
         description: "The path to the Dockerfile to use"
@@ -24,16 +20,8 @@ jobs:
     env:
       PRIVATE_REGISTRY_TOKEN: ${{ secrets.private-registry-token }}
     steps:
-      - name: Classic git Checkout
-        if: ${{ inputs.initial_event_name != 'pull_request_target' }}
+      - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Git Checkout for Pull Request Target
-        if: ${{ inputs.initial_event_name == 'pull_request_target' }}
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ inputs.revision }}
 
       # Login to registry (ACR)
       - name: Login to ACR
@@ -81,5 +69,5 @@ jobs:
           secret-files: |
             shipyard_token=./shipyard_token
           tags: |
-            ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
-            ${{ inputs.registry }}/${{ inputs.image }}:latest
+            oreprohub.azurecr.io/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
+            oreprohub.azurecr.io/${{ inputs.image }}:latest

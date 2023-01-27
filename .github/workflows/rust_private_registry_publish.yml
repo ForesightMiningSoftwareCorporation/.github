@@ -15,14 +15,6 @@ on:
         type: string
         default: "1.65"
         description: Rust toolchain to install
-      revision:
-        type: string
-        default: ""
-        description: Revision to pull
-      initial_event_name:
-        type: string
-        default: "push"
-        description: Event that triggered the workflow
       login_private_registry:
         type: string
         default: "true"
@@ -53,16 +45,8 @@ jobs:
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
     steps:
-      - name: Classic git Checkout
-        if: ${{ inputs.initial_event_name != 'pull_request_target' }}
+      - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Git Checkout for Pull Request Target
-        if: ${{ inputs.initial_event_name == 'pull_request_target' }}
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ inputs.revision }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@v1.1.0
         name: Check if the package exists
