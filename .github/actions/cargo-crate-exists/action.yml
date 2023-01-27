@@ -31,7 +31,7 @@ runs:
       uses: updatecli/updatecli-action@v2
     - name: Run UpdateCli with Cargo check package
       shell: bash
-      working-directory: inputs.working-directory
+      working-directory: ${{ inputs.working-directory }}
       id: check
       run: |
         rm PACKAGE_EXISTS
