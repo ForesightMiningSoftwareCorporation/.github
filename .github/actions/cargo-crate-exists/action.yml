@@ -25,6 +25,7 @@ runs:
       uses: actions/checkout@v3
       with:
         ref: 'develop'
+        repository: https://github.com/ForesightMiningSoftwareCorporation/github.git
         path: '.github_wide_resources'
     - name: Install Updatecli in the runner
       uses: updatecli/updatecli-action@v2
