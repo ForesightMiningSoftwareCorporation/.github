@@ -120,7 +120,7 @@ jobs:
           github-token: ${{ secrets.github-token }}
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@develop
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@v1.1.0
         name: Check if the package exists
         id: check_exists
         with:

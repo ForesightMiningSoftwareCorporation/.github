@@ -24,7 +24,7 @@ runs:
     - name: Checkout github wide resources
       uses: actions/checkout@v3
       with:
-        ref: 'develop'
+        ref: 'v1.1.0'
         repository: ForesightMiningSoftwareCorporation/github
         path: '.github_wide_resources'
     - name: Install Updatecli in the runner
