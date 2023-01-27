@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - uses: SebRollen/toml-action@v1.1.0
+      - uses: SebRollen/toml-action@v1.0.0
         id: read_version
         with:
           file: '${{ inputs.working-directory }}/Cargo.toml'

@@ -131,7 +131,7 @@ jobs:
 #          ssh-private-key: |
 #            ${{ env.SSH_PRIVATE_KEYS }}
 #
-#      - uses: SebRollen/toml-action@v1.1.0
+#      - uses: SebRollen/toml-action@v1.0.0
 #        name: Read Cargo version
 #        if: matrix.bin.bs == true || matrix.bin.docker == true
 #        id: read_cargo_toml_version
