@@ -188,7 +188,7 @@ jobs:
         run: cargo publish
 
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists == 'false' &&
+        if: steps.check_exists.outputs.exists == 'false'
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord-webhook }}
