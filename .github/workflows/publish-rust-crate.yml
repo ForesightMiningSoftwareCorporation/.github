@@ -130,7 +130,7 @@ jobs:
         name: Check if the package exists
         id: check_exists
         with:
-          working-directory: inputs.working-directory
+          working-directory: ${{ inputs.working-directory }}
           cargo_private_registry_git_http_url: inputs.private-registry-git-http-url
           cargo_private_registry_git_http_username: secrets.private-registry-git-username
           cargo_private_registry_git_http_password: secrets.private-registry-git-password
