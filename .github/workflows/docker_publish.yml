@@ -74,8 +74,8 @@ jobs:
           file: "${{ inputs.working-directory }}/${{ inputs.dockerfile }}"
           ssh:
             default=${{ env.SSH_AUTH_SOCK }}
-          secret-files: |
-            shipyard_token=./shipyard_token
+          secrets: |
+            CARGO_HTTP_USER_AGENT="shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
           tags: |
             oreprohub.azurecr.io/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
             oreprohub.azurecr.io/${{ inputs.image }}:latest
