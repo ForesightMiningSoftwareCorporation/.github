@@ -74,6 +74,8 @@ jobs:
           file: "${{ inputs.working-directory }}/${{ inputs.dockerfile }}"
           ssh:
             default=${{ env.SSH_AUTH_SOCK }}
+          secrets: |
+            cargo_http_user_agent="shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
           secret-files: |
             shipyard_token=./shipyard_token
           tags: |
