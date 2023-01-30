@@ -17,8 +17,6 @@ on:
 jobs:
   docker_publish:
     runs-on: ubuntu-latest
-    env:
-      PRIVATE_REGISTRY_TOKEN: ${{ secrets.private-registry-token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
