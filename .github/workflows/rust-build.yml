@@ -43,7 +43,7 @@ on:
         default: Dockerfile
       docker_image:
         type: string
-        required: true
+        default: ''
         description: "Docker image name"
 
 jobs:
