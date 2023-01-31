@@ -13,6 +13,10 @@ on:
         type: string
         default: 'false'
         description: "Should the crate be published to the private registry"
+      publish_public_registry:
+        type: string
+        default: 'false'
+        description: "Should the crate be published to the public registry"
       publish_docker:
         type: string
         default: 'false'
@@ -56,7 +60,7 @@ jobs:
       required_packages: ${{ inputs.required_packages }}
       working-directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
-      login_private_registry: ${{ inputs.login_private_registry }}
+      login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
     secrets: inherit
   publish_private_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1.1.0
