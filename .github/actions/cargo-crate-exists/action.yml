@@ -39,7 +39,7 @@ runs:
         PACKAGE_EXISTS=$(cat PACKAGE_EXISTS 2>/dev/null || echo "false")
         echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
       env:
-        UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL: inputs.cargo_private_registry_git_http_url
-        UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME: inputs.cargo_private_registry_git_http_username
-        UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD: inputs.cargo_private_registry_git_http_password
+        UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL: ${{ inputs.cargo_private_registry_git_http_url }}
+        UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME: ${{ inputs.cargo_private_registry_git_http_username }}
+        UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD: ${{ inputs.cargo_private_registry_git_http_password }}
 
