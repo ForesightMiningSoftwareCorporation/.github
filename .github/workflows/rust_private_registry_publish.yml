@@ -53,9 +53,9 @@ jobs:
         id: check_exists
         with:
           working-directory: ${{ inputs.working-directory }}
-          cargo_private_registry_git_http_url: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL
-          cargo_private_registry_git_http_username: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME
-          cargo_private_registry_git_http_password: secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD
+          cargo_private_registry_git_http_url: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
+          cargo_private_registry_git_http_username: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME }}
+          cargo_private_registry_git_http_password: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD }}
 
       - name: Cache Dependencies
         if: steps.check_exists.outputs.exists == 'false'
