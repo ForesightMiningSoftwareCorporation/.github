@@ -58,16 +58,16 @@ jobs:
           cargo_private_registry_git_http_password: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD }}
 
       - name: Cache Dependencies
-        if: steps.check_exists.outputs.exists == 'false'
+        if: steps.check_exists.outputs.exists != 'true'
         uses: Swatinem/rust-cache@v2
 
       - uses: dtolnay/rust-toolchain@master
-        if: steps.check_exists.outputs.exists == 'false'
+        if: steps.check_exists.outputs.exists != 'true'
         with:
           toolchain: ${{ inputs.toolchain }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
-        if: steps.check_exists.outputs.exists == 'false'
+        if: steps.check_exists.outputs.exists != 'true'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -75,22 +75,22 @@ jobs:
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
       - name: Additional Script
-        if: steps.check_exists.outputs.exists == 'false' && inputs.additional_script != ''
+        if: steps.check_exists.outputs.exists != 'true' && inputs.additional_script != ''
         run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Update Packages
-        if: steps.check_exists.outputs.exists == 'false' && inputs.required_packages != ''
+        if: steps.check_exists.outputs.exists != 'true' && inputs.required_packages != ''
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Publish to private registry
-        if: steps.check_exists.outputs.exists == 'false'
+        if: steps.check_exists.outputs.exists != 'true'
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
 
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists == 'false'
+        if: steps.check_exists.outputs.exists != 'true'
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
