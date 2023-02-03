@@ -52,6 +52,8 @@ jobs:
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+          additional_private_keys: |
+            ${{ secrets.FSE_SSH_PRIVATE_KEY }}
 
       - name: Set up Docker Buildx
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
