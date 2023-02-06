@@ -21,8 +21,7 @@ jobs:
       - name: Build & Push
         uses: docker/build-push-action@v3
         with:
-          context: docker/orica_server
+          context: docker/orica_server_builder
           push: true
-          build-args: RUST_VERSION=${{ inputs.rust_version }}
           tags: |
             ghcr.io/foresightminingsoftwarecorporation/orica-server-builder:latest

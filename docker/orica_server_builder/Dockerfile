@@ -1,4 +1,4 @@
-FROM ubuntu:focal AS builder
+FROM ubuntu:focal
 
 WORKDIR /usr/src/
 ARG OPENSSL_VERSION=1.1.1m
