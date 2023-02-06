@@ -7,5 +7,3 @@ RUN apt-get update && \
       ca-certificates \
       libfontconfig-dev \
       libmkl-dev
-
-RUN update-ca-certificates
