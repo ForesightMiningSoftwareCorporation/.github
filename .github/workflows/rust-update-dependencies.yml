@@ -1,0 +1,39 @@
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        type: string
+        default: "."
+        description: Working directory to find the rust crate
+      branch:
+        type: string
+        default: "main"
+        description: Branch where to look for the dep
+
+jobs:
+  test:
+    name: Check for Rust Auto-Discovery
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Checkout github wide resources
+        uses: actions/checkout@v3
+        with:
+          ref: 'v1.1.0'
+          repository: ForesightMiningSoftwareCorporation/github
+          path: '.github_wide_resources'
+      - name: Install Updatecli in the runner
+        uses: updatecli/updatecli-action@v2
+      - name: Run UpdateCli with Cargo check package
+        shell: bash
+        run: |
+          updatecli diff --experimental --config $GITHUB_WORKSPACE/.github_wide_resources/updatecli/updatecli.d/rust/autodiscovery.yml --values $GITHUB_WORKSPACE/.github_wide_resources/updatecli/values.github-action.yaml
+        env:
+          UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATECLI_BRANCH: ${{ inputs.branch }}
+          UPDATECLI_REPO: ${{ github.event.repository.name }}
+          UPDATECLI_ROOTDIR: ${{ inputs.working-directory }}
+          UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
+          UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME }}
+          UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD }}

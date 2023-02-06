@@ -1,4 +1,11 @@
 github:
+  user: "GitHub Actions"
+  username: "github-actions"
+  token: "UPDATECLI_GITHUB_TOKEN"
+  branch: "UPDATECLI_BRANCH"
+  owner: "ForesightMiningSoftwareCorporation"
+  repository: "UPDATECLI_REPO"
+  root_dir: "UPDATECLI_ROOTDIR"
   cargo_private_registry_url: "UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL"
   cargo_private_registry_username: "UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME"
   cargo_private_registry_password: "UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD"

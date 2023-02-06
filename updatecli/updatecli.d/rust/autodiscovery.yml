@@ -1,0 +1,38 @@
+name: "Cargo autodiscovery"
+
+scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      owner: "{{ .github.owner }}"
+      username: "{{ .github.username }}"
+      branch: "{{ requiredEnv .github.branch }}"
+      repository: "{{ requiredEnv .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+  private-reg:
+    kind: git
+    spec:
+      url: "{{ requiredEnv .github.cargo_private_registry_url }}"
+      username: "{{ requiredEnv .github.cargo_private_registry_username }}"
+      password: "{{ requiredEnv .github.cargo_private_registry_password }}"
+      branch: "master"
+
+autodiscovery:
+  scmid: default
+  crawlers:
+    cargo:
+      rootdir: "{{ requiredEnv .github.root_dir }}"
+      registries:
+        foresight-mining-software-corporation:
+          scmid: private-reg
+
+actions:
+  default:
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      labels:
+        - dependencies
+        - cargo
+        - updatecli
