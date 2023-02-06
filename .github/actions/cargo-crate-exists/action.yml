@@ -21,6 +21,11 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: "Ensure we don't track the new resources in git"
+      shell: bash
+      run: |
+        echo ".github_wide_resources/" >> ~/.gitignore_global
+        echo "PACKAGE_EXISTS" >> ~/.gitignore_global
     - name: Checkout github wide resources
       uses: actions/checkout@v3
       with:
