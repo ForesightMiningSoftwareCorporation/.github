@@ -1,4 +1,4 @@
-name: Build builder for orica_server
+name: Build runner for orica_server
 
 on:
   workflow_dispatch:
