@@ -44,7 +44,7 @@ runs:
       run: |
         rm PACKAGE_EXISTS || true
         updatecli apply --config $GITHUB_WORKSPACE/.github_wide_resources/updatecli/updatecli.d/rust/check-crate-exists.yml --values $GITHUB_WORKSPACE/.github_wide_resources/updatecli/values.github-action.yaml
-        PACKAGE_EXISTS=$(cat PACKAGE_EXISTS 2>/dev/null || echo "false")
+        PACKAGE_EXISTS=$(cat PACKAGE_EXISTS 2>/dev/null || echo "true")
         echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
       env:
         UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL: ${{ inputs.cargo_private_registry_git_http_url }}
