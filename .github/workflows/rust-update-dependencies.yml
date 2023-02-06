@@ -27,7 +27,7 @@ jobs:
         uses: updatecli/updatecli-action@v2
         with:
           version: 'v0.44.0'
-      - name: Run UpdateCli with Cargo check package
+      - name: Run UpdateCli Autodiscovery
         shell: bash
         run: |
           updatecli diff --experimental --config $GITHUB_WORKSPACE/.github_wide_resources/updatecli/updatecli.d/rust/autodiscovery.yml --values $GITHUB_WORKSPACE/.github_wide_resources/updatecli/values.github-action.yaml
