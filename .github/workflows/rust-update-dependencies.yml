@@ -25,6 +25,8 @@ jobs:
           path: '.github_wide_resources'
       - name: Install Updatecli in the runner
         uses: updatecli/updatecli-action@v2
+        with:
+          version: 'v0.44.0'
       - name: Run UpdateCli with Cargo check package
         shell: bash
         run: |
