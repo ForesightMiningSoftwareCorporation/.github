@@ -81,6 +81,11 @@ jobs:
           image_name: ${{ inputs.image }}
           version: ${{ steps.read_version.outputs.value }}
 
+      - uses: dtolnay/rust-toolchain@master
+        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
+        with:
+          toolchain: 1.65
+
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.0.0
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
