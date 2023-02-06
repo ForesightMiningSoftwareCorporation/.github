@@ -21,6 +21,9 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Configure Git to use global ignore file
+      shell: bash
+      run: git config --global core.excludesfile ~/.gitignore_global
     - name: "Ensure we don't track the new resources in git"
       shell: bash
       run: |
