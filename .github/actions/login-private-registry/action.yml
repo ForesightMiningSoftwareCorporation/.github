@@ -49,4 +49,4 @@ runs:
         echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> $HOME/.gitconfig
     - name: Login to private registry
       shell: bash
-      run: cargo login -Z registry-auth --registry ${{ inputs.name }} ${{ inputs.token }}
+      run: cargo login --registry ${{ inputs.name }} ${{ inputs.token }}
