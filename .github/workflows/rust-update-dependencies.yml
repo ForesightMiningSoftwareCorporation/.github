@@ -9,6 +9,10 @@ on:
         type: string
         default: "main"
         description: Branch where to look for the dep
+      dry_run:
+        type: string
+        default: "false"
+        description: "Should the update be done or just a dry run"
 
 jobs:
   test:
@@ -30,7 +34,7 @@ jobs:
       - name: Run UpdateCli Autodiscovery
         shell: bash
         run: |
-          updatecli apply --experimental --config $GITHUB_WORKSPACE/.github_wide_resources/updatecli/updatecli.d/rust/autodiscovery.yml --values $GITHUB_WORKSPACE/.github_wide_resources/updatecli/values.github-action.yaml
+          updatecli ${{ inputs.dry_run == 'true' && 'diff' || 'apply' }} --experimental --config $GITHUB_WORKSPACE/.github_wide_resources/updatecli/updatecli.d/rust/autodiscovery.yml --values $GITHUB_WORKSPACE/.github_wide_resources/updatecli/values.github-action.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           UPDATECLI_BRANCH: ${{ inputs.branch }}
