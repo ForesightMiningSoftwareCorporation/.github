@@ -20,6 +20,7 @@ scms:
 
 autodiscovery:
   scmid: default
+  actionid: default
   crawlers:
     cargo:
       rootdir: "{{ requiredEnv .github.root_dir }}"
