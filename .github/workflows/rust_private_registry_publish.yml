@@ -59,8 +59,10 @@ jobs:
 
       - name: Check Exists
         if: steps.check_exists.outputs.exists != 'true'
+        env:
+          EXISTS: ${{ steps.check_exists.outputs.exists }}
         run: |
-          echo '${{ steps.check_exists.outputs.exists }}'
+          echo '$EXISTS'
         shell: bash
 
       - name: Cache Dependencies
