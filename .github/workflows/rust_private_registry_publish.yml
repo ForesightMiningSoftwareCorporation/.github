@@ -48,7 +48,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@main
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@v1.1.0
         name: Check if the package exists
         id: check_exists
         with:
