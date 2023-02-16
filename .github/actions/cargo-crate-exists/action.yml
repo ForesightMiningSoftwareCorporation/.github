@@ -16,8 +16,9 @@ inputs:
     required: true
 outputs:
   exists:
-    value: steps.check.outputs.PACKAGE_EXISTS
+    value: ${{ steps.check.outputs.PACKAGE_EXISTS }}
     description: "Does the package exists"
+
 runs:
   using: "composite"
   steps:

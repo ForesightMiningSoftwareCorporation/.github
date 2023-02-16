@@ -48,7 +48,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@v1.1.0
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@main
         name: Check if the package exists
         id: check_exists
         with:
@@ -56,14 +56,6 @@ jobs:
           cargo_private_registry_git_http_url: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
           cargo_private_registry_git_http_username: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME }}
           cargo_private_registry_git_http_password: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD }}
-
-      - name: Check Exists
-        if: steps.check_exists.outputs.exists != 'true'
-        env:
-          EXISTS: "${{ steps.check_exists.outputs.exists }}"
-        run: |
-          echo $EXISTS
-        shell: bash
 
       - name: Cache Dependencies
         if: steps.check_exists.outputs.exists != 'true'
