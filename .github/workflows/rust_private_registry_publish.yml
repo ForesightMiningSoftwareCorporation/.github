@@ -60,7 +60,7 @@ jobs:
       - name: Check Exists
         if: steps.check_exists.outputs.exists != 'true'
         run: |
-          echo "${{ steps.check_exists.outputs.exists }}"
+          echo '${{ steps.check_exists.outputs.exists }}'
         shell: bash
 
       - name: Cache Dependencies
