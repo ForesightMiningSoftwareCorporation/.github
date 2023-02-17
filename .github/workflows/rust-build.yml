@@ -52,7 +52,7 @@ on:
 
 jobs:
   test:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.1.0
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@better_test_outputs
     if: ${{ inputs.skip-test != 'true' }}
     with:
       toolchain: ${{ inputs.toolchain }}
