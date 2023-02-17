@@ -13,6 +13,7 @@ RUN apt-add-repository non-free && apt-get update && DEBIAN_FRONTEND=noninteract
 RUN rustup component add clippy rustfmt
 RUN cargo install --locked cargo-deny
 RUN cargo install cargo-machete
+RUN cargo install cargo-metadata
 
 RUN mkdir -p /test-dir
 
