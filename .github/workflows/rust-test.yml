@@ -74,6 +74,13 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Get crate name
+        id: name
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "value=$(cargo metadata --no-deps --format-version 1 | jq '.packages[0].name')" >> $GITHUB_OUTPUT
+
       - name: fmt
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: fmt
@@ -169,7 +176,7 @@ jobs:
           script: |
             const output =`
             <details>
-            <summary><h3>${{ (steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure') && '✅' || '❌' }} ${{ inputs.working-directory }}</h3> (click for details)</summary>
+            <summary><h3>${{ (steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure') && '❌' || '✅' }} ${{ steps.name.outputs.value }}</h3> (click for details)</summary>
             <table>
               <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
               <tr>
