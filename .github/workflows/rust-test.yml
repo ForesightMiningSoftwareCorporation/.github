@@ -227,7 +227,7 @@ jobs:
               </tr>
             </table>
 
-            Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
+            Pushed by: \`@${{ github.actor }}\`, Action: \`${{ github.event_name }}\`;
             Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>`
             github.rest.issues.createComment({
               issue_number: context.issue.number,
