@@ -70,6 +70,7 @@ jobs:
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
           additional_private_keys: |
             ${{ secrets.FSE_SSH_PRIVATE_KEY }}
+            ${{ secrets.BEVY_CLIPMAP_SSH_PRIVATE_KEY }}
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
