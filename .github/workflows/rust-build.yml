@@ -63,7 +63,7 @@ jobs:
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
     secrets: inherit
   publish_private_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@fix-discord-notif
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1.1.0
     if: always() && inputs.publish == 'true' && inputs.publish_private_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
