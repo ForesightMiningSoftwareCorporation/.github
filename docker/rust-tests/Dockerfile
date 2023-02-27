@@ -4,6 +4,7 @@ FROM rust:$RUST_VERSION
 RUN apt-get update && apt-get install -y software-properties-common
 
 RUN apt-add-repository non-free && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    moreutils \
     libmkl-dev \
     libudev-dev \
     libasound2-dev \

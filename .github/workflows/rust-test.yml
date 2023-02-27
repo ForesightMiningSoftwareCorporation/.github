@@ -75,6 +75,16 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Get crate name
+        id: name
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "value=$(cargo metadata --no-deps --format-version 1 | jq '.packages[0].name')" >> $GITHUB_OUTPUT
+      - name: Set start time as env variable
+        id: start_time
+        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
+        run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
       - name: fmt
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: fmt
@@ -82,6 +92,10 @@ jobs:
         with:
           command: "cargo fmt --verbose --all -- --check"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
@@ -91,6 +105,10 @@ jobs:
         with:
           command: "cargo check ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: run clippy
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
@@ -100,10 +118,15 @@ jobs:
         with:
           command: "cargo clippy ${{ inputs.additional_args }} -- -D warnings"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: Copy Default deny if not exists
         shell: bash
         working-directory: ${{ inputs.working-directory }}
+        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         run: |
           if [ ! -f deny.yml ]; then
             wget https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
@@ -117,6 +140,10 @@ jobs:
         with:
           command: "cargo deny check licenses"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check bans
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
@@ -126,6 +153,10 @@ jobs:
         with:
           command: "cargo deny check bans"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check advisories
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
@@ -135,6 +166,10 @@ jobs:
         with:
           command: "cargo deny check advisories"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check sources
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
@@ -144,6 +179,10 @@ jobs:
         with:
           command: "cargo deny check sources"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: unused dependencies
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
@@ -153,6 +192,10 @@ jobs:
         with:
           command: "cargo machete"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: Tests
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
@@ -162,6 +205,15 @@ jobs:
         with:
           command: "cargo test ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
+
+      - name: Set end time as env variable
+        id: end_time
+        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
+        run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
       - uses: actions/github-script@v6
         name: Report status on PR
@@ -169,67 +221,70 @@ jobs:
         with:
           script: |
             const output =`
-            # Ran tests in directory: ${{ inputs.working-directory }}
+            <details>
+            <summary><h3>${{ (steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure') && '❌' || '✅' }} ${{ steps.name.outputs.value }}</h3> (click for details)</summary>
             <table>
               <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
               <tr>
-                <td>*</td>
+                <td align="center">🔘</td>
                 <td>\`cargo fmt --verbose --all -- --check\`</td>
                 <td>\`${{ steps.fmt.outcome == 'success' && '✅' || (steps.fmt.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.fmt.outputs.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=fmt&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td>*</td>
+                <td align="center">🔘</td>
                 <td>\`cargo check ${{ inputs.additional_args }}\`</td>
                 <td>\`${{ steps.check.outcome == 'success' && '✅' || (steps.check.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.check.outputs.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=check&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td>*</td>
+                <td align="center">🔘</td>
                 <td>\`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`</td>
                 <td>\`${{ steps.clippy.outcome == 'success' && '✅' || (steps.clippy.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.clippy.outputs.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=clippy&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td></td>
+                <td align="center">⚫</td>
                 <td>\`cargo deny check licenses\`</td>
                 <td>\`${{ steps.deny-license.outcome == 'success' && '✅' || (steps.deny-license.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.deny-license.outputs.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-license&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td></td>
+                <td align="center">⚫</td>
                 <td>\`cargo deny check bans\`</td>
                 <td>\`${{ steps.deny-bans.outcome == 'success' && '✅' || (steps.deny-bans.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.deny-bans.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-bans&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
                 <tr>
-                  <td></td>
+                  <td align="center">⚫</td>
                   <td>\`cargo deny check advisories\`</td>
                   <td>\`${{ steps.deny-advisories.outcome == 'success' && '✅' || (steps.deny-advisories.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.deny-advisories.outputs.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-advisories&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td></td>
+                <td align="center">⚫</td>
                 <td>\`cargo deny check sources\`</td>
                 <td>\`${{ steps.deny-sources.outcome == 'success' && '✅' || (steps.deny-sources.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.deny-sources.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-sources&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td></td>
+                <td align="center">⚫</td>
                 <td>\`cargo machete\`</td>
                 <td>\`${{ steps.dependencies.outcome == 'success' && '✅' || (steps.dependencies.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.dependencies.outputs.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=dependencies&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td>*</td>
+                <td align="center">🔘</td>
                 <td>\`cargo test ${{ inputs.additional_args }}\`</td>
                 <td>\`${{ steps.tests.outcome == 'success' && '✅' || (steps.tests.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
-                <td>${{ steps.tests.outputs.summary }}</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=tests&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
             </table>
 
-            Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`;
-            Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>`
+            Pushed by: \`@${{ github.actor }}\`, Action: \`${{ github.event_name }}\`;
+            Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>
+            Logs: <a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=All&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a>
+            </details>`
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
