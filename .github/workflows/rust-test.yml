@@ -82,92 +82,129 @@ jobs:
           echo "value=$(cargo metadata --no-deps --format-version 1 | jq '.packages[0].name')" >> $GITHUB_OUTPUT
 
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: fmt
         continue-on-error: true
         with:
           command: "cargo fmt --verbose --all -- --check"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: check
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.fmt.outcome == 'success'
         with:
           command: "cargo check ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: clippy
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.check.outcome == 'success'
         with:
           command: "cargo clippy ${{ inputs.additional_args }} -- -D warnings"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: Copy Default deny if not exists
         shell: bash
         working-directory: ${{ inputs.working-directory }}
+        if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         run: |
           if [ ! -f deny.yml ]; then
             wget https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
 
       - name: check license
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: deny-license
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo deny check licenses"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check bans
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: deny-bans
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo deny check bans"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check advisories
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: deny-advisories
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo deny check advisories"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: check sources
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: deny-sources
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo deny check sources"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: unused dependencies
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: dependencies
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
         with:
           command: "cargo machete"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - name: Tests
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
         id: tests
         continue-on-error: true
         if: inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success')
         with:
           command: "cargo test ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
 
       - uses: actions/github-script@v6
         name: Report status on PR
