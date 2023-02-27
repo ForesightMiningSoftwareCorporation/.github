@@ -48,20 +48,20 @@ runs:
           rc=$?
         fi
         echo "exitcode=$rc" >> $GITHUB_OUTPUT
-    - name: Upload to artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: ${{ github.action }}-stdout
-        path: ${{ inputs.working-directory }}/output.txt
-#    - name: Upload stdout
-#      uses: ForesightMiningSoftwareCorporation/upload-log-to-loki@releases/v1
+#    - name: Upload to artifacts
+#      uses: actions/upload-artifact@v2
 #      with:
-#        log_file: ${{ inputs.working-directory }}/output.txt
-#        loki_url: ${{ inputs.loki_url }}
-#        loki_username: ${{ inputs.loki_username }}
-#        loki_password: ${{ inputs.loki_password }}
-#        loki_org_id: ${{ inputs.loki_org_id }}
-#        loki_labels: 'job=${{ github.job }},workflow=${{ github.workflow }},action=${{ github.action }},id=${{ inputs.id }}'
+#        name: ${{ github.action }}-stdout
+#        path: ${{ inputs.working-directory }}/output.txt
+    - name: Upload stdout
+      uses: ForesightMiningSoftwareCorporation/upload-log-to-loki@releases/v1
+      with:
+        log_file: ${{ inputs.working-directory }}/output.txt
+        loki_url: ${{ inputs.loki_url }}
+        loki_username: ${{ inputs.loki_username }}
+        loki_password: ${{ inputs.loki_password }}
+        loki_org_id: ${{ inputs.loki_org_id }}
+        loki_labels: 'job=${{ github.job }},workflow=${{ github.workflow }},action=${{ github.action }},id=${{ github.run_id }}'
     - name: Check exit code
       shell: bash
       run: |
