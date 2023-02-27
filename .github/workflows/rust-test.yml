@@ -85,7 +85,7 @@ jobs:
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: fmt
         continue-on-error: true
         with:
@@ -97,7 +97,7 @@ jobs:
           loki_org_id: 1
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: check
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.fmt.outcome == 'success'
@@ -110,7 +110,7 @@ jobs:
           loki_org_id: 1
 
       - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: clippy
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.check.outcome == 'success'
@@ -132,7 +132,7 @@ jobs:
           fi
 
       - name: check license
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-license
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -145,7 +145,7 @@ jobs:
           loki_org_id: 1
 
       - name: check bans
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-bans
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -158,7 +158,7 @@ jobs:
           loki_org_id: 1
 
       - name: check advisories
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-advisories
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -171,7 +171,7 @@ jobs:
           loki_org_id: 1
 
       - name: check sources
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: deny-sources
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -184,7 +184,7 @@ jobs:
           loki_org_id: 1
 
       - name: unused dependencies
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: dependencies
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.clippy.outcome == 'success'
@@ -197,7 +197,7 @@ jobs:
           loki_org_id: 1
 
       - name: Tests
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@better_test_outputs
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: tests
         continue-on-error: true
         if: inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success')
