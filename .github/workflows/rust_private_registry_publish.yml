@@ -96,8 +96,8 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: |
-          echo "name=$(cargo metadata --no-deps --format-version 1 | jq '.packages[0].name')" >> $GITHUB_OUTPUT
-          echo "version=$(cargo metadata --no-deps --format-version 1 | jq '.packages[0].version')" >> $GITHUB_OUTPUT
+          echo "name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')" >> $GITHUB_OUTPUT
+          echo "version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
 
       - name: Send Discord Notification
         if: steps.check_exists.outputs.exists != 'true'
