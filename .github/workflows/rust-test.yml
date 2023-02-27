@@ -81,6 +81,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           echo "value=$(cargo metadata --no-deps --format-version 1 | jq '.packages[0].name')" >> $GITHUB_OUTPUT
+
       - name: Set start time as env variable
         id: start_time
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
