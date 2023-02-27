@@ -91,11 +91,19 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
 
+      - name: Get crate metadata
+        id: metadata
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')" >> $GITHUB_OUTPUT
+          echo "version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
+
       - name: Send Discord Notification
         if: steps.check_exists.outputs.exists != 'true'
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}]'
+          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.metadata.outputs.name }}/${{ steps.metadata.outputs.version }}/docs/${{ steps.metadata.outputs.name }}/index.html"}]'
         with:
-          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_package_name.outputs.value }} has been published to the private registry"
+          args: "Version ${{ steps.metadata.outputs.version }} of ${{ steps.metadata.outputs.name }} has been published to the private registry"
