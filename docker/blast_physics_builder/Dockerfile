@@ -51,5 +51,5 @@ ENV PATH=/root/.cargo/bin:$PATH
 RUN rustup target add x86_64-unknown-linux-musl
 
 # Install OpenSSl
-COPY scripts/actions/build_openssl_ubuntu.sh build_openssl_ubuntu.sh
+COPY build_openssl_ubuntu.sh build_openssl_ubuntu.sh
 RUN ./build_openssl_ubuntu.sh
