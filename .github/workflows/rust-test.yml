@@ -224,7 +224,7 @@ jobs:
           script: |
             const output =`
             <details>
-            <summary><h3>${{ (steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure') && '❌' || '✅' }} ${{ steps.name.outputs.value }}</h3> (click for details)</summary>
+            <summary><h3>${{ steps.name.outputs.value }} - ${{ (steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure') && '❌' || '✅' }} ${{ steps.name.outputs.value }}</h3> (click for details)</summary>
             <table>
               <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
               <tr>
