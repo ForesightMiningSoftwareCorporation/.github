@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.5.0-base-ubuntu20.04 AS builder
+FROM nvidia/cuda:12.0.0-base-ubuntu22.04 AS builder
 
 LABEL maintainer="Loïs Postula <lois.postula@foresightmining.com>"
 LABEL description="Orica Blast Physics Builder Image"
