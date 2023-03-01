@@ -229,57 +229,57 @@ jobs:
             <table>
               <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
               <tr>
-                <td align="center">🔘</td>
+                <td align="center">✓</td>
                 <td>\`cargo fmt --verbose --all -- --check\`</td>
-                <td>\`${{ steps.fmt.outcome == 'success' && '✅' || (steps.fmt.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.fmt.outcome == 'success' && '✅' || (steps.fmt.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=fmt&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td align="center">🔘</td>
+                <td align="center">✓</td>
                 <td>\`cargo check ${{ inputs.additional_args }}\`</td>
-                <td>\`${{ steps.check.outcome == 'success' && '✅' || (steps.check.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.check.outcome == 'success' && '✅' || (steps.check.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=check&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td align="center">🔘</td>
+                <td align="center">✓</td>
                 <td>\`cargo clippy ${{ inputs.additional_args }} -- -D warnings\`</td>
-                <td>\`${{ steps.clippy.outcome == 'success' && '✅' || (steps.clippy.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.clippy.outcome == 'success' && '✅' || (steps.clippy.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=clippy&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td align="center">⚫</td>
+                <td align="center"></td>
                 <td>\`cargo deny check licenses\`</td>
-                <td>\`${{ steps.deny-license.outcome == 'success' && '✅' || (steps.deny-license.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.deny-license.outcome == 'success' && '✅' || (steps.deny-license.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-license&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td align="center">⚫</td>
+                <td align="center"></td>
                 <td>\`cargo deny check bans\`</td>
-                <td>\`${{ steps.deny-bans.outcome == 'success' && '✅' || (steps.deny-bans.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.deny-bans.outcome == 'success' && '✅' || (steps.deny-bans.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-bans&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
                 <tr>
-                  <td align="center">⚫</td>
+                  <td align="center"></td>
                   <td>\`cargo deny check advisories\`</td>
-                  <td>\`${{ steps.deny-advisories.outcome == 'success' && '✅' || (steps.deny-advisories.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                  <td>\`${{ steps.deny-advisories.outcome == 'success' && '✅' || (steps.deny-advisories.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-advisories&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td align="center">⚫</td>
+                <td align="center"></td>
                 <td>\`cargo deny check sources\`</td>
-                <td>\`${{ steps.deny-sources.outcome == 'success' && '✅' || (steps.deny-sources.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.deny-sources.outcome == 'success' && '✅' || (steps.deny-sources.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=deny-sources&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td align="center">⚫</td>
+                <td align="center"></td>
                 <td>\`cargo machete\`</td>
-                <td>\`${{ steps.dependencies.outcome == 'success' && '✅' || (steps.dependencies.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.dependencies.outcome == 'success' && '✅' || (steps.dependencies.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=dependencies&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
               <tr>
-                <td align="center">🔘</td>
+                <td align="center">✓</td>
                 <td>\`cargo test ${{ inputs.additional_args }}\`</td>
-                <td>\`${{ steps.tests.outcome == 'success' && '✅' || (steps.tests.outcome == 'skipped' && '🔶' || '❌') }}\`</td>
+                <td>\`${{ steps.tests.outcome == 'success' && '✅' || (steps.tests.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=tests&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
             </table>
