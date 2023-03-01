@@ -38,7 +38,7 @@ RUN apt-get update && \
     libc6-dev
 
 RUN add-apt-repository ppa:graphics-drivers
-RUN apt install nvidia-driver-470 -y
+RUN apt install nvidia-driver-525 -y
 
 # Static linking for C++ code
 RUN ln -s "/usr/bin/g++" "/usr/bin/musl-g++"
