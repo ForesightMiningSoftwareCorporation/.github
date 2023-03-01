@@ -6,7 +6,7 @@ scms:
     spec:
       user: "{{ .github.user }}"
       owner: "{{ .github.owner }}"
-      username: "{{ .github.username }}"
+      username: "{{ requiredEnv .github.username }}"
       branch: "{{ requiredEnv .github.branch }}"
       repository: "{{ requiredEnv .github.repository }}"
       token: "{{ requiredEnv .github.token }}"
