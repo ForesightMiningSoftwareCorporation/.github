@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.7.0-base-ubuntu22.04 AS builder
+FROM nvidia/cuda:11.5.0-base-ubuntu20.04 AS builder
 
 LABEL maintainer="Loïs Postula <lois.postula@foresightmining.com>"
 LABEL description="Orica Blast Physics Builder Image"
@@ -34,11 +34,10 @@ RUN apt-get update && \
     cmake \
     curl \
     gfortran \
-    git \
-    libc6-dev
+    git
 
 RUN add-apt-repository ppa:graphics-drivers
-RUN apt install nvidia-driver-535 -y
+RUN apt install nvidia-driver-470 -y
 
 # Static linking for C++ code
 RUN ln -s "/usr/bin/g++" "/usr/bin/musl-g++"
