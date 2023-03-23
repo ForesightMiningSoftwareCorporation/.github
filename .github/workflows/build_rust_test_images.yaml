@@ -1,3 +1,5 @@
+name: Build rust test image
+
 on:
   workflow_dispatch:
     inputs:
