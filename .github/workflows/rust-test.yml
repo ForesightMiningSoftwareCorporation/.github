@@ -248,7 +248,7 @@ jobs:
               <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
               <tr>
                 <td align="center">✓</td>
-                <td>Custom: \`${inputs.cargo_custom_commands}`</td>
+                <td>Custom: \`${inputs.cargo_custom_commands}\`</td>
                 <td>\`${{ steps.custom.outcome == 'success' && '✅' || (steps.custom.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=custom&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
