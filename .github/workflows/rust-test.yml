@@ -109,7 +109,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: fmt
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome = 'success'
+        if: inputs.fail-fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success'
         with:
           command: "cargo fmt --verbose --all -- --check"
           working-directory: ${{ inputs.working-directory }}
