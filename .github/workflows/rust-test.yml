@@ -21,6 +21,10 @@ on:
         type: string
         default: "."
         description: Working directory to run the cargo command
+      custom_cargo_commands:
+        type: string
+        default: ""
+        description: Cusom cargo commands that will be run after login
       fail-fast:
         type: string
         default: "true"
@@ -88,10 +92,24 @@ jobs:
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
+      - name: Run Cargo Custom command
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        id: custom
+        if: inputs.custom_cargo_commands != ''
+        continue-on-error: true
+        with:
+          command: ${{ inputs.custom_cargo_commands }}
+          working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
+
       - name: fmt
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: fmt
         continue-on-error: true
+        if: inputs.fail-fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome = 'success'
         with:
           command: "cargo fmt --verbose --all -- --check"
           working-directory: ${{ inputs.working-directory }}
@@ -230,6 +248,12 @@ jobs:
               <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
               <tr>
                 <td align="center">✓</td>
+                <td>Custom: \`${inputs.cargo_custom_commands}`</td>
+                <td>\`${{ steps.custom.outcome == 'success' && '✅' || (steps.custom.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=custom&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
+              </tr>
+              <tr>
+                <td align="center">✓</td>
                 <td>\`cargo fmt --verbose --all -- --check\`</td>
                 <td>\`${{ steps.fmt.outcome == 'success' && '✅' || (steps.fmt.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=fmt&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
@@ -295,5 +319,5 @@ jobs:
               body: output
             })
       - name: Rust Test status
-        if: steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure'
+        if: steps.custom.outcome == 'failure' || steps.fmt.outcome == 'failure' || steps.check.outcome == 'failure' || steps.clippy.outcome == 'failure' || steps.tests.outcome == 'failure'
         run: exit 1
