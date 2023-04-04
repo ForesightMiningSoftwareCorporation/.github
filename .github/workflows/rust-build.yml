@@ -41,6 +41,10 @@ on:
         type: string
         default: ""
         description: Additional arguments to pass to the cargo command
+      custom_cargo_commands:
+        type: string
+        default: ""
+        description: Cusom cargo commands that will be run after login
       dockerfile:
         type: string
         description: "The path to the Dockerfile to use"
@@ -60,6 +64,7 @@ jobs:
       required_packages: ${{ inputs.required_packages }}
       working-directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
+      custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
     secrets: inherit
   publish_private_registry:
@@ -73,6 +78,7 @@ jobs:
       required_packages: ${{ inputs.required_packages }}
       working-directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
+      custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
   publish_docker_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v1.1.0
