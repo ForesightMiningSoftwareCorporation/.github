@@ -42,7 +42,7 @@ runs:
       continue-on-error: true
       working-directory: ${{ inputs.working-directory }}
       run: |
-        if ${{ inputs.command }} 2>&1 | ts "%Y-%m-%dT%H:%M:%.SZ; " > output.txt; then
+        if ${{ inputs.command }} 2>&1 | ts "%Y-%m-%dT%H:%M:%.SZ; " | tee output.txt; then
           rc=0
         else
           rc=$?
