@@ -231,6 +231,20 @@ jobs:
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
           loki_org_id: 1
 
+      - name: Publishing DryRun
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
+        id: publish-dryrun
+        continue-on-error: true
+        if: inputs.fail-fast == 'false' || steps.tests.outcome == 'success'
+        with:
+          command: "cargo publish --dry-run ${{ inputs.additional_args }}"
+          working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
+
+
       - name: Set end time as env variable
         id: end_time
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
@@ -305,6 +319,12 @@ jobs:
                 <td>\`cargo test ${{ inputs.additional_args }}\`</td>
                 <td>\`${{ steps.tests.outcome == 'success' && '✅' || (steps.tests.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
                 <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=tests&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
+              </tr>
+              <tr>
+                <td align="center">✓</td>
+                <td>\`cargo publish --dry-run ${{ inputs.additional_args }}\`</td>
+                <td>\`${{ steps.publish-dryrun.outcome == 'success' && '✅' || (steps.publish-dryrun.outcome == 'skipped' && '⏭' || '❌') }}\`</td>
+                <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=publish-dryrun&from=${{ steps.start_time.outputs.value }}&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
               </tr>
             </table>
 
