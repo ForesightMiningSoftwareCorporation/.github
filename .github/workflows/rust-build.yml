@@ -80,6 +80,19 @@ jobs:
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
+  publish_public_registry:
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@v1.1.0
+    if: always() && inputs.publish == 'true' && inputs.publish_public_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs:
+      - test
+    with:
+      toolchain: ${{ inputs.toolchain }}
+      additional_script: ${{ inputs.additional_script }}
+      required_packages: ${{ inputs.required_packages }}
+      working-directory: ${{ inputs.working-directory }}
+      additional_args: ${{ inputs.additional_args }}
+      custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
+    secrets: inherit
   publish_docker_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v1.1.0
     if: always() && inputs.publish == 'true' && inputs.publish_docker == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
@@ -90,90 +103,3 @@ jobs:
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
     secrets: inherit
-#  build:
-#    name: Build Steps
-#    strategy:
-#      matrix:
-#        bin: ${{ fromJson(inputs.matrix).bin }}
-#        docker_registry: ${{ fromJson(inputs.matrix).docker_registry }}
-#        os: ${{ fromJson(inputs.matrix).os }}
-#        profile: ${{ fromJson(inputs.matrix).profile }}
-#        toolchain: ${{ fromJson(inputs.matrix).toolchain }}
-#    runs-on: ${{ matrix.os.name }}
-#    env:
-#      SSH_PRIVATE_KEYS: ${{ secrets.PRIVATE_KEYS }}
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v3
-#
-#      - name: Extract branch name and map to release channel
-#        id: extract_branch
-#        run: |
-#          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-#          RELEASE_CHANNEL=nightly
-#          if [ "$BRANCH_NAME" == "alpha" ] ; then
-#            RELEASE_CHANNEL=alpha
-#          elif [ "$BRANCH_NAME" == "beta" ] ; then
-#            RELEASE_CHANNEL=beta
-#          elif [ "$BRANCH_NAME" == "prod" ] ; then
-#            RELEASE_CHANNEL=prod
-#          fi
-#          echo "##[set-output name=release_channel;]$(echo $RELEASE_CHANNEL)"
-#        shell: bash
-#
-#      - name: Access private repos
-#        if: env.SSH_PRIVATE_KEYS != ''
-#        uses: webfactory/ssh-agent@v0.5.4
-#        with:
-#          ssh-private-key: |
-#            ${{ env.SSH_PRIVATE_KEYS }}
-#
-#      - uses: SebRollen/toml-action@v1.0.0
-#        name: Read Cargo version
-#        if: matrix.bin.bs == true || matrix.bin.docker == true
-#        id: read_cargo_toml_version
-#        with:
-#          file: ${{ matrix.bin.root_crate == true && 'Cargo.toml' || 'crates/${{ inputs.bin }}/Cargo.toml' }}
-#          field: 'package.version'
-#
-#      - name: Build and push to Blob Storage
-#        if: matrix.bin.bs == true
-#        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-push-bs@main
-#        with:
-#          bin: ${{ matrix.bin.name }}
-#          build_profile: ${{ matrix.profile }}
-#          build_toolchain: ${{ matrix.toolchain }}
-#          connection_string: ${{ secrets.BLOCK_STORAGE_CONNECTION_STRING }}
-#          container_name: ${{ inputs.block_storage_container_name }}
-#          release_channel: ${{ steps.extract_branch.outputs.release_channel }}
-#          runner_arch: ${{ matrix.os.arch }}
-#          runner_extension: ${{ matrix.os.extension }}
-#          runner_os: ${{ matrix.os.name }}
-#          version: ${{ steps.read_cargo_toml_version.outputs.value }}
-#
-#      - name: Build and push to Docker
-#        if: matrix.bin.docker == true && matrix.os.name == 'ubuntu-latest' && steps.extract_branch.outputs.release_channel == 'nightly'
-#        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-push-acr@main
-#        with:
-#          dockerfile: ${{ matrix.bin.dockerfile }}
-#          image: ${{ matrix.bin.docker_image }}
-#          password: ${{ secrets.DOCKER_PASSWORD }}
-#          registry: ${{ matrix.docker_registry }}
-#          username: ${{ secrets.DOCKER_USERNAME }}
-#          version: ${{ steps.read_cargo_toml_version.outputs.value }}
-#          ssh: ${{ env.SSH_PRIVATE_KEYS != '' && 'default' || '' }}
-#
-#      - name: Build and push to private npm registry
-#        if: matrix.bin.npm == true
-#        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-push-npm-registry@main
-#        with:
-#          bin: ${{ matrix.bin.name }}
-#          docker_build: ${{ matrix.bin.npm_docker_build }}
-#          docker: ${{ matrix.bin.npm_docker }}
-#          node_auth_token: ${{ secrets.PAT_TOKEN }}
-#          npm_token: ${{ secrets.GH_REGISTRY_PACKAGES }}
-#          runner_arch: ${{ matrix.os.arch }}
-#          runner_extension: ${{ matrix.os.extension }}
-#          runner_os: ${{ matrix.os.name }}
-#          with_cuda: ${{ matrix.bin.npm_with_cuda }}
-#          with_rust: ${{ matrix.bin.npm_with_rust }}
