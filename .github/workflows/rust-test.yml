@@ -59,7 +59,7 @@ jobs:
       - name: "Ensure we don't track the new resources in git"
         shell: bash
         run: |
-          echo "output.txt/" >> ~/.gitignore_global
+          echo "output.txt" >> ~/.gitignore_global
           echo "deny.toml" >> ~/.gitignore_global
 
       - name: Checkout
