@@ -109,11 +109,24 @@ jobs:
           echo "name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')" >> $GITHUB_OUTPUT
           echo "version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
 
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_version
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.version'
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_name
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.name'
+
+
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists != 'true' && secrects.DISCORD_WEBHOOK != ''
+        if: steps.check_exists.outputs.exists != 'true' && secrets.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.metadata.outputs.name }}/${{ steps.metadata.outputs.version }}/docs/${{ steps.metadata.outputs.name }}/index.html"}]'
+          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_name.outputs.value }}/index.html"}]'
         with:
-          args: "Version ${{ steps.metadata.outputs.version }} of ${{ steps.metadata.outputs.name }} has been published to the private registry"
+          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} has been published to the private registry"
