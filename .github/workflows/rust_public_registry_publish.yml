@@ -139,6 +139,6 @@ jobs:
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"title": "Crates.oi", "url": "https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"}]'
+          DISCORD_EMBEDS: '[{"title": "Crates.io", "url": "https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"}]'
         with:
           args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} has been published to the public registry"
