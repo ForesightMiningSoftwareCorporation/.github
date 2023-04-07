@@ -110,7 +110,7 @@ jobs:
           echo "version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
 
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists != 'true'
+        if: steps.check_exists.outputs.exists != 'true' && secrects.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
