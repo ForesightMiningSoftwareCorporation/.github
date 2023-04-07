@@ -85,13 +85,13 @@ jobs:
 
       - name: Login to public Registry
         shell: bash
-        if: steps.check_exists.outputs.exists == 'false' && inputs.login_private_registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false'
         run: |
           cargo login ${{ secrets.CARGO_PUBLIC_REGISTRY_TOKEN }}
 
       - name: Generate token
         id: generate_token
-        if: steps.check_exists.outputs.exists == 'false' && inputs.login_private_registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false'
         uses: tibdex/github-app-token@v1
         with:
           app_id: ${{ secrets.ACTIONS_APPROVERS_APP_ID }}
@@ -107,7 +107,7 @@ jobs:
 
       - name: Approve Release
         uses: trstringer/manual-approval@v1
-        if: steps.check_exists.outputs.exists == 'false' && inputs.login_private_registry == 'true'
+        if: steps.check_exists.outputs.exists == 'false'
         with:
           secret: ${{ steps.generate_token.outputs.token }}
           approvers: "Publishers"
