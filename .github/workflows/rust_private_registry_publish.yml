@@ -43,6 +43,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
+  DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"
 
 jobs:
   cargo_publish_private_registry:
@@ -123,7 +124,7 @@ jobs:
 
 
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists != 'true' && secrets.DISCORD_WEBHOOK != ''
+        if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
