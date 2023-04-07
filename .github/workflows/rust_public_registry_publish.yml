@@ -135,15 +135,6 @@ jobs:
         run: cargo publish
 
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists == 'false'
-        uses: Ilshidur/action-discord@master
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_package_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_package_name.outputs.value }}/index.html"}]'
-        with:
-          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_package_name.outputs.value }} has been published to the private registry"
-
-      - name: Send Discord Notification
         if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
