@@ -102,14 +102,6 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }} ${{ inputs.additional_args }}
 
-      - name: Get crate metadata
-        id: metadata
-        shell: bash
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          echo "name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')" >> $GITHUB_OUTPUT
-          echo "version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
-
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
         with:
