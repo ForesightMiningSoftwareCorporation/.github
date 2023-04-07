@@ -53,6 +53,15 @@ jobs:
       image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
       options: --user root
     steps:
+      - name: Configure Git to use global ignore file
+        shell: bash
+        run: git config --global core.excludesfile ~/.gitignore_global
+      - name: "Ensure we don't track the new resources in git"
+        shell: bash
+        run: |
+          echo "outpout.txt/" >> ~/.gitignore_global
+          echo "deny.toml" >> ~/.gitignore_global
+
       - name: Checkout
         uses: actions/checkout@v3
 
