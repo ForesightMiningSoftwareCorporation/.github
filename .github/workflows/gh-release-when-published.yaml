@@ -59,9 +59,9 @@ jobs:
           name: ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
           body: |
             ## Releases
-            Private Registry: ${{ inputs.private_registry_release && 'link to private reg' || 'N/A'}}
-            Public Registry: ${{ inputs.public_registry_release && 'link to public reg' || 'N/A'}}
-            Docker: ${{ inputs.docker_release && 'link to docker' || 'N/A'}}
+            * Private Registry: ${{ inputs.private_registry_release && 'https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}' || 'N/A'}}
+            * Public Registry: ${{ inputs.public_registry_release && 'https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}' || 'N/A'}}
+            * Docker: ${{ inputs.docker_release && 'oreprohub.azurecr.io/${{ steps.read_name.outputs.value }}:${{ steps.read_version.outputs.value }}' || 'N/A'}}
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}
 
