@@ -1,0 +1,99 @@
+
+on:
+  workflow_call:
+    inputs:
+      private_registry_release:
+        type: string
+        default: 'false'
+        description: "Was the crate released on the private registry"
+      public_registry_release:
+        type: string
+        default: 'false'
+        description: 'Was the crate released on the public registry'
+      docker_release:
+        type: string
+        default: 'false'
+        description: 'Was the crate released on docker'
+      working-directory:
+        type: string
+        default: "."
+        description: "The working directory"
+
+env:
+  DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"
+
+jobs:
+  create-github-release:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_version
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.version'
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_name
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.name'
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: "${{ secrets.GITHUB_TOKEN }}"
+          custom_tag: "${{ steps.read_version.outputs.value }}"
+          tag_prefix:  "${{ steps.read_name.outputs.value }}-"
+
+      - name: Generate Private Registry url
+        id: private_registry_url
+        if: inputs.private_registry_release == 'true'
+        shell: bash
+        run: |
+          url="https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
+          echo "value=$url" >> $GITHUB_OUTPUT
+
+      - name: Generate Public Registry url
+        id: public_registry_url
+        if: inputs.public_registry_release == 'true'
+        shell: bash
+        run: |
+          url="https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
+          echo "value=$url" >> $GITHUB_OUTPUT
+
+      - name: Generate Docker URL
+        id: docker_registry_url
+        if: inputs.docker_release == 'true'
+        shell: bash
+        run: |
+          url="oreprohub.azurecr.io/${{ steps.read_name.outputs.value }}:${{ steps.read_version.outputs.value }}"
+          echo "value=$url" >> $GITHUB_OUTPUT
+
+      - name: Create a GitHub release
+        if: steps.check_exists.outputs.exists != 'true'
+        uses: ncipollo/release-action@v1
+        id: release
+        with:
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
+          body: |
+            ## Releases
+            * Private Registry: ${{ steps.private_registry_url.outputs.value || 'NA' }}
+            * Public Registry: ${{ steps.pubic_registry_url.outputs.value || 'NA' }}
+            * Docker: ${{ steps.docker_registry_url.outputs.value || 'NA' }}
+            ## Changelog
+            ${{ steps.tag_version.outputs.changelog }}
+
+      - name: Send Discord Notification
+        if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: '[{"title": "Release", "url": "${{steps.release.outputs.html_url}}"}]'
+        with:
+          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} has been released"
