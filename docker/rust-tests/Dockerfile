@@ -20,6 +20,3 @@ RUN cargo install tomlq
 RUN mkdir -p /test-dir
 
 WORKDIR /test-dir
-
-
-t
