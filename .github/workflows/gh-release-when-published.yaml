@@ -55,7 +55,7 @@ jobs:
         if: inputs.private_registry_release == 'true'
         shell: bash
         run: |
-          url="https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
+          url="https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
           echo "value=$url" >> $GITHUB_OUTPUT
 
       - name: Generate Public Registry url
