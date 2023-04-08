@@ -1,5 +1,9 @@
 on:
   workflow_call:
+    ouputs:
+      released:
+        description: Was the crate released
+        value: ${{ jobs.docker_publish.outputs.released }}
     inputs:
       working-directory:
         type: string
@@ -17,6 +21,8 @@ on:
 jobs:
   docker_publish:
     runs-on: ubuntu-latest
+    outputs:
+      released: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false && 'true' || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

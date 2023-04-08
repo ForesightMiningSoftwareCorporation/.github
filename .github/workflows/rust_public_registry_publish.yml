@@ -2,6 +2,10 @@ name: Publish Release to Private Registry
 
 on:
   workflow_call:
+    ouputs:
+      released:
+        description: Was the crate released
+        value: ${{ jobs.cargo_publish_public_registry.outputs.released }}
     inputs:
       runner:
         type: string
@@ -42,7 +46,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
-  DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"
 
 permissions:
   issues: write
@@ -52,6 +55,8 @@ jobs:
   cargo_publish_public_registry:
     name: Release new version to public registry
     runs-on: "ubuntu-latest"
+    outputs:
+      released: ${{ steps.check_exists.outputs.exists == 'false' && 'true' || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -133,12 +138,3 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish
-
-      - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
-        uses: Ilshidur/action-discord@master
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"title": "Crates.io", "url": "https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"}]'
-        with:
-          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} has been published to the public registry"

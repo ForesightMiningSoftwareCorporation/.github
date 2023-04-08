@@ -73,7 +73,7 @@ jobs:
       skip-test-publish: ${{ inputs.skip-test-publish }}
     secrets: inherit
   publish_private_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1.1.0
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@better-notif
     if: always() && inputs.publish == 'true' && inputs.publish_private_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
@@ -86,7 +86,7 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
   publish_public_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@v1.1.0
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@better-notif
     if: always() && inputs.publish == 'true' && inputs.publish_public_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
@@ -99,7 +99,7 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
   publish_docker_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v1.1.0
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@better-notif
     if: always() && inputs.publish == 'true' && inputs.publish_docker == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
@@ -108,3 +108,17 @@ jobs:
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
     secrets: inherit
+  report_release:
+    needs:
+      - publish_private_registry
+      - publish_public_registry
+      - publish_docker_registry
+    steps:
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/gh-release-when-published@better-notif
+        if: always() && inputs.publish && (needs.publish_private_registry.outputs.released == 'true' || needs.publish_publish_registry.outputs.released == 'true' || needs.publish_docker_registry.outputs.released == 'true' )
+        id: read_version
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          private_registry_release: ${{ inputs.publish_private_registry == 'true' }}
+          public_registry_release: ${{ inputs.publish_public_registry == 'true' }}
+          docker_release: ${{ inputs.publish_docker == 'true' }}

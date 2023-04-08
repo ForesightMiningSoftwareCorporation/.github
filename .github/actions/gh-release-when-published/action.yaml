@@ -1,0 +1,68 @@
+
+name: "Create a Github Release and a tag when a crate has been published"
+description: "Composite action to create a github release when an a crate has been published"
+
+inputs:
+  private_registry_release:
+    default: 'false'
+    description: "Was the crate released on the private registry"
+  public_registry_release:
+    default: 'false'
+    description: 'Was the crate released on the public registry'
+  docker_release:
+    default: 'false'
+    description: 'Was the crate released on docker'
+  working-directory:
+    required: true
+    description: "The working directory"
+
+env:
+  DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: SebRollen/toml-action@v1.0.2
+      id: read_version
+      with:
+        file: '${{ inputs.working-directory }}/Cargo.toml'
+        field: 'package.version'
+
+    - uses: SebRollen/toml-action@v1.0.2
+      id: read_name
+      with:
+        file: '${{ inputs.working-directory }}/Cargo.toml'
+        field: 'package.name'
+
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: "${{ secrets.GITHUB_TOKEN }}"
+        custom_tag: "${{ steps.read_version.outputs.value }}"
+        tag_prefix:  "${{ steps.read_name.outputs.value }}-"
+
+    - name: Create a GitHub release
+      if: steps.check_exists.outputs.exists != 'true'
+      uses: ncipollo/release-action@v1
+      id: release
+      with:
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
+        body: |
+          ## Releases
+          Private Registry: ${{ inputs.private_registry_release && 'link to private reg' || 'N/A'}}
+          Public Registry: ${{ inputs.public_registry_release && 'link to public reg' || 'N/A'}}
+          Docker: ${{ inputs.docker_release && 'link to docker' || 'N/A'}}
+          ## Changelog
+          ${{ steps.tag_version.outputs.changelog }}
+
+
+    - name: Send Discord Notification
+      if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        DISCORD_EMBEDS: '[{"title": "Release", "url": "${{steps.release.outputs.html_url}}"}]'
+      with:
+        args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} has been released"
