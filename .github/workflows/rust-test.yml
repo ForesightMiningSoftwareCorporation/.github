@@ -98,7 +98,7 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: |
-          echo "value=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')" >> $GITHUB_OUTPUT
+          echo "value=$(tomlq package.name -f Cargo.toml)" >> $GITHUB_OUTPUT
 
       - name: Set start time as env variable
         id: start_time
