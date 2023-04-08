@@ -61,7 +61,7 @@ runs:
         loki_username: ${{ inputs.loki_username }}
         loki_password: ${{ inputs.loki_password }}
         loki_org_id: ${{ inputs.loki_org_id }}
-        loki_labels: 'job=${{ github.job }},workflow=${{ github.workflow }},action=${{ github.action }},id=${{ github.run_id }}'
+        loki_labels: 'job=${{ github.job }},workflow=${{ github.workflow }},action=${{ github.action }},id=${{ github.run_id }},repo=${{ github.repository }}'
     - name: Check exit code
       shell: bash
       run: |
