@@ -26,6 +26,10 @@ jobs:
   create-github-release:
     runs-on: ubuntu-latest
     steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
         with:
@@ -60,7 +64,6 @@ jobs:
             Docker: ${{ inputs.docker_release && 'link to docker' || 'N/A'}}
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}
-
 
       - name: Send Discord Notification
         if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
