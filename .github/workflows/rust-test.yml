@@ -33,6 +33,10 @@ on:
         type: string
         default: "false"
         description: Should we skip cargo test (useful in there are no tests define)
+      skip-test-publish:
+        type: string
+        default: 'false'
+        description: "Should the publis dry-run test be ran"
       login_private_registry:
         type: string
         default: "true"
@@ -244,7 +248,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.1.0
         id: publish-dryrun
         continue-on-error: true
-        if: inputs.fail-fast == 'false' || steps.tests.outcome == 'success'
+        if: inputs.skip-test-publish != 'true' && (inputs.fail-fast == 'false' || steps.tests.outcome == 'success')
         with:
           command: "cargo package ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
@@ -252,7 +256,6 @@ jobs:
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
           loki_org_id: 1
-
 
       - name: Set end time as env variable
         id: end_time

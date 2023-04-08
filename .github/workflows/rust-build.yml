@@ -5,6 +5,10 @@ on:
         type: string
         default: 'false'
         description: "Should the tests be ran"
+      skip-test-publish:
+        type: string
+        default: 'false'
+        description: "Should the publis dry-run test be ran"
       publish:
         type: string
         default: 'false'
@@ -66,6 +70,7 @@ jobs:
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
+      skip-test-publish: ${{ inputs.skip-test-publish }}
     secrets: inherit
   publish_private_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1.1.0
