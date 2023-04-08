@@ -114,12 +114,6 @@ jobs:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.name'
 
-      - name: Get previous tag
-        id: previousTag
-        run: |
-          name=$(git describe --abbrev=0 --match "${{ steps.read_name.outputs.value }}-*" HEAD^)
-          echo "previousTag=$name" >> $GITHUB_ENV
-
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.1
