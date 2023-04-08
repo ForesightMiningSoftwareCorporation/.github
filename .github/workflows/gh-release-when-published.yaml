@@ -1,7 +1,4 @@
 
-name: "Create a Github Release and a tag when a crate has been published"
-description: "Composite action to create a github release when an a crate has been published"
-
 on:
   workflow_call:
     inputs:
