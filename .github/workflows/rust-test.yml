@@ -259,6 +259,11 @@ jobs:
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
+      - uses: int128/hide-comment-action@v1
+        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
+        with:
+          authors: |
+            ${{ github.actor }}
       - uses: actions/github-script@v6
         name: Report status on PR
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
