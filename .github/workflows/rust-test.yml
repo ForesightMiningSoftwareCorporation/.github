@@ -246,7 +246,7 @@ jobs:
         continue-on-error: true
         if: inputs.fail-fast == 'false' || steps.tests.outcome == 'success'
         with:
-          command: "cargo publish --dry-run ${{ inputs.additional_args }}"
+          command: "cargo package ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
@@ -263,7 +263,8 @@ jobs:
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
         with:
           authors: |
-            ${{ github.actor }}
+            github-actions
+
       - uses: actions/github-script@v6
         name: Report status on PR
         if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
