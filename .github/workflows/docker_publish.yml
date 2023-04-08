@@ -1,6 +1,6 @@
 on:
   workflow_call:
-    ouputs:
+    outputs:
       released:
         description: Was the crate released
         value: ${{ jobs.docker_publish.outputs.released }}

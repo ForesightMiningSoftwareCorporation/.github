@@ -2,7 +2,7 @@ name: Publish Release to Private Registry
 
 on:
   workflow_call:
-    ouputs:
+    outputs:
       released:
         description: Was the crate released
         value: ${{ jobs.cargo_publish_private_registry.outputs.released }}
