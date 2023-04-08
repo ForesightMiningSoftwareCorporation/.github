@@ -2,6 +2,10 @@ name: Publish Release to Private Registry
 
 on:
   workflow_call:
+    outputs:
+      released:
+        description: Was the crate released
+        value: ${{ jobs.cargo_publish_private_registry.outputs.released }}
     inputs:
       required_packages:
         type: string
@@ -43,12 +47,13 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
-  DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"
 
 jobs:
   cargo_publish_private_registry:
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
+    outputs:
+      released: ${{ steps.check_exists.outputs.exists == 'false' && 'true' || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -101,44 +106,3 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }} ${{ inputs.additional_args }}
-
-      - uses: SebRollen/toml-action@v1.0.2
-        if: steps.check_exists.outputs.exists != 'true'
-        id: read_version
-        with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.version'
-
-      - uses: SebRollen/toml-action@v1.0.2
-        if: steps.check_exists.outputs.exists != 'true'
-        id: read_name
-        with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.name'
-
-      - name: Bump version and push tag
-        if: steps.check_exists.outputs.exists != 'true'
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: "${{ secrets.GITHUB_TOKEN }}"
-          custom_tag: "${{ steps.read_version.outputs.value }}"
-          tag_prefix:  "${{ steps.read_name.outputs.value }}-"
-
-      - name: Create a GitHub release
-        if: steps.check_exists.outputs.exists != 'true'
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ steps.tag_version.outputs.new_tag }}
-          name:  ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
-          body: ${{ steps.tag_version.outputs.changelog }}
-
-
-      - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
-        uses: Ilshidur/action-discord@master
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"title": "Documentation", "url": "https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}/docs/${{ steps.read_name.outputs.value }}/index.html"}]'
-        with:
-          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} has been published to the private registry"
