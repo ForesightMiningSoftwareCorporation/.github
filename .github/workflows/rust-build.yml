@@ -114,12 +114,11 @@ jobs:
       - publish_private_registry
       - publish_public_registry
       - publish_docker_registry
-    steps:
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/gh-release-when-published@better-notif
-        if: always() && inputs.publish && (needs.publish_private_registry.outputs.released == 'true' || needs.publish_publish_registry.outputs.released == 'true' || needs.publish_docker_registry.outputs.released == 'true' )
-        id: read_version
-        with:
-          working-directory: ${{ inputs.working-directory }}
-          private_registry_release: ${{ inputs.publish_private_registry == 'true' }}
-          public_registry_release: ${{ inputs.publish_public_registry == 'true' }}
-          docker_release: ${{ inputs.publish_docker == 'true' }}
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@better-notif
+    if: always() && inputs.publish && (needs.publish_private_registry.outputs.released == 'true' || needs.publish_publish_registry.outputs.released == 'true' || needs.publish_docker_registry.outputs.released == 'true' )
+    with:
+      working-directory: ${{ inputs.working-directory }}
+      private_registry_release: ${{ inputs.publish_private_registry == 'true' }}
+      public_registry_release: ${{ inputs.publish_public_registry == 'true' }}
+      docker_release: ${{ inputs.publish_docker == 'true' }}
+    secrets: inherit
