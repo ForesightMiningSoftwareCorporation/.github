@@ -50,6 +50,30 @@ jobs:
           custom_tag: "${{ steps.read_version.outputs.value }}"
           tag_prefix:  "${{ steps.read_name.outputs.value }}-"
 
+      - name: Generate Private Registry url
+        id: private_registry_url
+        if: inputs.private_registry_release == 'true'
+        shell: bash
+        run: |
+          url="https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
+          echo "value=$url" >> $GITHUB_OUTPUT
+
+      - name: Generate Public Registry url
+        id: public_registry_url
+        if: inputs.public_registry_release == 'true'
+        shell: bash
+        run: |
+          url="https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
+          echo "value=$url" >> $GITHUB_OUTPUT
+
+      - name: Generate Docker URL
+        id: docker_registry_url
+        if: inputs.docker_release == 'true'
+        shell: bash
+        run: |
+          url="oreprohub.azurecr.io/${{ steps.read_name.outputs.value }}:${{ steps.read_version.outputs.value }}"
+          echo "value=$url" >> $GITHUB_OUTPUT
+
       - name: Create a GitHub release
         if: steps.check_exists.outputs.exists != 'true'
         uses: ncipollo/release-action@v1
@@ -59,9 +83,9 @@ jobs:
           name: ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
           body: |
             ## Releases
-            * Private Registry: ${{ inputs.private_registry_release && 'https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}' || 'N/A'}}
-            * Public Registry: ${{ inputs.public_registry_release && 'https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}' || 'N/A'}}
-            * Docker: ${{ inputs.docker_release && 'oreprohub.azurecr.io/${{ steps.read_name.outputs.value }}:${{ steps.read_version.outputs.value }}' || 'N/A'}}
+            * Private Registry: ${{ steps.private_registry_url.outputs.value || 'NA' }}
+            * Public Registry: ${{ steps.pubic_registry_url.outputs.value || 'NA' }}
+            * Docker: ${{ steps.docker_registry_url.outputs.value || 'NA' }}
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}
 
