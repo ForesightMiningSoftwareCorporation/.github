@@ -6,16 +6,20 @@ on:
   workflow_call:
     inputs:
       private_registry_release:
+        type: string
         default: 'false'
         description: "Was the crate released on the private registry"
       public_registry_release:
+        type: string
         default: 'false'
         description: 'Was the crate released on the public registry'
       docker_release:
+        type: string
         default: 'false'
         description: 'Was the crate released on docker'
       working-directory:
-        required: true
+        type: string
+        default: "."
         description: "The working directory"
 
 env:
