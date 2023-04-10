@@ -1,0 +1,104 @@
+name: Publish Release to Private Registry
+
+on:
+  workflow_call:
+    outputs:
+      released:
+        description: Was the crate released
+        value: ${{ jobs.cargo_publish_binary.outputs.released }}
+    inputs:
+      required_packages:
+        type: string
+        default: ""
+        description: Package that needs to be installed before Rust compilation can happens
+      additional_args:
+        type: string
+        default: ""
+        description: Additional arguments to pass to the cargo command
+      toolchain:
+        type: string
+        default: "1.65"
+        description: Rust toolchain to install
+      working-directory:
+        type: string
+        default: "."
+        description: Working directory to run the cargo command
+      additional_script:
+        type: string
+        default: ""
+        description: Additional script to run before the additional packages
+      custom_cargo_commands:
+        type: string
+        default: ""
+        description: Cusom cargo commands that will be run after login
+      os_windows_enabled:
+        type: string
+        default: 'true'
+        description: "Binary building: build on windows"
+      version_trigger:
+        type: string
+        default: 'patch'
+        description: "Controls which update trigger a build"
+
+    secrets:
+      github-private-keys:
+        required: false
+        description: Private keys that need to be added to the ssh-agent
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
+
+jobs:
+  cargo_publish_binary:
+    name: Release new version to binary
+    runs-on: "ubuntu-latest"
+    outputs:
+      released: ${{ steps.check_exists.outputs.exists == 'false' && 'true' || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-version-is-after-prev@binary-release
+        name: Check if we should consider this as a new release
+        id: is_after
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          registry_git_http_url: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
+          registry_ssh_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+          registry_known_hosts: |
+            ${{ var.CARGO_PRIVATE_REGISTRY_KNOWN_HOSTS }}
+          min_update_type: ${{ inputs.version_trigger }}
+      - name: Cache Dependencies
+        if: steps.is_after.outputs.is_after == 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - uses: dtolnay/rust-toolchain@master
+        if: steps.is_after.outputs.is_after == 'true'
+        with:
+          toolchain: ${{ inputs.toolchain }}
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+        if: steps.is_after.outputs.is_after == 'true'
+        with:
+          private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
+          name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
+          token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+
+      - name: Additional Script
+        if: steps.is_after.outputs.is_after == 'true' && inputs.additional_script != ''
+        run: ${{ inputs.additional_script }}
+        shell: bash
+
+      - name: Update Packages
+        if: steps.is_after.outputs.is_after == 'true' && inputs.required_packages != ''
+        run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
+
+      - name: Run custom cargo command
+        if: steps.is_after.outputs.is_after == 'true' && inputs.custom_cargo_commands != ''
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.custom_cargo_commands }}
+

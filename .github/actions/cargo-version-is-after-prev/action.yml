@@ -1,0 +1,64 @@
+name: "Get version diff for current crate"
+description: "Composite action to check which type of update we are doing (semver diff)"
+
+inputs:
+  working-directory:
+    required: true
+    description: "The working directory"
+  registry_git_url:
+    description: "Cargo Registry git url"
+    required: true
+  registry_ssh_key:
+    description: "SSH key to pull private registry"
+    required: true
+  registry_known_hosts:
+    required: true
+  min_update_type:
+    description: "Minimum version type to consider for update"
+    default: "patch"
+outputs:
+  is_after:
+    value: ${{ steps.is_after_version.outputs.is_after }}
+    description: "Is the new release after"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: SebRollen/toml-action@v1.0.2
+      id: read_version
+      with:
+        file: '${{ inputs.working-directory }}/Cargo.toml'
+        field: 'package.version'
+
+    - uses: SebRollen/toml-action@v1.0.2
+      id: read_name
+      with:
+        file: '${{ inputs.working-directory }}/Cargo.toml'
+        field: 'package.name'
+    - name: Add ssh key to clone private registry
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ inputs.registry_ssh_key }}
+        name: id_rsa_private_reg_index
+        known_hosts: ${{ inputs.registry_known_hosts }}
+    - name: Clone private registry index repository
+      shell: bash
+      run: |
+        git clone --depth=1 -b master --single-branch --recurse-submodules --shallow-submodules ${{ inputs.registry_git_url }} ${{ runner.temp }}/crate_index
+    - name: Install cargo-index
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: cargo install cargo-index
+    - name: Get latest version
+      id: latest_version
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        latest=$(cargo index list --index ${{ runner.temp }}/crate_index --package ${{ steps.read_name.outputs.value }}  | jq -s . | jq 'sort_by(.vers | split("[^0-9]+"))[-1].vers')
+        echo "value=$latest" >> $GITHUB_OUTPUT
+    - uses: "@ForesightMiningSoftwareCorporation/is-newer-version@v1"
+      id: is_after_version
+      with:
+        before: ${{ steps.latest_version.outputs.value }}
+        after: ${{ steps.read_version.outputs.value }}
+        release_type: ${{ inputs.min_update_type }}
