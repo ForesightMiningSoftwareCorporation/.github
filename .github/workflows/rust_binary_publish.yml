@@ -60,7 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-version-is-after-prev@binary-release
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-version-is-after-prev@binary_release
         name: Check if we should consider this as a new release
         id: is_after
         with:
