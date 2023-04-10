@@ -68,7 +68,7 @@ jobs:
           registry_git_http_url: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
           registry_ssh_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           registry_known_hosts: |
-            ${{ var.CARGO_PRIVATE_REGISTRY_KNOWN_HOSTS }}
+            ${{ vars.CARGO_PRIVATE_REGISTRY_KNOWN_HOSTS }}
           min_update_type: ${{ inputs.version_trigger }}
       - name: Cache Dependencies
         if: steps.is_after.outputs.is_after == 'true'
