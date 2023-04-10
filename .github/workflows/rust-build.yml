@@ -121,7 +121,7 @@ jobs:
       image: ${{ inputs.docker_image }}
     secrets: inherit
   publish_binary:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yaml@binary_release
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@binary_release
     needs:
       - test
     if: always() && inputs.publish == 'true' && inputs.publish_binary == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
