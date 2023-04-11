@@ -82,7 +82,7 @@ jobs:
           min_update_type: ${{ inputs.version_trigger }}
 
       - shell: bash
-        run: echo ${{ steps.is_after.outputs.is_after }}
+        run: echo "${{ steps.is_after.outputs.is_after }}"
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
         if: steps.is_after.outputs.is_after == 'true'

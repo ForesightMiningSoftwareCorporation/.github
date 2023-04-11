@@ -18,7 +18,7 @@ inputs:
     default: "patch"
 outputs:
   is_after:
-    value: ${{ steps.is_after_version.outputs.is_after }}
+    value: ${{ steps.is_after_version.outputs.newer }}
     description: "Is the new release after"
 
 runs:
