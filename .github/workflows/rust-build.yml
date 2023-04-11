@@ -61,10 +61,6 @@ on:
         type: string
         default: ''
         description: "Docker image name"
-      binary_os_windows_enabled:
-        type: string
-        default: 'true'
-        description: "Binary building: build on windows"
       binary_version_trigger:
         type: string
         default: 'patch'
@@ -132,7 +128,6 @@ jobs:
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       working-directory: ${{ inputs.working-directory }}
-      os_windows_enabled: ${{ inputs.binary_os_windows_enabled }}
       version_trigger: ${{ inputs.binary_version_trigger }}
     secrets: inherit
   report_release:

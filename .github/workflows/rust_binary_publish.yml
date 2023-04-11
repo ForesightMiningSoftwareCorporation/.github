@@ -31,10 +31,6 @@ on:
         type: string
         default: ""
         description: Cusom cargo commands that will be run after login
-      os_windows_enabled:
-        type: string
-        default: 'true'
-        description: "Binary building: build on windows"
       version_trigger:
         type: string
         default: 'patch'
@@ -51,41 +47,81 @@ env:
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
 
 jobs:
+  check_if_needed:
+     name: Check if a new publish is required
+     runs-on: 'ubuntu-latest'
+     outputs:
+       needed: ${{ steps.is_after.outputs.is_after == 'true' }}
+     steps:
+       - name: Checkout
+         uses: actions/checkout@v3
+
+       - name: Cache Dependencies
+         uses: Swatinem/rust-cache@v2
+         with:
+           cache-on-failure: true
+
+       - uses: dtolnay/rust-toolchain@master
+         with:
+           toolchain: ${{ inputs.toolchain }}
+       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-version-is-after-prev@binary_release
+         name: Check if we should consider this as a new release
+         id: is_after
+         with:
+           working-directory: ${{ inputs.working-directory }}
+           registry_git_url: ${{ vars.CARGO_PRIVATE_REGISTRY_HOST }}
+           registry_ssh_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+           registry_known_hosts: |
+             ${{ vars.CARGO_PRIVATE_REGISTRY_KNOWN_HOSTS }}
+           min_update_type: ${{ inputs.version_trigger }}
+  matrix:
+    name: Build Matrix for binary release
+    needs:
+      - check_if_needed
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    if: needs.jobs.check_if_needed.outputs.needed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create and set Build Matrix from matrix.json
+        id: set-matrix
+        run: |
+          MATRIX=$(jq -c . < .github/workflows/matrix.json | tr -d '^J')
+          echo matrix=$MATRIX >> $GITHUB_OUTPUT
   cargo_publish_binary:
     name: Release new version to binary
-    runs-on: "ubuntu-latest"
-    outputs:
-      released: ${{ steps.check_exists.outputs.exists == 'false' && 'true' || 'false' }}
+    needs:
+      - check_if_needed
+      - matrix
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.matrix.outputs.matrix).os }}
+    runs-on: ${{ matrix.os.name }}
+    if: needs.jobs.check_if_needed.outputs.needed
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-          cache-directories:
+      - name: Extract branch name
+        id: extract_branch
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          RELEASE_CHANNEL=nightly
+          if [ "$BRANCH_NAME" == "alpha" ] ; then
+            RELEASE_CHANNEL=alpha
+          elif [ "$BRANCH_NAME" == "beta" ] ; then
+            RELEASE_CHANNEL=beta
+          elif [ "$BRANCH_NAME" == "prod" ] ; then
+            RELEASE_CHANNEL=prod
+          fi
+          echo release_channel=$RELEASE_CHANNEL >> $GITHUB_OUTPUT
+        shell: bash
 
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-version-is-after-prev@binary_release
-        name: Check if we should consider this as a new release
-        id: is_after
-        with:
-          working-directory: ${{ inputs.working-directory }}
-          registry_git_url: ${{ vars.CARGO_PRIVATE_REGISTRY_HOST }}
-          registry_ssh_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
-          registry_known_hosts: |
-            ${{ vars.CARGO_PRIVATE_REGISTRY_KNOWN_HOSTS }}
-          min_update_type: ${{ inputs.version_trigger }}
-
-      - shell: bash
-        run: echo "${{ steps.is_after.outputs.is_after }}"
-
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
-        if: steps.is_after.outputs.is_after == 'true'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -93,17 +129,20 @@ jobs:
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
       - name: Additional Script
-        if: steps.is_after.outputs.is_after == 'true' && inputs.additional_script != ''
+        if: inputs.additional_script != ''
         run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Update Packages
-        if: steps.is_after.outputs.is_after == 'true' && inputs.required_packages != ''
+        if: inputs.required_packages != '' && matrix.bin.name == 'ubuntu-latest'
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Run custom cargo command
-        if: steps.is_after.outputs.is_after == 'true' && inputs.custom_cargo_commands != ''
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.custom_cargo_commands }}
 
+      - name: Build Binary to private registry
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo build ${{ inputs.additional_args }}
