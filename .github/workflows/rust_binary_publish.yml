@@ -65,7 +65,7 @@ jobs:
         id: is_after
         with:
           working-directory: ${{ inputs.working-directory }}
-          registry_git_http_url: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
+          registry_git_url: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
           registry_ssh_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           registry_known_hosts: |
             ${{ vars.CARGO_PRIVATE_REGISTRY_KNOWN_HOSTS }}
