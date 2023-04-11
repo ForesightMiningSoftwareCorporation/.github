@@ -80,7 +80,7 @@ jobs:
       - check_if_needed
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-    if: needs.jobs.check_if_needed.outputs.needed
+    if: needs.check_if_needed.outputs.needed
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -98,7 +98,7 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.matrix.outputs.matrix).os }}
     runs-on: ${{ matrix.os.name }}
-    if: needs.jobs.check_if_needed.outputs.needed
+    if: needs.check_if_needed.outputs.needed
     steps:
       - uses: actions/checkout@v3
 
