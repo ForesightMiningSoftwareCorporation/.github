@@ -158,7 +158,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.custom_cargo_commands }}
 
-      - name: Build Binary to private registry
+      - name: Build Binary
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
@@ -169,7 +169,7 @@ jobs:
         shell: bash
         run: |
           artifacts_dir=${{ runner.temp }}/bin_output/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
-          mkdir -p $artiacts_dir
+          mkdir -p $artifacts_dir
           cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
 
       - name: Copy to bin folder windows
