@@ -60,14 +60,6 @@ jobs:
        - name: Checkout
          uses: actions/checkout@v3
 
-       - name: Cache Dependencies
-         uses: Swatinem/rust-cache@v2
-         with:
-           cache-on-failure: true
-
-       - uses: dtolnay/rust-toolchain@master
-         with:
-           toolchain: ${{ inputs.toolchain }}
        - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-version-is-after-prev@binary_release
          name: Check if we should consider this as a new release
          id: is_after
