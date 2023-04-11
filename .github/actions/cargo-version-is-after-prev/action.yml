@@ -35,32 +35,31 @@ runs:
       with:
         file: '${{ inputs.working-directory }}/Cargo.toml'
         field: 'package.name'
+
     - name: Add ssh key to clone private registry
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ inputs.registry_ssh_key }}
         name: id_rsa_private_reg_index
         known_hosts: ${{ inputs.registry_known_hosts }}
+
     - name: Clone private registry index repository
       shell: bash
       env:
         GIT_SSH_COMMAND: 'ssh -i ~/.ssh/id_rsa_private_reg_index -o IdentitiesOnly=yes'
       run: |
         git clone --depth=1 -b master --single-branch --recurse-submodules --shallow-submodules ${{ inputs.registry_git_url }} ${{ runner.temp }}/crate_index
-    - name: Install cargo-index
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: cargo install cargo-index
-    - name: Get latest version
+
+    - name: Get Latest Rust Crate Version
       id: latest_version
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        latest=$(cargo index list --index ${{ runner.temp }}/crate_index --package ${{ steps.read_name.outputs.value }}  | jq -s . | jq -r 'sort_by(.vers | split("[^0-9]+"))[-1].vers')
-        echo "value=$latest" >> $GITHUB_OUTPUT
+      uses: ForesightMiningSoftwareCorporation/rust-latest-version@v1
+      with:
+        registry: ${{ runner.temp }}/crate_index
+        crate: ${{ steps.read_name.outputs.value }}
+
     - uses: ForesightMiningSoftwareCorporation/is-newer-version@v1
       id: is_after_version
       with:
         before: ${{ steps.latest_version.outputs.value }}
-        after: ${{ steps.read_version.outputs.value }}
+        after: ${{ steps.read_version.outputs.version }}
         release_type: ${{ inputs.min_update_type }}
