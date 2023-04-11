@@ -56,7 +56,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        latest=$(cargo index list --index ${{ runner.temp }}/crate_index --package ${{ steps.read_name.outputs.value }}  | jq -s . | jq 'sort_by(.vers | split("[^0-9]+"))[-1].vers')
+        latest=$(cargo index list --index ${{ runner.temp }}/crate_index --package ${{ steps.read_name.outputs.value }}  | jq -s . | jq -r 'sort_by(.vers | split("[^0-9]+"))[-1].vers')
         echo "value=$latest" >> $GITHUB_OUTPUT
     - uses: ForesightMiningSoftwareCorporation/is-newer-version@v1
       id: is_after_version
