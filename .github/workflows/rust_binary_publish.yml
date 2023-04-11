@@ -164,7 +164,7 @@ jobs:
         run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
 
       - name: Copy to bin folder linux
-        if: matrix.bin.name == 'ubuntu-latest'
+        if: matrix.os.name == 'ubuntu-latest'
         working-directory: ${{ inputs.working-directory }}
         shell: bash
         run: |
@@ -173,7 +173,7 @@ jobs:
           cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
 
       - name: Copy to bin folder windows
-        if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'windows-latest' }}
+        if: matrix.os.name == 'windows-latest'
         shell: pwsh
         run: |
           $Out = New-Item -Name "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
