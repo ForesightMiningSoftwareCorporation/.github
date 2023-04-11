@@ -60,6 +60,6 @@ runs:
     - uses: ForesightMiningSoftwareCorporation/is-newer-version@v1
       id: is_after_version
       with:
-        before: ${{ steps.latest_version.outputs.value }}
-        after: ${{ steps.read_version.outputs.version }}
+        before: ${{ steps.latest_version.outputs.version }}
+        after: ${{ steps.read_version.outputs.value }}
         release_type: ${{ inputs.min_update_type }}
