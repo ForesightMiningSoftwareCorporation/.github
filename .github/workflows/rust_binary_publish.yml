@@ -161,7 +161,7 @@ jobs:
       - name: Build Binary
         shell: bash
         working-directory: ${{ inputs.working-directory }}
-        crun: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
+        run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
 
       - name: Copy to bin folder linux
         if: matrix.os.name == 'ubuntu-latest'
@@ -191,7 +191,6 @@ jobs:
       - cargo_publish_binary
     steps:
       - name: Download artifacts
-        continue-on-error: true
         id: download_artifacts
         uses: actions/download-artifact@v3
         with:
