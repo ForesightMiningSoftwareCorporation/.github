@@ -177,7 +177,7 @@ jobs:
         shell: pwsh
         run: |
           $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
-          Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{  steps.read_name.outputs.value }}${{ inputs.runner_extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+          Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ steps.read_name.outputs.value }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
