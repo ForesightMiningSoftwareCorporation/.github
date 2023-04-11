@@ -19,6 +19,10 @@ on:
         type: string
         default: "1.65"
         description: Rust toolchain to install
+      profile:
+        type: string
+        default: "release"
+        description: Cargo build profile to use
       working-directory:
         type: string
         default: "."
@@ -117,6 +121,18 @@ jobs:
           echo release_channel=$RELEASE_CHANNEL >> $GITHUB_OUTPUT
         shell: bash
 
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_version
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.version'
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_name
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.name'
+
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
@@ -145,4 +161,26 @@ jobs:
       - name: Build Binary to private registry
         shell: bash
         working-directory: ${{ inputs.working-directory }}
-        run: cargo build ${{ inputs.additional_args }}
+        run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
+
+      - name: Copy to bin folder linux
+        if: matrix.bin.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
+        shell: bash
+        run: |
+          artifacts_dir=${{ runner.temp }}/bin_output/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
+          mkdir -p $artiacts_dir
+          cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - name: Copy to bin folder windows
+        if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'windows-latest' }}
+        shell: pwsh
+        run: |
+          $Out = New-Item -Name "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
+          Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{  steps.read_name.outputs.value }}${{ inputs.runner_extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-binaries
+          path: ${{ runner.temp }}/bin_output
