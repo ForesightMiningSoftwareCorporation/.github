@@ -64,6 +64,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+          cache-directories:
 
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -79,6 +80,9 @@ jobs:
           registry_known_hosts: |
             ${{ vars.CARGO_PRIVATE_REGISTRY_KNOWN_HOSTS }}
           min_update_type: ${{ inputs.version_trigger }}
+
+      - shell: bash
+        run: echo ${{ steps.is_after.outputs.is_after }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
         if: steps.is_after.outputs.is_after == 'true'
