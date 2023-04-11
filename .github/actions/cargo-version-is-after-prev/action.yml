@@ -43,6 +43,8 @@ runs:
         known_hosts: ${{ inputs.registry_known_hosts }}
     - name: Clone private registry index repository
       shell: bash
+      env:
+        GIT_SSH_COMMAND: 'ssh -i ~/.ssh/id_rsa_private_reg_index -o IdentitiesOnly=yes'
       run: |
         git clone --depth=1 -b master --single-branch --recurse-submodules --shallow-submodules ${{ inputs.registry_git_url }} ${{ runner.temp }}/crate_index
     - name: Install cargo-index
