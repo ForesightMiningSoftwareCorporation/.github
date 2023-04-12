@@ -47,6 +47,10 @@ on:
         type: string
         default: '.github/workflows/matrix.json'
         description: "Matrix file to load"
+      post_build_additional_script:
+        type: string
+        default: ""
+        description: Post Build Additional script to run after the additional packages
 
     secrets:
       github-private-keys:
@@ -215,6 +219,46 @@ jobs:
         run: |
           $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
           Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ steps.read_name.outputs.value }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - name: Additional Post build Linux Script from matrix
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        run: ${{ matrix.os.post_build_additional_script }}
+        shell: bash
+
+      - name: Additional Post build Linux Script from input if not matrix
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.post_build_additional_script }}
+        shell: bash
+
+      - name: Additional Post build Windows Script from matrix
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ matrix.os.post_build_additional_script }}
+        shell: pwsh
+
+      - name: Additional Post build Windows Script from input if not matrix
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.post_build_additional_script }}
+        shell: pwsh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
