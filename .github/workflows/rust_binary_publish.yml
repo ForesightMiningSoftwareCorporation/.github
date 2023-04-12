@@ -227,6 +227,7 @@ jobs:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
         run: ${{ matrix.os.post_build_additional_script }}
         shell: bash
 
@@ -236,6 +237,7 @@ jobs:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.post_build_additional_script }}
         shell: bash
@@ -246,6 +248,7 @@ jobs:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ matrix.os.post_build_additional_script }}
         shell: pwsh
@@ -256,6 +259,7 @@ jobs:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.post_build_additional_script }}
         shell: pwsh
