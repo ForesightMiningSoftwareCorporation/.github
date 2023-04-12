@@ -29,10 +29,18 @@ on:
         type: string
         default: 'false'
         description: "Should the crate be published as a binary"
+      notify:
+        type: string
+        default: 'true'
+        description: "Should the publish be notify"
       toolchain:
         type: string
         default: "1.65"
         description: Rust toolchain to install
+      release_channel:
+        type: string
+        default: ""
+        description: Hard coded release channel
       additional_script:
         type: string
         default: ""
@@ -123,6 +131,7 @@ jobs:
     if: always() && inputs.publish == 'true' && inputs.publish_binary == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     with:
       toolchain: ${{ inputs.toolchain }}
+      release_channel: ${{ inputs.release_channel }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
       additional_args: ${{ inputs.additional_args }}
@@ -137,7 +146,7 @@ jobs:
       - publish_docker_registry
       - publish_binary
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@binary_release
-    if: always() && inputs.publish && (needs.publish_private_registry.outputs.released == 'true' || needs.publish_public_registry.outputs.released == 'true' || needs.publish_docker_registry.outputs.released == 'true' || needs.publish_binary.outputs.released == 'true')
+    if: always() && inputs.publish == 'true' $$ inputs.notify == 'true' && (needs.publish_private_registry.outputs.released == 'true' || needs.publish_public_registry.outputs.released == 'true' || needs.publish_docker_registry.outputs.released == 'true' || needs.publish_binary.outputs.released == 'true')
     with:
       working-directory: ${{ inputs.working-directory }}
       private_registry_release: ${{ inputs.publish_private_registry == 'true' }}
