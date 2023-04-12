@@ -161,6 +161,8 @@ jobs:
         if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
         working-directory: ${{ inputs.working-directory }}
         env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         run: ${{ matrix.os.additional_script }}
         shell: bash
@@ -168,6 +170,8 @@ jobs:
       - name: Additional Linux Script from input if not matrix
         if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
         env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.additional_script }}
@@ -176,6 +180,8 @@ jobs:
       - name: Additional Windows Script from matrix
         if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
         env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ matrix.os.additional_script }}
@@ -184,6 +190,8 @@ jobs:
       - name: Additional Windows Script from input if not matrix
         if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
         env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
           RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.additional_script }}
