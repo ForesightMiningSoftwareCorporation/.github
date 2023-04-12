@@ -155,11 +155,11 @@ jobs:
           $EOF
           )
           AS=${MATRIX_AS:-$ACTION_AS}
-          echo $MATRIX_AS
-          echo $ACTION_AS
-          echo $AS
+          echo -e $MATRIX_AS
+          echo -e $ACTION_AS
+          echo -e $AS
           echo "script<<${EOF}" >> $GITHUB_OUTPUT
-          echo ${AS} >> $GITHUB_OUTPUT
+          echo -e ${AS} >> $GITHUB_OUTPUT
           echo "${EOF}" >> $GITHUB_OUTPUT
       - name: Additional Linux Script
         if: steps.additional_script.outputs.script != '' && matrix.os.name == 'ubuntu-latest'
