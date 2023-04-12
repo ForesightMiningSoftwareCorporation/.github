@@ -147,26 +147,31 @@ jobs:
 
       - name: Additional Linux Script from matrix
         if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
         run: ${{ matrix.os.additional_script }}
         shell: bash
 
       - name: Additional Linux Script from input if not matrix
         if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Additional Windows Script from matrix
         if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
+        working-directory: ${{ inputs.working-directory }}
         run: ${{ matrix.os.additional_script }}
         shell: pwsh
 
       - name: Additional Windows Script from input if not matrix
         if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
+        working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.additional_script }}
         shell: pwsh
 
       - name: Update Packages
         if: inputs.required_packages != '' && matrix.bin.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Run custom cargo command
