@@ -134,6 +134,9 @@ jobs:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.name'
 
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v2
+
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
