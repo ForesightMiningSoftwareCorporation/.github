@@ -141,34 +141,24 @@ jobs:
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
-      - name: Derive additional script
-        shell: bash
-        id: additional_script
-        run: |
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          MATRIX_AS=$( cat <<$EOF
-          ${{ matrix.os.additional_script }}
-          $EOF
-          )
-          ACTION_AS=$( cat <<$EOF
-          ${{ inputs.additional_script }}
-          $EOF
-          )
-          AS=${MATRIX_AS:-$ACTION_AS}
-          printf $MATRIX_AS
-          printf $ACTION_AS
-          printf $AS
-          echo "script<<${EOF}" >> $GITHUB_OUTPUT
-          printf ${AS} >> $GITHUB_OUTPUT
-          echo "${EOF}" >> $GITHUB_OUTPUT
-      - name: Additional Linux Script
-        if: steps.additional_script.outputs.script != '' && matrix.os.name == 'ubuntu-latest'
-        run: ${{ steps.additional_script.outputs.script }}
+      - name: Additional Linux Script from matrix
+        if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        run: ${{ matrix.os.additional_script }}
         shell: bash
 
-      - name: Additional Windows Script
-        if: steps.additional_script.outputs.script != '' && matrix.os.name == 'windows-latest'
-        run: ${{ steps.additional_script.outputs.script }}
+      - name: Additional Linux Script from input if not matrix
+        if: matrix.os.additional_script == '' && input.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        run: ${{ input.additional_script }}
+        shell: bash
+
+      - name: Additiona Windows Script from matrix
+        if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
+        run: ${{ matrix.os.additional_script }}
+        shell: pwsh
+
+      - name: Additional Windows Script from input if not matrix
+        if: matrix.os.additional_script == '' && input.additional_script != '' && matrix.os.name == 'windows-latest'
+        run: ${{ input.additional_script }}
         shell: pwsh
 
       - name: Update Packages
