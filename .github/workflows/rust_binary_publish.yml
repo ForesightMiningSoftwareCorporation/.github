@@ -148,10 +148,12 @@ jobs:
           ACTION_AS: ${{ inputs.additional_script }}
           MATRIX_AS: ${{ matrix.os.additional_script }}
         run: |
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           AS=${MATRIX_AS:-$ACTION_AS}
-          echo "script<<EOF" >> $GITHUB_OUTPUT
+          echo $AS
+          echo "script<<${EOF}" >> $GITHUB_OUTPUT
           echo ${AS} >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${EOF}" >> $GITHUB_OUTPUT
       - name: Additional Linux Script
         if: steps.additional_script.outputs.script != '' && matrix.os.name == 'ubuntu-latest'
         run: ${{ steps.additional_script.outputs.script }}

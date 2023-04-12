@@ -1,0 +1,15 @@
+Script started on Wed Apr 12 09:03:36 2023
+line_a
+line_b
+^DRestored session: Wed Apr 12 09:03:23 CEST 2023
+[1m[7m%[27m[1m[0m                                                                                [0m[27m[24m[Jlpostula@Loiss-MacBook-Air github % [K[?2004hlline_a[?2004l
+zsh: command not found: line_a
+[1m[7m%[27m[1m[0m                                                                                [0m[27m[24m[Jlpostula@Loiss-MacBook-Air github % [K[?2004hlline_b[?2004l
+zsh: command not found: line_b
+[1m[7m%[27m[1m[0m                                                                                [0m[27m[24m[Jlpostula@Loiss-MacBook-Air github % [K[?2004h[?2004l
+
+Saving session...
+...saving history...truncating history files...
+...completed.
+
+Script done on Wed Apr 12 09:03:36 2023
