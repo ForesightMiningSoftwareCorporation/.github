@@ -146,12 +146,14 @@ jobs:
         id: additional_script
         run: |
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          MATRIX_AS=<<$EOF
-            ${{ matrix.os.additional_script }}
+          MATRIX_AS=$( cat <<$EOF
+          ${{ matrix.os.additional_script }}
           $EOF
-          ACTION_AS=<<$EOF
-            ${{ inputs.additional_script }}
+          )
+          ACTION_AS=$( cat <<$EOF
+          ${{ inputs.additional_script }}
           $EOF
+          )
           AS=${MATRIX_AS:-$ACTION_AS}
           echo $MATRIX_AS
           echo $ACTION_AS
