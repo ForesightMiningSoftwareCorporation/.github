@@ -148,23 +148,31 @@ jobs:
       - name: Additional Linux Script from matrix
         if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
         working-directory: ${{ inputs.working-directory }}
+        env:
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         run: ${{ matrix.os.additional_script }}
         shell: bash
 
       - name: Additional Linux Script from input if not matrix
         if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        env:
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Additional Windows Script from matrix
         if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ matrix.os.additional_script }}
         shell: pwsh
 
       - name: Additional Windows Script from input if not matrix
         if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.additional_script }}
         shell: pwsh
