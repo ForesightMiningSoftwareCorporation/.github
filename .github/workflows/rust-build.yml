@@ -73,6 +73,10 @@ on:
         type: string
         default: 'patch'
         description: "Controls which update trigger a build"
+      matrix_file:
+        type: string
+        default: '.github/workflows/matrix.json'
+        description: "Matrix file to load"
 
 jobs:
   test:
@@ -138,6 +142,7 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       working-directory: ${{ inputs.working-directory }}
       version_trigger: ${{ inputs.binary_version_trigger }}
+      matrix_file: ${{ inputs.matrix_file }}
     secrets: inherit
   report_release:
     needs:

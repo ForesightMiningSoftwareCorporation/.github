@@ -43,6 +43,10 @@ on:
         type: string
         default: 'patch'
         description: "Controls which update trigger a build"
+      matrix_file:
+        type: string
+        default: '.github/workflows/matrix.json'
+        description: "Matrix file to load"
 
     secrets:
       github-private-keys:
@@ -87,7 +91,7 @@ jobs:
       - name: Create and set Build Matrix from matrix.json
         id: set-matrix
         run: |
-          MATRIX=$(jq -c . < .github/workflows/matrix.json | tr -d '^J')
+          MATRIX=$(jq -c . < ${{ inputs.matrix_file }} | tr -d '^J')
           echo matrix=$MATRIX >> $GITHUB_OUTPUT
   cargo_publish_binary:
     name: Release new version to binary
@@ -151,7 +155,7 @@ jobs:
         run: ${{ inputs.additional_script }}
         shell: bash
 
-      - name: Additiona Windows Script from matrix
+      - name: Additional Windows Script from matrix
         if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
         run: ${{ matrix.os.additional_script }}
         shell: pwsh
