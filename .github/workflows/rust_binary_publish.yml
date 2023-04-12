@@ -19,6 +19,10 @@ on:
         type: string
         default: "1.65"
         description: Rust toolchain to install
+      release_channel:
+        type: string
+        default: ""
+        description: Hard coded release channel
       profile:
         type: string
         default: "release"
@@ -100,9 +104,10 @@ jobs:
 
       - name: Extract branch name
         id: extract_branch
+        env:
+          ACTION_RC: ${{ inputs.release_channel }}
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          RELEASE_CHANNEL=nightly
           if [ "$BRANCH_NAME" == "alpha" ] ; then
             RELEASE_CHANNEL=alpha
           elif [ "$BRANCH_NAME" == "beta" ] ; then
@@ -110,7 +115,7 @@ jobs:
           elif [ "$BRANCH_NAME" == "prod" ] ; then
             RELEASE_CHANNEL=prod
           fi
-          echo release_channel=$RELEASE_CHANNEL >> $GITHUB_OUTPUT
+          echo release_channel=${ACTION_RC:-${RELEASE_CHANNEL:-nightly}}$RELEASE_CHANNEL >> $GITHUB_OUTPUT
         shell: bash
 
       - uses: SebRollen/toml-action@v1.0.2
@@ -136,10 +141,15 @@ jobs:
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
-      - name: Additional Script
-        if: inputs.additional_script != ''
+      - name: Additional Linux Script
+        if: inputs.additional_script != '' && matrix.bin.name == 'ubuntu-latest'
         run: ${{ inputs.additional_script }}
         shell: bash
+
+      - name: Additional Windows Script
+        if: inputs.additional_script != '' && matrix.bin.name == 'windows-latest'
+        run: ${{ inputs.additional_script }}
+        shell: pwsh
 
       - name: Update Packages
         if: inputs.required_packages != '' && matrix.bin.name == 'ubuntu-latest'
