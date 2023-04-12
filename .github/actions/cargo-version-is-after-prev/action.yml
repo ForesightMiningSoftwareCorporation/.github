@@ -52,6 +52,7 @@ runs:
 
     - name: Get Latest Rust Crate Version
       id: latest_version
+      continue-on-error: true
       uses: ForesightMiningSoftwareCorporation/rust-latest-version@v1
       with:
         registry: ${{ runner.temp }}/crate_index
@@ -60,6 +61,6 @@ runs:
     - uses: ForesightMiningSoftwareCorporation/is-newer-version@v1
       id: is_after_version
       with:
-        before: ${{ steps.latest_version.outputs.version }}
+        before: ${{ steps.latest_version.outcome == 'success' && steps.latest_version.outputs.version || '0.0.0' }}
         after: ${{ steps.read_version.outputs.value }}
         release_type: ${{ inputs.min_update_type }}
