@@ -77,6 +77,10 @@ on:
         type: string
         default: '.github/workflows/matrix.json'
         description: "Matrix file to load"
+      post_build_additional_script:
+        type: string
+        default: ""
+        description: Post Build Additional script to run after the additional packages
 
 jobs:
   test:
@@ -143,6 +147,8 @@ jobs:
       working-directory: ${{ inputs.working-directory }}
       version_trigger: ${{ inputs.binary_version_trigger }}
       matrix_file: ${{ inputs.matrix_file }}
+      post_build_additional_script: ${{ inputs.post_build_additional_script }}
+
     secrets: inherit
   report_release:
     needs:
