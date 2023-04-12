@@ -144,6 +144,11 @@ jobs:
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+          additional_private_keys: |
+            ${{ secrets.BEVY_CLIPMAP_SSH_PRIVATE_KEY }}
+            ${{ secrets.DAG_TABLES_SSH_PRIVATE_KEY }}
+            ${{ secrets.FSE_APP_SSH_PRIVATE_KEY }}
+            ${{ secrets.FSE_SSH_PRIVATE_KEY }}
 
       - name: Additional Linux Script from matrix
         if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
