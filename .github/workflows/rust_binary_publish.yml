@@ -148,7 +148,13 @@ jobs:
           ACTION_AS: ${{ inputs.additional_script }}
           MATRIX_AS: ${{ matrix.os.additional_script }}
         run: |
-          echo script=${MATRIX_AS:-$ACTION_AS} >> $GITHUB_OUTPUT
+          AS=${MATRIX_AS:-$ACTION_AS}
+          delimiter="$(openssl rand -hex 8)"
+          {
+          echo "script<<${delimiter}"
+          echo ${AS}
+          echo "${delimiter}"
+          } >> $GITHUB_OUTPUT
       - name: Additional Linux Script
         if: steps.additional_script.outputs.script != '' && matrix.bin.name == 'ubuntu-latest'
         run: ${{ steps.additional_script.outputs.script }}
