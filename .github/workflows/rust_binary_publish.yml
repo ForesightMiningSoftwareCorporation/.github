@@ -147,8 +147,8 @@ jobs:
         shell: bash
 
       - name: Additional Linux Script from input if not matrix
-        if: matrix.os.additional_script == '' && input.additional_script != '' && matrix.os.name == 'ubuntu-latest'
-        run: ${{ input.additional_script }}
+        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Additiona Windows Script from matrix
@@ -157,8 +157,8 @@ jobs:
         shell: pwsh
 
       - name: Additional Windows Script from input if not matrix
-        if: matrix.os.additional_script == '' && input.additional_script != '' && matrix.os.name == 'windows-latest'
-        run: ${{ input.additional_script }}
+        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
+        run: ${{ inputs.additional_script }}
         shell: pwsh
 
       - name: Update Packages
