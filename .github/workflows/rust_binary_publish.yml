@@ -150,6 +150,8 @@ jobs:
         run: |
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           AS=${MATRIX_AS:-$ACTION_AS}
+          echo $MATRIX_AS
+          echo $ACTION_AS
           echo $AS
           echo "script<<${EOF}" >> $GITHUB_OUTPUT
           echo ${AS} >> $GITHUB_OUTPUT
