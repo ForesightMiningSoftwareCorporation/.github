@@ -102,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Extract branch name
+      - name: Derive Release Channell
         id: extract_branch
         env:
           ACTION_RC: ${{ inputs.release_channel }}
@@ -141,14 +141,22 @@ jobs:
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
+      - name: Derive additional script
+        shell: bash
+        id: additional_script
+        env:
+          ACTION_AS: ${{ inputs.additional_script }}
+          MATRIX_AS: ${{ matrix.os.additional_script }}
+        run: |
+          echo script=${ACTION_AS:-$MATRIX_AS} >> $GITHUB_OUTPUT
       - name: Additional Linux Script
-        if: inputs.additional_script != '' && matrix.bin.name == 'ubuntu-latest'
-        run: ${{ inputs.additional_script }}
+        if: steps.additional_script.outputs.script != '' && matrix.bin.name == 'ubuntu-latest'
+        run: ${{ steps.additional_script.outputs.script }}
         shell: bash
 
       - name: Additional Windows Script
-        if: inputs.additional_script != '' && matrix.bin.name == 'windows-latest'
-        run: ${{ inputs.additional_script }}
+        if: steps.additional_script.outputs.script != '' && matrix.bin.name == 'windows-latest'
+        run: ${{ steps.additional_script.outputs.script }}
         shell: pwsh
 
       - name: Update Packages
