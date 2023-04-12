@@ -148,7 +148,7 @@ jobs:
           ACTION_AS: ${{ inputs.additional_script }}
           MATRIX_AS: ${{ matrix.os.additional_script }}
         run: |
-          echo script=${ACTION_AS:-$MATRIX_AS} >> $GITHUB_OUTPUT
+          echo script=${MATRIX_AS:-$ACTION_AS} >> $GITHUB_OUTPUT
       - name: Additional Linux Script
         if: steps.additional_script.outputs.script != '' && matrix.bin.name == 'ubuntu-latest'
         run: ${{ steps.additional_script.outputs.script }}
