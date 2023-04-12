@@ -153,12 +153,12 @@ jobs:
           echo ${AS} >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Additional Linux Script
-        if: steps.additional_script.outputs.script != '' && matrix.bin.name == 'ubuntu-latest'
+        if: steps.additional_script.outputs.script != '' && matrix.os.name == 'ubuntu-latest'
         run: ${{ steps.additional_script.outputs.script }}
         shell: bash
 
       - name: Additional Windows Script
-        if: steps.additional_script.outputs.script != '' && matrix.bin.name == 'windows-latest'
+        if: steps.additional_script.outputs.script != '' && matrix.os.name == 'windows-latest'
         run: ${{ steps.additional_script.outputs.script }}
         shell: pwsh
 
