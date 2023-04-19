@@ -73,7 +73,7 @@ jobs:
         run: ${{ inputs.additional_script }}
         shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_REGISTRY_PACKAGES }}
         working-directory: ${{ inputs.working-directory }}
 
       - name: Update Packages
