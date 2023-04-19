@@ -79,13 +79,13 @@ jobs:
 
       - name: Download Artifact
         uses: actions/download-artifact@v3
-        if: inputs.artifact_name != "" && inputs.artifact_path != ""
+        if: inputs.artifact_name != '' && inputs.artifact_path != ''
         with:
           name: ${{ inputs.artifact_name }}
           path: ${{ inputs.artifact_path }}
 
       - name: Download Artifact
-        if: inputs.artifact_name != "" && inputs.artifact_path != ""
+        if: inputs.artifact_name != '' && inputs.artifact_path != ''
         run: ls -R ${{ inputs.artifact_path }}
 
       - name: Additional Script
