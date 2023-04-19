@@ -29,14 +29,18 @@ on:
         type: string
         default: "1.65"
         description: Rust toolchain to install
-      artifact_name:
+      additional_cache_path:
         type: string
         default: ""
-        description: Name of an artifact that we should download
-      artifact_path:
+        description: Path of additional cache to get
+      additional_cache_key:
         type: string
         default: ""
-        description: Path to put the artifacts in
+        description: Key of additional cache to get
+      additional_cache_miss:
+        type: string
+        default: ""
+        description: Script to run if additional cache miss
       additional_script:
         type: string
         default: ""
@@ -72,8 +76,9 @@ jobs:
     if: ${{ inputs.skip-test != 'true' }}
     with:
       toolchain: ${{ inputs.toolchain }}
-      artifact_name: ${{ inputs.artifact_name }}
-      artifact_path: ${{ inputs.artifact_path }}
+      additional_cache_path: ${{ inputs.additional_cache_path }}
+      additional_cache_key: ${{ inputs.additional_cache_key }}
+      additional_cache_miss: ${{ inputs.additional_cache_miss }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
       working-directory: ${{ inputs.working-directory }}
