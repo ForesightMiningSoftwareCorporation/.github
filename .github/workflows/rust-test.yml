@@ -13,14 +13,18 @@ on:
         type: string
         default: ""
         description: Additional arguments to pass to the cargo command
-      artifact_name:
+      additional_cache_path:
         type: string
         default: ""
-        description: Name of an artifact that we should download
-      artifact_path:
+        description: Path of additional cache to get
+      additional_cache_key:
         type: string
         default: ""
-        description: Path to put the artifacts in
+        description: Key of additional cache to get
+      additional_cache_miss:
+        type: string
+        default: ""
+        description: Script to run if additional cache miss
       additional_script:
         type: string
         default: ""
@@ -77,16 +81,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download Artifact
-        uses: actions/download-artifact@v3
-        if: inputs.artifact_name != '' && inputs.artifact_path != ''
+      - name: Additional Cache
+        id: additional-cache
+        uses: actions/cache@v3
+        if: inputs.additional_cache_key != '' && inputs.additional_cache_path != ''
         with:
-          name: ${{ inputs.artifact_name }}
-          path: ${{ inputs.artifact_path }}
+          path: ${{ inputs.additional_cache_path }}
+          key: ${{ inputs.additional_cache_key }}
 
-      - name: Download Artifact
-        if: inputs.artifact_name != '' && inputs.artifact_path != ''
-        run: ls -R ${{ inputs.artifact_path }}
+      - name: Additional Cache Miss Command
+        if: steps.additional-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: ${{ inputs.additional_cache_miss }}
 
       - name: Additional Script
         run: ${{ inputs.additional_script }}
