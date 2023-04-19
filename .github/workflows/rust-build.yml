@@ -29,6 +29,14 @@ on:
         type: string
         default: "1.65"
         description: Rust toolchain to install
+      artifact_name:
+        type: string
+        default: ""
+        description: Name of an artifact that we should download
+      artifact_path:
+        type: string
+        default: ""
+        description: Path to put the artifacts in
       additional_script:
         type: string
         default: ""
@@ -64,6 +72,8 @@ jobs:
     if: ${{ inputs.skip-test != 'true' }}
     with:
       toolchain: ${{ inputs.toolchain }}
+      artifact_name: ${{ inputs.artifact_name }}
+      artifact_path: ${{ inputs.artifact_path }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
       working-directory: ${{ inputs.working-directory }}

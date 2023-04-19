@@ -13,6 +13,14 @@ on:
         type: string
         default: ""
         description: Additional arguments to pass to the cargo command
+      artifact_name:
+        type: string
+        default: ""
+        description: Name of an artifact that we should download
+      artifact_path:
+        type: string
+        default: ""
+        description: Path to put the artifacts in
       additional_script:
         type: string
         default: ""
@@ -69,11 +77,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Download Artifact
+        if: inputs.artifact_name != "" && inputs.artifact_path != ""
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: ${{ inputs.artifact_path }}
+
+      - name: Download Artifact
+        if: inputs.artifact_name != "" && inputs.artifact_path != ""
+        run: ls -R ${{ inputs.artifact_path }}
+
       - name: Additional Script
         run: ${{ inputs.additional_script }}
         shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_REGISTRY_PACKAGES }}
         working-directory: ${{ inputs.working-directory }}
 
       - name: Update Packages
