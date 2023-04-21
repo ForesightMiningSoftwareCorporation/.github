@@ -17,6 +17,10 @@ on:
         type: string
         required: true
         description: "Docker image name"
+      registry:
+        type: string
+        default: "oreprohub.azurecr.io"
+        description: "Docker registry"
 
 jobs:
   docker_publish:
@@ -27,27 +31,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Login to registry (ACR)
-      - name: Login to ACR
-        uses: docker/login-action@v2
-        with:
-          registry: oreprohub.azurecr.io
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
         with:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.version'
 
+      # Login to registry (ACR)
+      - name: Login to ACR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry == 'oreprohub.azurecr.io' && secrets.ACR_USERNAME || github.actor }}
+          password: ${{ inputs.registry == 'oreprohub.azurecr.io' && secrets.ACR_PASSWORD || secrets.GITHUB_TOKEN }}
+
       - name: Check Docker version exists
         id: check_version_exists
         uses: foresightminingsoftwarecorporation/docker-check-exists@v1
         with:
-          repository: oreprohub.azurecr.io
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          repository: ${{ inputs.registry }}
+          username: ${{ inputs.registry == 'oreprohub.azurecr.io' && secrets.ACR_USERNAME || github.actor }}
+          password: ${{ inputs.registry == 'oreprohub.azurecr.io' && secrets.ACR_PASSWORD || secrets.GITHUB_TOKEN }}
           image_name: ${{ inputs.image }}
           version: ${{ steps.read_version.outputs.value }}
 
@@ -75,12 +79,14 @@ jobs:
         shell: bash
         run: |
           echo "\"shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}\"" > ./shipyard_token
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build & Push
         uses: docker/build-push-action@v3
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
@@ -95,7 +101,7 @@ jobs:
             cargo_private_registry_token="${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
             cargo_private_registry_name="${{ secrets.CARGO_PRIVATE_REGISTRY_NAME  }}"
           tags: |
-            oreprohub.azurecr.io/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
-            oreprohub.azurecr.io/${{ inputs.image }}:latest
+            ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
+            ${{ inputs.registry }}/${{ inputs.image }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

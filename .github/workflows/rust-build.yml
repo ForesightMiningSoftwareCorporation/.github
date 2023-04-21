@@ -69,6 +69,10 @@ on:
         type: string
         default: ''
         description: "Docker image name"
+      docker_registry:
+        type: string
+        default: "oreprohub.azurecr.io"
+        description: "Docker registry"
 
 jobs:
   test:
@@ -122,6 +126,7 @@ jobs:
       working-directory: ${{ inputs.working-directory }}
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
+      registry: ${{ inputs.docker_registry }}
     secrets: inherit
   report_release:
     needs:
