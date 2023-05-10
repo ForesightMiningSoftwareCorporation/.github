@@ -1,0 +1,280 @@
+name: Publish Release to Private Registry
+
+on:
+  workflow_call:
+    outputs:
+      released:
+        description: Was the binary published
+        value: ${{ jobs.cargo_upload_binary.outputs.uploaded }}
+    inputs:
+      required_packages:
+        type: string
+        default: ""
+        description: Package that needs to be installed before Rust compilation can happens
+      additional_args:
+        type: string
+        default: ""
+        description: Additional arguments to pass to the cargo command
+      toolchain:
+        type: string
+        default: "1.65"
+        description: Rust toolchain to install
+      release_channel:
+        type: string
+        default: ""
+        description: Hard coded release channel
+      profile:
+        type: string
+        default: "release"
+        description: Cargo build profile to use
+      login_private_registry:
+        type: string
+        default: "true"
+      skip-test:
+        type: boolean
+        default: false
+        description: Skip the test step
+      working-directory:
+        type: string
+        default: "."
+        description: Working directory to run the cargo command
+      additional_script:
+        type: string
+        default: ""
+        description: Additional script to run before the additional packages
+      matrix_file:
+        type: string
+        default: '.github/workflows/matrix.json'
+        description: "Matrix file to load"
+      custom_cargo_commands:
+        type: string
+        default: ""
+        description: Cusom cargo commands that will be run after login
+      post_build_additional_script:
+        type: string
+        default: ""
+        description: Post Build Additional script to run after the additional packages
+    secrets:
+      github-private-keys:
+        required: false
+        description: Private keys that need to be added to the ssh-agent
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
+
+jobs:
+  matrix:
+    name: Build Matrix for binary release
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Create and set Build Matrix from matrix.json
+        id: set-matrix
+        shell: bash
+        run: |
+          MATRIX=$(jq -c . < ${{ inputs.matrix_file }} | tr -d '^J')
+          echo matrix=$MATRIX >> $GITHUB_OUTPUT
+  cargo_upload_binary:
+    name: Upload binary to artifact storage
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.matrix.outputs.matrix).os }}
+    runs-on: ${{ matrix.os.name }}
+    needs:
+        - matrix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Derive Release Channel
+        id: extract_branch
+        shell: bash
+        env:
+          ACTION_RC: ${{ inputs.release_channel }}
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          if [ "$BRANCH_NAME" == "alpha" ] ; then
+            RELEASE_CHANNEL=alpha
+          elif [ "$BRANCH_NAME" == "beta" ] ; then
+            RELEASE_CHANNEL=beta
+          elif [ "$BRANCH_NAME" == "prod" ] ; then
+            RELEASE_CHANNEL=prod
+          fi
+          echo release_channel=${ACTION_RC:-${RELEASE_CHANNEL:-nightly}}$RELEASE_CHANNEL >> $GITHUB_OUTPUT
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_version
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.version'
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_name
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.name'
+
+      - name: Cache Dependencies
+        if: steps.check_exists.outputs.exists != 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - uses: dtolnay/rust-toolchain@master
+        if: steps.check_exists.outputs.exists != 'true'
+        with:
+          toolchain: ${{ inputs.toolchain }}
+
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+        if: steps.check_exists.outputs.exists != 'true'
+        with:
+          private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
+          name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
+          token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+          additional_private_keys: |
+            ${{ secrets.FSE_SSH_PRIVATE_KEY }}
+
+      - name: Additional Linux Script from matrix
+        if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        run: ${{ matrix.os.additional_script }}
+        shell: bash
+
+      - name: Additional Linux Script from input if not matrix
+        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.additional_script }}
+        shell: bash
+
+      - name: Additional Windows Script from matrix
+        if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ matrix.os.additional_script }}
+        shell: pwsh
+
+      - name: Additional Windows Script from input if not matrix
+        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.additional_script }}
+        shell: pwsh
+
+      - name: Update Packages
+        if: steps.check_exists.outputs.exists != 'true' && inputs.required_packages != ''
+        run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
+
+      - name: Run custom cargo command
+        if: steps.check_exists.outputs.exists != 'true' && inputs.custom_cargo_commands != ''
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.custom_cargo_commands }}
+
+      - name: Build Binary
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
+
+      - name: Copy to bin folder linux
+        if: matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
+        shell: bash
+        run: |
+          artifacts_dir=${{ runner.temp }}/bin_output/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
+          mkdir -p $artifacts_dir
+          cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - name: Copy to bin folder windows
+        if: matrix.os.name == 'windows-latest'
+        shell: pwsh
+        run: |
+          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
+          Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ steps.read_name.outputs.value }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - name: Additional Post build Linux Script from matrix
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
+        run: ${{ matrix.os.post_build_additional_script }}
+        shell: bash
+
+      - name: Additional Post build Linux Script from input if not matrix
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.post_build_additional_script }}
+        shell: bash
+
+      - name: Additional Post build Windows Script from matrix
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ matrix.os.post_build_additional_script }}
+        shell: pwsh
+
+      - name: Additional Post build Windows Script from input if not matrix
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
+        env:
+          CRATE_NAME: ${{ steps.read_name.outputs.value }}
+          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
+          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          TEMP_DIR: ${{ runner.temp }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.post_build_additional_script }}
+        shell: pwsh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-binaries
+          path: ${{ runner.temp }}/bin_output
+  publish_to_bs:
+    name: Publish artifact to Block Storage
+    runs-on: ubuntu-latest
+    needs:
+      - cargo_upload_binary
+    steps:
+      - name: Download artifacts
+        id: download_artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-binaries
+          path: binaries
+
+      - name: Upload artifacts to blob storage
+        if: steps.download_artifacts.outcome == 'success'
+        uses: bacongobbler/azure-blob-storage-upload@main
+        with:
+          container_name: fse-update
+          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
+          source_dir: binaries
