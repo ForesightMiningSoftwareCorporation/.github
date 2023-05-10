@@ -74,6 +74,13 @@ jobs:
           url="oreprohub.azurecr.io/${{ steps.read_name.outputs.value }}:${{ steps.read_version.outputs.value }}"
           echo "value=$url" >> $GITHUB_OUTPUT
 
+      - name: Download artifacts
+        id: download_artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-binaries
+          path: binaries
+
       - name: Create a GitHub release
         if: steps.check_exists.outputs.exists != 'true'
         uses: ncipollo/release-action@v1
@@ -81,6 +88,7 @@ jobs:
         with:
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
+          artifacts: "binaries/${{ steps.read_name.outputs.value }}/**/*"
           body: |
             ## Releases
             * Private Registry: ${{ steps.private_registry_url.outputs.value || 'NA' }}

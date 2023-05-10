@@ -25,10 +25,18 @@ on:
         type: string
         default: 'false'
         description: "Should the docker image be built and published"
+      publish_binary:
+        type: string
+        default: 'false'
+        description: "Should the binary be built and published"
       toolchain:
         type: string
         default: "1.65"
         description: Rust toolchain to install
+      release_channel:
+        type: string
+        default: ""
+        description: Hard coded release channel
       additional_cache_path:
         type: string
         default: ""
@@ -73,6 +81,14 @@ on:
         type: string
         default: "oreprohub.azurecr.io"
         description: "Docker registry"
+      matrix_file:
+        type: string
+        default: '.github/workflows/matrix.json'
+        description: "Matrix file to load"
+      post_build_additional_script:
+        type: string
+        default: ""
+        description: Post Build Additional script to run after the additional packages
 
 jobs:
   test:
@@ -91,11 +107,36 @@ jobs:
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
       skip-test-publish: ${{ inputs.skip-test-publish }}
     secrets: inherit
+  check_release_exists:
+    runs-on: 'ubuntu-latest'
+    if: inputs.publish
+    outputs:
+      exists: ${{ steps.check_release_exists.outputs.exists }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_version
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.version'
+
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_name
+        with:
+          file: '${{ inputs.working-directory }}/Cargo.toml'
+          field: 'package.name'
+      - uses: mukunku/tag-exists-action@v1.2.0
+        id: check_release_exists
+        with:
+          tag: "${{ steps.read_name.outputs.value }}-${{ steps.read_version.outputs.value }}"
   publish_private_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1.1.0
-    if: always() && inputs.publish == 'true' && inputs.publish_private_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: always() && inputs.publish == 'true' && needs.check_release_exists.outputs.exists == 'false' && inputs.publish_private_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
+      - check_release_exists
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
@@ -106,9 +147,10 @@ jobs:
     secrets: inherit
   publish_public_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@v1.1.0
-    if: always() && inputs.publish == 'true' && inputs.publish_public_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: always() && inputs.publish == 'true' && needs.check_release_exists.outputs.exists == 'false' && inputs.publish_public_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
+      - check_release_exists
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
@@ -119,22 +161,41 @@ jobs:
     secrets: inherit
   publish_docker_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v1.1.0
-    if: always() && inputs.publish == 'true' && inputs.publish_docker == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: always() && inputs.publish == 'true' && needs.check_release_exists.outputs.exists == 'false' && inputs.publish_docker == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
+      - check_release_exists
     with:
       working-directory: ${{ inputs.working-directory }}
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
       registry: ${{ inputs.docker_registry }}
     secrets: inherit
+  publish_binary:
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v1.1.0
+    if: always() && inputs.publish == 'true' && needs.check_release_exists.outputs.exists == 'false' && inputs.publish_binary  && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs:
+      - test
+      - check_release_exists
+    with:
+      toolchain: ${{ inputs.toolchain }}
+      release_channel: ${{ inputs.release_channel }}
+      additional_script: ${{ inputs.additional_script }}
+      required_packages: ${{ inputs.required_packages }}
+      working-directory: ${{ inputs.working-directory }}
+      additional_args: ${{ inputs.additional_args }}
+      custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
+      matrix_file: ${{ inputs.matrix_file }}
+      post_build_additional_script: ${{ inputs.post_build_additional_script }}
+    secrets: inherit
   report_release:
     needs:
       - publish_private_registry
       - publish_public_registry
       - publish_docker_registry
+      - publish_binary
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v1.1.0
-    if: always() && inputs.publish && (needs.publish_private_registry.outputs.released == 'true' || needs.publish_publish_registry.outputs.released == 'true' || needs.publish_docker_registry.outputs.released == 'true' )
+    if: always() && inputs.publish&& needs.check_release_exists.outputs.exists == 'false'
     with:
       working-directory: ${{ inputs.working-directory }}
       private_registry_release: ${{ inputs.publish_private_registry == 'true' }}
