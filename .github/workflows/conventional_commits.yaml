@@ -3,6 +3,11 @@ name: Validate Pull requests use conventional commit
 on:
   pull_request:
     branches: [master, main]
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
 
 jobs:
   check-for-cc:
