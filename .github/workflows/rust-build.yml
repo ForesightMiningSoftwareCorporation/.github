@@ -195,7 +195,7 @@ jobs:
       - publish_docker_registry
       - publish_binary
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v1.1.0
-    if: always() && inputs.publish&& needs.check_release_exists.outputs.exists == 'false'
+    if: always() && inputs.publish == 'true' && needs.check_release_exists.outputs.exists == 'false'
     with:
       working-directory: ${{ inputs.working-directory }}
       private_registry_release: ${{ inputs.publish_private_registry == 'true' }}
