@@ -200,7 +200,15 @@ jobs:
         run: |
           artifacts_dir=${{ runner.temp }}/bin_output/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
           mkdir -p $artifacts_dir
-          cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+          cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - name: Create sha512 checksum for binary linux
+        if: matrix.os.name == 'ubuntu-latest'
+        shell: bash
+        run: |
+          sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }} \
+          | awk '{ print $1 }' >> \
+          $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-sha512.txt
 
       - name: Copy to bin folder windows
         if: matrix.os.name == 'windows-latest'
@@ -208,6 +216,13 @@ jobs:
         run: |
           $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
           Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ steps.read_name.outputs.value }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - name: Create sha512 checksum for binary windows
+        if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'windows-latest' }}
+        shell: pwsh
+        run: |
+          $hash = Get-FileHash "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}" -Algorithm SHA512
+          echo $hash.Hash >> "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-sha512.txt"
 
       - name: Additional Post build Linux Script from matrix
         if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
