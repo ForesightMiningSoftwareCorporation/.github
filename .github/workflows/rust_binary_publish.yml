@@ -273,10 +273,11 @@ jobs:
         with:
           name: release-binaries
           path: ${{ runner.temp }}/bin_output
-      - name: Upload artifacts to blob storage
-        if: steps.check_exists.outputs.exists != 'true'
-        uses: bacongobbler/azure-blob-storage-upload@main
+
+      - name: Azure Blob Upload
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
         with:
           container_name: fse-update
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
-          source_dir: ${{ runner.temp }}/bin_output
+          source_folder: ${{ runner.temp }}/bin_output
+          delete_if_exists: true
