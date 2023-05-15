@@ -217,9 +217,7 @@ jobs:
         if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
         shell: bash
         run: |
-          sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }} \
-          | awk '{ print $1 }' >> \
-          $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-sha512.txt
+          sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}-sha-512.txt
 
       - name: Copy to bin folder windows
         if: matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
