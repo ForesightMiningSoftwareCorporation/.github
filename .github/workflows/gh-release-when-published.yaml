@@ -14,6 +14,10 @@ on:
         type: string
         default: 'false'
         description: 'Was the crate released on docker'
+      binary_release:
+        type: string
+        default: 'false'
+        description: 'Was the crate released as binary'
       working-directory:
         type: string
         default: "."
@@ -76,13 +80,13 @@ jobs:
 
       - name: Download artifacts
         id: download_artifacts
+        if: inputs.binary_release == 'true'
         uses: actions/download-artifact@v3
         with:
           name: release-binaries
           path: binaries
 
       - name: Create a GitHub release
-        if: steps.check_exists.outputs.exists != 'true'
         uses: ncipollo/release-action@v1
         id: release
         with:
@@ -94,11 +98,12 @@ jobs:
             * Private Registry: ${{ steps.private_registry_url.outputs.value || 'NA' }}
             * Public Registry: ${{ steps.pubic_registry_url.outputs.value || 'NA' }}
             * Docker: ${{ steps.docker_registry_url.outputs.value || 'NA' }}
+            * Binary: ${{ inputs.binary_release == 'true' && 'See artifacts' || 'NA' }}
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}
 
       - name: Send Discord Notification
-        if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
+        if: (success() || failure()) && env.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
