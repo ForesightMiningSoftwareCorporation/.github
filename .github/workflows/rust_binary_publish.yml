@@ -273,24 +273,10 @@ jobs:
         with:
           name: release-binaries
           path: ${{ runner.temp }}/bin_output
-  publish_to_bs:
-    name: Publish artifact to Block Storage
-    if: steps.check_exists.outputs.exists != 'true'
-    runs-on: ubuntu-latest
-    needs:
-      - cargo_upload_binary
-    steps:
-      - name: Download artifacts
-        id: download_artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: release-binaries
-          path: binaries
-
       - name: Upload artifacts to blob storage
-        if: steps.download_artifacts.outcome == 'success'
+        if: steps.check_exists.outputs.exists != 'true'
         uses: bacongobbler/azure-blob-storage-upload@main
         with:
           container_name: fse-update
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
-          source_dir: binaries
+          source_dir: ${{ runner.temp }}/bin_output
