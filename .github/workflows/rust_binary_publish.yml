@@ -212,11 +212,6 @@ jobs:
           artifacts_dir=${{ runner.temp }}/bin_output/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
           mkdir -p $artifacts_dir
           cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
-
-      - name: Create sha512 checksum for binary linux
-        if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
-        shell: bash
-        run: |
           sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}-sha-512.txt
 
       - name: Copy to bin folder windows
@@ -225,11 +220,6 @@ jobs:
         run: |
           $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
           Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ steps.read_name.outputs.value }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
-
-      - name: Create sha512 checksum for binary windows
-        if: inputs.runner_os == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
-        shell: pwsh
-        run: |
           $hash = Get-FileHash "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}" -Algorithm SHA512
           echo $hash.Hash >> "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-sha512.txt"
 
