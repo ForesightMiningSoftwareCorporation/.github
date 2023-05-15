@@ -167,7 +167,7 @@ jobs:
       - publish_docker
       - publish_binary
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@fix-release-reporting
-    if: always() && inputs.publish == 'true' && ( inputs.publish_private_registry == 'true' && needs.publish_private_registry.outputs.released == 'true' ) && ( inputs.publish_public_registry == 'true' && needs.publish_public_registry.outputs.released == 'true' )  && ( inputs.publish_docker == 'true' && needs.publish_docker.outputs.released == 'true' ) && ( inputs.publish_binary == 'true' && needs.publish_binary.outputs.released == 'true' )
+    if: always() && inputs.publish == 'true' && ( inputs.publish_private_registry == 'false' || (inputs.publish_private_registry == 'true' && needs.publish_private_registry.outputs.released == 'true' )) && ( inputs.publish_public_registry == 'false' || ( inputs.publish_public_registry == 'true' && needs.publish_public_registry.outputs.released == 'true' ))  && (inputs.publish_docker == 'false' || ( inputs.publish_docker == 'true' && needs.publish_docker.outputs.released == 'true' )) && (inputs.publish_binary == 'false' || ( inputs.publish_binary == 'true' && needs.publish_binary.outputs.released == 'true' ))
     with:
       working-directory: ${{ inputs.working-directory }}
       private_registry_release: ${{ inputs.publish_private_registry == 'true' && needs.publish_private_registry.outputs.released == 'true' }}
