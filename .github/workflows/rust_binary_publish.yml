@@ -84,6 +84,8 @@ jobs:
     strategy:
       matrix:
         os: ${{ fromJson(needs.matrix.outputs.matrix).os }}
+    outputs:
+      released: ${{ steps.check_version_exists.outputs.exists == 'false' && 'true' || 'false' }}
     runs-on: ${{ matrix.os.name }}
     needs:
         - matrix
@@ -119,6 +121,14 @@ jobs:
           file: '${{ inputs.working-directory }}/Cargo.toml'
           field: 'package.name'
 
+
+      - uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
+        id: check_exists
+        with:
+          container_name: fse-update
+          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
+          blob_name: ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
       - name: Cache Dependencies
         if: steps.check_exists.outputs.exists != 'true'
         uses: Swatinem/rust-cache@v2
@@ -139,7 +149,7 @@ jobs:
             ${{ secrets.FSE_SSH_PRIVATE_KEY }}
 
       - name: Additional Linux Script from matrix
-        if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
         working-directory: ${{ inputs.working-directory }}
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
@@ -149,7 +159,7 @@ jobs:
         shell: bash
 
       - name: Additional Linux Script from input if not matrix
-        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
@@ -159,7 +169,7 @@ jobs:
         shell: bash
 
       - name: Additional Windows Script from matrix
-        if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
+        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
@@ -169,7 +179,7 @@ jobs:
         shell: pwsh
 
       - name: Additional Windows Script from input if not matrix
-        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
+        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
@@ -190,11 +200,12 @@ jobs:
 
       - name: Build Binary
         shell: bash
+        if: steps.check_exists.outputs.exists != 'true'
         working-directory: ${{ inputs.working-directory }}
         run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
 
       - name: Copy to bin folder linux
-        if: matrix.os.name == 'ubuntu-latest'
+        if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
         working-directory: ${{ inputs.working-directory }}
         shell: bash
         run: |
@@ -203,7 +214,7 @@ jobs:
           cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
 
       - name: Create sha512 checksum for binary linux
-        if: matrix.os.name == 'ubuntu-latest'
+        if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
         shell: bash
         run: |
           sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }} \
@@ -211,21 +222,21 @@ jobs:
           $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-sha512.txt
 
       - name: Copy to bin folder windows
-        if: matrix.os.name == 'windows-latest'
+        if: matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
         shell: pwsh
         run: |
           $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
           Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ steps.read_name.outputs.value }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
 
       - name: Create sha512 checksum for binary windows
-        if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false && inputs.runner_os == 'windows-latest' }}
+        if: inputs.runner_os == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
         shell: pwsh
         run: |
           $hash = Get-FileHash "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}" -Algorithm SHA512
           echo $hash.Hash >> "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-sha512.txt"
 
       - name: Additional Post build Linux Script from matrix
-        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
         working-directory: ${{ inputs.working-directory }}
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
@@ -236,7 +247,7 @@ jobs:
         shell: bash
 
       - name: Additional Post build Linux Script from input if not matrix
-        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
@@ -247,7 +258,7 @@ jobs:
         shell: bash
 
       - name: Additional Post build Windows Script from matrix
-        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
@@ -258,7 +269,7 @@ jobs:
         shell: pwsh
 
       - name: Additional Post build Windows Script from input if not matrix
-        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
         env:
           CRATE_NAME: ${{ steps.read_name.outputs.value }}
           CRATE_VERSION: ${{ steps.read_version.outputs.value }}
@@ -269,12 +280,14 @@ jobs:
         shell: pwsh
 
       - name: Upload artifacts
+        if: steps.check_exists.outputs.exists != 'true'
         uses: actions/upload-artifact@v3
         with:
           name: release-binaries
           path: ${{ runner.temp }}/bin_output
   publish_to_bs:
     name: Publish artifact to Block Storage
+    if: steps.check_exists.outputs.exists != 'true'
     runs-on: ubuntu-latest
     needs:
       - cargo_upload_binary

@@ -14,6 +14,10 @@ on:
         type: string
         default: 'false'
         description: 'Was the crate released on docker'
+      binary_release:
+        type: string
+        default: 'false'
+        description: 'Was the crate released as binary'
       working-directory:
         type: string
         default: "."
@@ -76,6 +80,7 @@ jobs:
 
       - name: Download artifacts
         id: download_artifacts
+        if: inputs.binary_release == 'true'
         uses: actions/download-artifact@v3
         with:
           name: release-binaries
@@ -83,7 +88,6 @@ jobs:
 
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
-        if: success() || failure()
         id: release
         with:
           tag: ${{ steps.tag_version.outputs.new_tag }}
@@ -94,6 +98,7 @@ jobs:
             * Private Registry: ${{ steps.private_registry_url.outputs.value || 'NA' }}
             * Public Registry: ${{ steps.pubic_registry_url.outputs.value || 'NA' }}
             * Docker: ${{ steps.docker_registry_url.outputs.value || 'NA' }}
+            * Binary: ${{ inputs.binary_release == 'true' && 'See artifacts' || 'NA' }}
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}
 
