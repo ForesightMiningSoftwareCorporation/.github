@@ -34,7 +34,9 @@ RUN apt-get update && \
     cmake \
     curl \
     gfortran \
-    git
+    git \
+    protobuf-compiler
+
 
 RUN add-apt-repository ppa:graphics-drivers
 RUN apt install nvidia-driver-470 -y
