@@ -38,7 +38,7 @@ RUN ln -s "/usr/bin/g++" "/usr/bin/musl-g++"
 
 # install Rust
 RUN curl https://sh.rustup.rs -sSf | \
-    sh -s -- --default-toolchain 1.65 -y -t x86_64-unknown-linux-musl --profile minimal
+    sh -s -- --default-toolchain 1.69 -y -t x86_64-unknown-linux-musl --profile minimal
 
 ENV PATH=/root/.cargo/bin:$PATH
 RUN rustup target add x86_64-unknown-linux-musl

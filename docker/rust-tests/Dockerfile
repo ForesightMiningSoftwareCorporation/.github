@@ -1,4 +1,4 @@
-ARG RUST_VERSION=1.65
+ARG RUST_VERSION=1.69
 FROM rust:$RUST_VERSION
 
 RUN apt-get update && apt-get install -y software-properties-common
