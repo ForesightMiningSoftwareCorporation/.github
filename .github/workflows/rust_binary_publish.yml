@@ -17,7 +17,7 @@ on:
         description: Additional arguments to pass to the cargo command
       toolchain:
         type: string
-        default: "1.65"
+        default: "1.69"
         description: Rust toolchain to install
       release_channel:
         type: string

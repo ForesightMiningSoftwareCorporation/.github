@@ -5,13 +5,13 @@ on:
     inputs:
       rust_version:
         description: "Rust version to install"
-        default: "1.65"
+        default: "1.69"
         type: string
   workflow_call:
     inputs:
       rust_version:
         description: "Rust version to install"
-        default: "1.65"
+        default: "1.69"
         type: string
 
 jobs:
