@@ -12,6 +12,13 @@ RUN apt-add-repository non-free && apt-get update && DEBIAN_FRONTEND=noninteract
     libgtk-3-dev \
     jq
 
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    npm
+RUN npm install npm@latest -g && \
+    npm install n -g && \
+    n latest
+
 RUN rustup component add clippy rustfmt
 RUN cargo install --locked cargo-deny
 RUN cargo install cargo-machete
