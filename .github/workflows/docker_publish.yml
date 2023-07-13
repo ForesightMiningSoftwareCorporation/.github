@@ -68,7 +68,7 @@ jobs:
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
           additional_private_keys: |
-            ${{ secrets.FSE_SSH_PRIVATE_KEY }}
+            ${{ secrets.OREPROLIB_SSH_PRIVATE_KEY }}
 
       - name: Set up Docker Buildx
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
@@ -97,6 +97,7 @@ jobs:
           ssh:
             default=${{ env.SSH_AUTH_SOCK }}
           secrets: |
+            node_auth_token="${{ secrets.GITHUB_TOKEN }}"
             cargo_http_user_agent="shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
             cargo_private_registry_token="${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
             cargo_private_registry_name="${{ secrets.CARGO_PRIVATE_REGISTRY_NAME  }}"
