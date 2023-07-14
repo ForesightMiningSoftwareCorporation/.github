@@ -93,6 +93,7 @@ jobs:
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
           artifacts: "binaries/${{ steps.read_name.outputs.value }}/**/*"
+          skipIfReleaseExists: true
           body: |
             ## Releases
             * Private Registry: ${{ steps.private_registry_url.outputs.value || 'NA' }}
