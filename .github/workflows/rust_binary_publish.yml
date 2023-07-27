@@ -125,7 +125,7 @@ jobs:
       - uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
         id: check_exists
         with:
-          container_name: fse-update
+          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           blob_name: ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
 
@@ -191,7 +191,7 @@ jobs:
         shell: pwsh
 
       - name: Update Packages
-        if: steps.check_exists.outputs.exists != 'true' && inputs.required_packages != ''
+        if: steps.check_exists.outputs.exists != 'true' && inputs.required_packages != '' && matrix.os.name == 'ubuntu-latest'
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Run custom cargo command
@@ -279,7 +279,7 @@ jobs:
       - name: Azure Blob Upload
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
         with:
-          container_name: fse-update
+          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/bin_output
           delete_if_exists: true
