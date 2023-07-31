@@ -7,6 +7,10 @@ on:
         description: "Rust version to install"
         default: "1.69"
         type: string
+      additional_tag:
+        description: "Additional tag for docker building"
+        default: "latest"
+        type: string
   workflow_call:
     inputs:
       rust_version:
@@ -37,3 +41,4 @@ jobs:
           build-args: RUST_VERSION=${{ inputs.rust_version }}
           tags: |
             ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.rust_version }}
+            ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.additional_tag }}
