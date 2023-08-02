@@ -47,7 +47,7 @@ on:
         description: Should we skip cargo test (useful in there are no tests define)
       skip-test-publish:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the publis dry-run test be ran"
       login_private_registry:
         type: string
@@ -65,6 +65,16 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
+    strategy:
+      matrix:
+        include:
+          - toolchain: ${{ inputs.toolchain }}
+            type: check
+          - toolchain: ${{ inputs.toolchain }}
+            type: test
+          - toolchain: ${{ inputs.nightly_toolchain }}
+            type: miri
+      fail-fast: ${{ inputs.fail-fast == 'true' }}
     container:
       image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
       options: --user root
