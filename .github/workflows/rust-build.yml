@@ -3,36 +3,40 @@ on:
     inputs:
       skip-test:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the tests be ran"
       skip-test-publish:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the publis dry-run test be ran"
       publish:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the crate be published"
       publish_private_registry:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the crate be published to the private registry"
       publish_public_registry:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the crate be published to the public registry"
       publish_docker:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the docker image be built and published"
       publish_binary:
         type: string
-        default: 'false'
+        default: "false"
         description: "Should the binary be built and published"
       toolchain:
         type: string
         default: "1.69"
         description: Rust toolchain to install
+      miri_toolchain:
+        type: string
+        default: "nightly-2023-08-02"
+        description: Rust toolchain to use for Miri
       release_channel:
         type: string
         default: ""
@@ -75,7 +79,7 @@ on:
         default: Dockerfile
       docker_image:
         type: string
-        default: ''
+        default: ""
         description: "Docker image name"
       docker_registry:
         type: string
@@ -83,7 +87,7 @@ on:
         description: "Docker registry"
       matrix_file:
         type: string
-        default: '.github/workflows/matrix.json'
+        default: ".github/workflows/matrix.json"
         description: "Matrix file to load"
       post_build_additional_script:
         type: string
@@ -91,9 +95,16 @@ on:
         description: Post Build Additional script to run after the additional packages
 
 jobs:
+  build_rust_ci_images:
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/setup_rust_test_images.yaml@v1.2.0
+    with:
+      rust_versions: "${{ inputs.toolchain }} ${{ inputs.miri_toolchain }}"
+    secrets: inherit
   test:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.1.0
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1.2.0
     if: ${{ inputs.skip-test != 'true' }}
+    needs:
+      - build_rust_ci_images
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_cache_path: ${{ inputs.additional_cache_path }}
