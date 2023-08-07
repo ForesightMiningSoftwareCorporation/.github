@@ -4,11 +4,15 @@ on:
       skip-test:
         type: string
         default: "false"
-        description: "Should the tests be ran"
+        description: "Should the tests be run"
+      skip-miri-test:
+        type: string
+        default: "true"
+        description: "Should miri tests be run"
       skip-test-publish:
         type: string
         default: "false"
-        description: "Should the publis dry-run test be ran"
+        description: "Should the public dry-run test be run"
       publish:
         type: string
         default: "false"
@@ -117,6 +121,8 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
       skip-test-publish: ${{ inputs.skip-test-publish }}
+      skip-miri-test: ${{ inputs.skip-miri-test }}
+      nightly_toolchain: ${{ inputs.miri_toolchain }}
     secrets: inherit
   publish_private_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1.1.0
