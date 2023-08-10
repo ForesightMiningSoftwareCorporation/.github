@@ -39,13 +39,14 @@ runs:
     - name: Install Updatecli in the runner
       uses: updatecli/updatecli-action@v2
       with:
-        version: 'v0.44.0'
+        version: 'v0.56.0'
     - name: Run UpdateCli with Cargo check package
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       id: check
       run: |
-        rm PACKAGE_EXISTS || true
+        // the only case were updatecli fails is when the package doesn't exists.
+        echo "false" > PACKAGE_EXISTS
         updatecli apply --config $GITHUB_WORKSPACE/.github_wide_resources/updatecli/updatecli.d/rust/check-crate-exists.yml --values $GITHUB_WORKSPACE/.github_wide_resources/updatecli/values.github-action.yaml || true
         PACKAGE_EXISTS=$(cat PACKAGE_EXISTS 2>/dev/null || echo "true")
         echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
