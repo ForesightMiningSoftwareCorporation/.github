@@ -43,7 +43,6 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       id: check
       run: |
-        echo "false" > PACKAGE_EXISTS
         updatecli apply --config $GITHUB_WORKSPACE/.github_wide_resources/updatecli/updatecli.d/rust/check-crate-exists.yml --values $GITHUB_WORKSPACE/.github_wide_resources/updatecli/values.github-action.yaml || true
         PACKAGE_EXISTS=$(cat PACKAGE_EXISTS 2>/dev/null || echo "true")
         echo "PACKAGE_EXISTS=$PACKAGE_EXISTS" >> $GITHUB_OUTPUT
