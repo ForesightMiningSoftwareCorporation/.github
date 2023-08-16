@@ -284,18 +284,18 @@ jobs:
 
       - name: Set end time as env variable
         id: end_time
-        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
       - uses: int128/hide-comment-action@v1
-        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         with:
           authors: |
             github-actions
 
       - uses: actions/github-script@v6
         name: Report status on PR
-        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         with:
           script: |
             const output =`
