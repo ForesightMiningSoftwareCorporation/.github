@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y \
     npm
 RUN npm install npm@latest -g && \
     npm install n -g && \
-    n latest
+    n latest && \
+    npm install yarn -g
 
 RUN rustup component add clippy rustfmt
 RUN cargo install --locked cargo-deny
