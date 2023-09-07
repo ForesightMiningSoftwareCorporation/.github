@@ -413,7 +413,7 @@ jobs:
             const footer = `
               </table>
 
-              Pushed by: @${{ github.actor }}, Action: ${{ github.event_name }};
+              Pushed by: ${{ github.actor }}, Action: ${{ github.event_name }};
               Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>
               Logs: <a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=All&from=${{ fromJson(steps.read.outputs.result).start.check }}&to=${{ steps.end_time.outputs.value }}">Logs</a>
               </details>
