@@ -429,5 +429,5 @@ jobs:
             });
 
       - name: Rust Test status
-        if: fromJson(steps.read.outputs.result).custom_outcome.check == 'failure' || fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure'
+        if: steps.read.outputs.result && (fromJson(steps.read.outputs.result).custom_outcome.check == 'failure' || fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure')
         run: exit 1
