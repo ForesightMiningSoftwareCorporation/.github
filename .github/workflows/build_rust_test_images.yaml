@@ -37,7 +37,7 @@ jobs:
       - name: Build & Push
         uses: docker/build-push-action@v3
         with:
-          context: https://github.com/ForesightMiningSoftwareCorporation/github.git#v1.2.0:docker/rust-tests
+          context: https://github.com/ForesightMiningSoftwareCorporation/github.git#v1:docker/rust-tests
           push: true
           build-args: |
             RUST_VERSION=${{ inputs.rust_version }}
