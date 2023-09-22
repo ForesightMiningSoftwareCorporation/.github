@@ -277,6 +277,7 @@ jobs:
           path: ${{ runner.temp }}/bin_output
 
       - name: Azure Blob Upload
+        if: steps.check_exists.outputs.exists != 'true'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
