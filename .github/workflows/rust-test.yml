@@ -53,10 +53,10 @@ on:
         type: string
         default: "false"
         description: Should we skip miri test (useful when tests are incompatible)
-      skip-test-publish:
+      test-publish-required:
         type: string
         default: "false"
-        description: "Should the publis dry-run test be ran"
+        description: "Should the publish dry-run test be marked as required"
       login_private_registry:
         type: string
         default: "true"
@@ -151,7 +151,7 @@ jobs:
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
       - name: Run Cargo Custom command
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: custom
         if: inputs.custom_cargo_commands != ''
         continue-on-error: true
@@ -164,7 +164,7 @@ jobs:
           loki_org_id: 1
 
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: fmt
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success')
@@ -177,7 +177,7 @@ jobs:
           loki_org_id: 1
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: check
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.fmt.outcome == 'success')
         with:
@@ -189,7 +189,7 @@ jobs:
           loki_org_id: 1
 
       - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: clippy
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.check.outcome == 'success' && !cancelled())
         with:
@@ -210,7 +210,7 @@ jobs:
           fi
 
       - name: check license
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-license
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
@@ -223,7 +223,7 @@ jobs:
           loki_org_id: 1
 
       - name: check bans
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-bans
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
@@ -236,7 +236,7 @@ jobs:
           loki_org_id: 1
 
       - name: check advisories
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-advisories
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
@@ -249,7 +249,7 @@ jobs:
           loki_org_id: 1
 
       - name: check sources
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-sources
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
@@ -262,7 +262,7 @@ jobs:
           loki_org_id: 1
 
       - name: unused dependencies
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: dependencies
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
@@ -275,10 +275,10 @@ jobs:
           loki_org_id: 1
 
       - name: Publishing DryRun
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: publish-dryrun
         continue-on-error: true
-        if: matrix.type == 'check' && inputs.skip-test-publish != 'true'
+        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo package ${{ inputs.additional_args }}"
           working-directory: ${{ inputs.working-directory }}
@@ -288,7 +288,7 @@ jobs:
           loki_org_id: 1
 
       - name: Tests
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: tests
         if: matrix.type == 'test' && inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
         with:
@@ -300,7 +300,7 @@ jobs:
           loki_org_id: 1
 
       - name: Miri
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1.2.0
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: miri
         continue-on-error: true
         if: matrix.type == 'miri' && inputs.skip-cargo-test == 'false' && inputs.skip-miri-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
@@ -384,7 +384,7 @@ jobs:
 
             const header = `
               <details>
-              <summary><h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure') && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3> (click for details)</summary>
+              <summary><h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check == 'failure')) && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3> (click for details)</summary>
               <table>
                 <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
             `;
@@ -408,7 +408,7 @@ jobs:
             const machete = entry('cargo machete', '${{ fromJson(steps.read.outputs.result).dependencies_outcome.check }}', false, 'dependencies');
             const test = entry('cargo test ${{ inputs.additional_args }}', '${{ fromJson(steps.read.outputs.result).tests_outcome.test }}', true, 'tests');
             const miri = entry('cargo miri test ${{ inputs.additional_args }}', '${{ fromJson(steps.read.outputs.result).miri_outcome.miri }}', false, 'miri');
-            const publish = entry('cargo publish --dry-run ${{ inputs.additional_args }}', '${{ fromJson(steps.read.outputs.result).publish-dryrun_outcome.check }}', false, 'publish-dryrun');
+            const publish = entry('cargo publish --dry-run ${{ inputs.additional_args }}', '${{ fromJson(steps.read.outputs.result).publish-dryrun_outcome.check }}', ${{ inputs.test-publish-required == 'true' }}, 'publish-dryrun');
 
             const footer = `
               </table>
@@ -429,5 +429,5 @@ jobs:
             });
 
       - name: Rust Test status
-        if: steps.read.outputs.result && (fromJson(steps.read.outputs.result).custom_outcome.check == 'failure' || fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure')
+        if: steps.read.outputs.result && (fromJson(steps.read.outputs.result).custom_outcome.check == 'failure' || fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check == 'failure'))
         run: exit 1
