@@ -117,7 +117,10 @@ jobs:
         if: inputs.additional_cache_key != '' && inputs.additional_cache_path != ''
         with:
           path: ${{ inputs.additional_cache_path }}
-          key: ${{ inputs.additional_cache_key }}
+          key: ${{ inputs.additional_cache_key }}-${{ github.ref_name }}
+          restore-keys: |
+            ${{ inputs.additional_cache_key }}-${{ github.base_ref }}
+            ${{ inputs.additional_cache_key }}
 
       - name: Additional Cache Miss Command
         if: steps.additional-cache.outputs.cache-hit != 'true'
