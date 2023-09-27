@@ -93,6 +93,10 @@ on:
         type: string
         default: ""
         description: Post Build Additional script to run after the additional packages
+      force_nonrequired_publish_test:
+        type: string
+        default: "false"
+        description: Force the publish test to be marked as non required
 
 jobs:
   build_rust_ci_images:
@@ -116,7 +120,7 @@ jobs:
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
-      test-publish-required: ${{ inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true' }}
+      test-publish-required: ${{ inputs.force_nonrequired_publish_test == "false" && (inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true') }}
       skip-miri-test: ${{ inputs.skip-miri-test }}
       nightly_toolchain: ${{ inputs.miri_toolchain }}
     secrets: inherit
