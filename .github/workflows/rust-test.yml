@@ -205,6 +205,19 @@ jobs:
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
           loki_org_id: 1
 
+      - name: documentation
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
+        id: doc
+        continue-on-error: true
+        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        with:
+          command: "RUSTDOCFLAGS=\"-D warnings\" cargo doc --no-deps --workspace"
+          working-directory: ${{ inputs.working-directory }}
+          loki_url: ${{ vars.LOKI_URL }}
+          loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
+          loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
+          loki_org_id: 1
+
       - name: Copy Default deny if not exists
         shell: bash
         working-directory: ${{ inputs.working-directory }}
@@ -326,6 +339,7 @@ jobs:
           outputs: |-
             check_outcome: ${{ steps.check.outcome }}
             clippy_outcome: ${{ steps.clippy.outcome }}
+            doc_outcome: ${{ steps.doc.outcome }}
             custom_outcome: ${{ steps.custom.outcome }}
             deny-advisories_outcome: ${{ steps.deny-advisories.outcome }}
             deny-bans_outcome: ${{ steps.deny-bans.outcome }}
@@ -388,8 +402,7 @@ jobs:
             }
 
             const header = `
-              <details>
-              <summary><h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check == 'failure')) && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3> (click for details)</summary>
+              <h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check == 'failure')) && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3>
               <table>
                 <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
             `;
@@ -406,6 +419,7 @@ jobs:
             const fmt = entry('cargo fmt --verbose --all -- --check', '${{ fromJson(steps.read.outputs.result).fmt_outcome.check }}', true, 'fmt');
             const check = entry('cargo check ${{ inputs.additional_args }}', '${{ fromJson(steps.read.outputs.result).check_outcome.check }}', true, 'check');
             const clippy = entry('cargo clippy ${{ inputs.additional_args }} -- -D warnings', '${{ fromJson(steps.read.outputs.result).clippy_outcome.check }}', true, 'clippy');
+            const doc = entry('RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace', '${{ fromJson(steps.read.outputs.result).doc_outcome.check }}', false, 'doc');
             const licenses = entry('cargo deny check licenses', '${{ fromJson(steps.read.outputs.result).deny-license_outcome.check }}', false, 'deny-license');
             const bans = entry('cargo deny check bans', '${{ fromJson(steps.read.outputs.result).deny-bans_outcome.check }}', false, 'deny-bans');
             const advisories = entry('cargo deny check advisories', '${{ fromJson(steps.read.outputs.result).deny-advisories_outcome.check }}', false, 'deny-advisories');
@@ -421,10 +435,9 @@ jobs:
               Pushed by: ${{ github.actor }}, Action: ${{ github.event_name }};
               Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>
               Logs: <a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=All&from=${{ fromJson(steps.read.outputs.result).start.check }}&to=${{ steps.end_time.outputs.value }}">Logs</a>
-              </details>
             `;
 
-            const output = header + custom + fmt + check + clippy + licenses + bans + advisories + sources + machete + test + miri + publish + footer;
+            const output = header + custom + fmt + check + clippy + doc + licenses + bans + advisories + sources + machete + test + miri + publish + footer;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
