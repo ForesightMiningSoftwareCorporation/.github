@@ -105,7 +105,7 @@ jobs:
       rust_versions: "${{ inputs.toolchain }} ${{ inputs.miri_toolchain }}"
     secrets: inherit
   test:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@220-add-cargo-doc-to-ci
     if: ${{ inputs.skip-test != 'true' }}
     needs:
       - build_rust_ci_images
