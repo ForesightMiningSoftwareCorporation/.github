@@ -402,7 +402,7 @@ jobs:
             }
 
             const header = `
-              <h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check == 'failure')) && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3>
+              <h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check!= 'success' || fromJson(steps.read.outputs.result).check_outcome.check!= 'success' || fromJson(steps.read.outputs.result).clippy_outcome.check!= 'success' || fromJson(steps.read.outputs.result).tests_outcome.test!= 'success' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check!= 'success')) && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3>
               <table>
                 <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
             `;
@@ -447,5 +447,5 @@ jobs:
             });
 
       - name: Rust Test status
-        if: steps.read.outputs.result && (fromJson(steps.read.outputs.result).custom_outcome.check == 'failure' || fromJson(steps.read.outputs.result).fmt_outcome.check == 'failure' || fromJson(steps.read.outputs.result).check_outcome.check == 'failure' || fromJson(steps.read.outputs.result).clippy_outcome.check == 'failure' || fromJson(steps.read.outputs.result).tests_outcome.test == 'failure' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check == 'failure'))
+        if: steps.read.outputs.result && (fromJson(steps.read.outputs.result).custom_outcome.check!= 'success' || fromJson(steps.read.outputs.result).fmt_outcome.check!= 'success' || fromJson(steps.read.outputs.result).check_outcome.check!= 'success' || fromJson(steps.read.outputs.result).clippy_outcome.check!= 'success' || fromJson(steps.read.outputs.result).tests_outcome.test!= 'success' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check!= 'success'))
         run: exit 1
