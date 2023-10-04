@@ -402,7 +402,7 @@ jobs:
             }
 
             const header = `
-              <h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check!= 'success' || fromJson(steps.read.outputs.result).check_outcome.check!= 'success' || fromJson(steps.read.outputs.result).clippy_outcome.check!= 'success' || fromJson(steps.read.outputs.result).tests_outcome.test!= 'success' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check!= 'success')) && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3>
+              <h3>${{ fromJson(steps.read.outputs.result).name.check }} - ${{ (fromJson(steps.read.outputs.result).fmt_outcome.check != 'success' || fromJson(steps.read.outputs.result).check_outcome.check != 'success' || fromJson(steps.read.outputs.result).clippy_outcome.check != 'success' || fromJson(steps.read.outputs.result).tests_outcome.test != 'success' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check != 'success')) && '❌' || '✅' }} ${{ fromJson(steps.read.outputs.result).name.check }}</h3>
               <table>
                 <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
             `;
@@ -419,7 +419,7 @@ jobs:
             const fmt = entry('cargo fmt --verbose --all -- --check', '${{ fromJson(steps.read.outputs.result).fmt_outcome.check }}', true, 'fmt');
             const check = entry('cargo check ${{ inputs.additional_args }}', '${{ fromJson(steps.read.outputs.result).check_outcome.check }}', true, 'check');
             const clippy = entry('cargo clippy ${{ inputs.additional_args }} -- -D warnings', '${{ fromJson(steps.read.outputs.result).clippy_outcome.check }}', true, 'clippy');
-            const doc = entry('RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace', '${{ fromJson(steps.read.outputs.result).doc_outcome.check }}', false, 'doc');
+            const doc = entry('cargo doc', '${{ fromJson(steps.read.outputs.result).doc_outcome.check }}', false, 'doc');
             const licenses = entry('cargo deny check licenses', '${{ fromJson(steps.read.outputs.result).deny-license_outcome.check }}', false, 'deny-license');
             const bans = entry('cargo deny check bans', '${{ fromJson(steps.read.outputs.result).deny-bans_outcome.check }}', false, 'deny-bans');
             const advisories = entry('cargo deny check advisories', '${{ fromJson(steps.read.outputs.result).deny-advisories_outcome.check }}', false, 'deny-advisories');
@@ -447,5 +447,5 @@ jobs:
             });
 
       - name: Rust Test status
-        if: steps.read.outputs.result && (fromJson(steps.read.outputs.result).custom_outcome.check!= 'success' || fromJson(steps.read.outputs.result).fmt_outcome.check!= 'success' || fromJson(steps.read.outputs.result).check_outcome.check!= 'success' || fromJson(steps.read.outputs.result).clippy_outcome.check!= 'success' || fromJson(steps.read.outputs.result).tests_outcome.test!= 'success' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check!= 'success'))
+        if: steps.read.outputs.result && ((inputs.custom_cargo_commands != '' && fromJson(steps.read.outputs.result).custom_outcome.check != 'success') || fromJson(steps.read.outputs.result).fmt_outcome.check != 'success' || fromJson(steps.read.outputs.result).check_outcome.check != 'success' || fromJson(steps.read.outputs.result).clippy_outcome.check != 'success' || fromJson(steps.read.outputs.result).tests_outcome.test != 'success' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check != 'success'))
         run: exit 1
