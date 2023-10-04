@@ -70,6 +70,9 @@ jobs:
       - name: Cache Dependencies
         if: steps.check_exists.outputs.exists != 'true'
         uses: Swatinem/rust-cache@v2
+        with:
+          env-vars: ""
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - uses: dtolnay/rust-toolchain@master
         if: steps.check_exists.outputs.exists != 'true'
