@@ -141,7 +141,7 @@ jobs:
         with:
           shared-key: "${{ github.job }}-${{ matrix.type }}"
           env-vars: ""
-          cache-on-failure: "true"
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Get crate name
         id: name

@@ -70,7 +70,11 @@ runs:
 
     - name: Cache Dependencies
       if: ${{ fromJSON(steps.check_bs_version_exists.outputs.exists) == false }}
-      uses: Swatinem/rust-cache@v1
+      uses: Swatinem/rust-cache@v2
+      with:
+        env-vars: ""
+        cache-on-failure: "true"
+        save-if: ${{ github.ref == 'refs/heads/main' }}
 
     - name: Build binaries
       uses: actions-rs/cargo@v1
