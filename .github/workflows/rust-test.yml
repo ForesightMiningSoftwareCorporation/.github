@@ -223,8 +223,8 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         run: |
-          if [ ! -f deny.yml ]; then
-            wget https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
+          if [ ! -f deny.toml ]; then
+            curl -o deny.toml https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
 
       - name: check license
