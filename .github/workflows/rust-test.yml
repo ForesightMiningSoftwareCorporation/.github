@@ -7,7 +7,7 @@ on:
         description: Package that needs to be installed before Rust compilation can happens
       toolchain:
         type: string
-        default: "1.69"
+        default: "1.73"
         description: Rust toolchain to install
       nightly_toolchain:
         type: string
@@ -99,7 +99,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         if: inputs.login_private_registry == 'true'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
@@ -211,7 +211,7 @@ jobs:
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
-          command: "RUSTDOCFLAGS=\"-D warnings\" cargo doc --no-deps --workspace"
+          command: 'RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace'
           working-directory: ${{ inputs.working-directory }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}

@@ -17,7 +17,7 @@ on:
         description: Additional arguments to pass to the cargo command
       toolchain:
         type: string
-        default: "1.69"
+        default: "1.73"
         description: Rust toolchain to install
       release_channel:
         type: string
@@ -44,7 +44,7 @@ on:
         description: Additional script to run before the additional packages
       matrix_file:
         type: string
-        default: '.github/workflows/matrix.json'
+        default: ".github/workflows/matrix.json"
         description: "Matrix file to load"
       custom_cargo_commands:
         type: string
@@ -88,7 +88,7 @@ jobs:
       released: ${{ steps.check_version_exists.outputs.exists == 'false' && 'true' || 'false' }}
     runs-on: ${{ matrix.os.name }}
     needs:
-        - matrix
+      - matrix
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -112,15 +112,14 @@ jobs:
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
         with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.version'
+          file: "${{ inputs.working-directory }}/Cargo.toml"
+          field: "package.version"
 
       - uses: SebRollen/toml-action@v1.0.2
         id: read_name
         with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.name'
-
+          file: "${{ inputs.working-directory }}/Cargo.toml"
+          field: "package.name"
 
       - uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
         id: check_exists
@@ -141,7 +140,7 @@ jobs:
         with:
           toolchain: ${{ inputs.toolchain }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         if: steps.check_exists.outputs.exists != 'true'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}

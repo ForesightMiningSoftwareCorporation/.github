@@ -11,31 +11,31 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
   apt-get install \
-    -yq --no-install-recommends \
-    software-properties-common \
-    lsb-release \
-    libudev-dev \
-    libasound2-dev \
-    libxcb-composite0-dev \
-    openssh-client \
-    wget \
-    curl \
-    gnupg2 \
-    tzdata \
-    pkg-config \
-    libssl-dev \
-    musl-dev \
-    musl-tools \
-    nvidia-cuda-dev \
-    libfontconfig-dev \
-    build-essential \
-    libfreetype-dev \
-    libexpat1-dev \
-    cmake \
-    curl \
-    gfortran \
-    git \
-    protobuf-compiler
+  -yq --no-install-recommends \
+  software-properties-common \
+  lsb-release \
+  libudev-dev \
+  libasound2-dev \
+  libxcb-composite0-dev \
+  openssh-client \
+  wget \
+  curl \
+  gnupg2 \
+  tzdata \
+  pkg-config \
+  libssl-dev \
+  musl-dev \
+  musl-tools \
+  nvidia-cuda-dev \
+  libfontconfig-dev \
+  build-essential \
+  libfreetype-dev \
+  libexpat1-dev \
+  cmake \
+  curl \
+  gfortran \
+  git \
+  protobuf-compiler
 
 
 RUN add-apt-repository ppa:graphics-drivers
@@ -46,7 +46,7 @@ RUN ln -s "/usr/bin/g++" "/usr/bin/musl-g++"
 
 # install Rust
 RUN curl https://sh.rustup.rs -sSf | \
-    sh -s -- --default-toolchain 1.69 -y -t x86_64-unknown-linux-musl --profile minimal
+  sh -s -- --default-toolchain 1.73 -y -t x86_64-unknown-linux-musl --profile minimal
 
 ENV PATH=/root/.cargo/bin:$PATH
 

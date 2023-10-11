@@ -3,7 +3,7 @@ on:
     inputs:
       rust_versions:
         type: string
-        default: "1.69"
+        default: "1.73"
         description: Rust rust_versions to install, whitespace separated
 
 jobs:
