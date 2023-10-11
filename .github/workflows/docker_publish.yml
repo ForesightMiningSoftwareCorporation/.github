@@ -34,8 +34,8 @@ jobs:
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
         with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.version'
+          file: "${{ inputs.working-directory }}/Cargo.toml"
+          field: "package.version"
 
       # Login to registry (ACR)
       - name: Login to ACR
@@ -58,9 +58,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
-          toolchain: 1.69
+          toolchain: 1.73
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1.1.0
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
@@ -94,8 +94,7 @@ jobs:
           context: ${{ inputs.working-directory }}
           push: true
           file: "${{ inputs.working-directory }}/${{ inputs.dockerfile }}"
-          ssh:
-            default=${{ env.SSH_AUTH_SOCK }}
+          ssh: default=${{ env.SSH_AUTH_SOCK }}
           secrets: |
             node_auth_token="${{ secrets.GITHUB_TOKEN }}"
             cargo_http_user_agent="shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"

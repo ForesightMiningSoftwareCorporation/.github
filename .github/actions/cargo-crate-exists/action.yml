@@ -33,9 +33,9 @@ runs:
     - name: Checkout github wide resources
       uses: actions/checkout@v3
       with:
-        ref: 'v1.1.0'
+        ref: "v1"
         repository: ForesightMiningSoftwareCorporation/github
-        path: '.github_wide_resources'
+        path: ".github_wide_resources"
     - name: Install Updatecli in the runner
       uses: updatecli/updatecli-action@v2
     - name: Run UpdateCli with Cargo check package
@@ -50,4 +50,3 @@ runs:
         UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL: ${{ inputs.cargo_private_registry_git_http_url }}
         UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME: ${{ inputs.cargo_private_registry_git_http_username }}
         UPDATECLI_CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD: ${{ inputs.cargo_private_registry_git_http_password }}
-
