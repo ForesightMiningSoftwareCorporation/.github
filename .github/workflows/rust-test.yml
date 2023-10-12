@@ -70,7 +70,7 @@ env:
 jobs:
   check:
     name: Rust ${{ matrix.type }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, gpu]
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
     strategy:
@@ -83,9 +83,6 @@ jobs:
           - toolchain: ${{ inputs.nightly_toolchain }}
             type: miri
       fail-fast: ${{ inputs.fail-fast == 'true' }}
-    container:
-      image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ matrix.toolchain }}
-      options: --user root
     steps:
       - name: Configure Git to use global ignore file
         shell: bash
