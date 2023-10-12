@@ -356,11 +356,6 @@ jobs:
   results:
     name: Rust Test Results
     runs-on: ubuntu-latest
-    env:
-      CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
-    container:
-      image: ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.toolchain }}
-      options: --user root
     needs: check
     if: always()
     steps:
