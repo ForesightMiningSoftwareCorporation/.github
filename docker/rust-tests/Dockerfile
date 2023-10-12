@@ -1,4 +1,4 @@
-FROM debian:11
+FROM myoung34/github-runner:2.310.2
 ARG RUST_VERSION=1.70
 
 RUN apt-get update && apt-get install -y software-properties-common build-essential curl make gcc
@@ -17,7 +17,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://static.rust-lang.org/rustup/dis
     ./rustup-init -y --default-toolchain $RUST_VERSION && \
     rm rustup-init
 
-RUN apt-add-repository non-free && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     moreutils \
     libmkl-dev \
     libudev-dev \
@@ -26,9 +26,10 @@ RUN apt-add-repository non-free && apt-get update && DEBIAN_FRONTEND=noninteract
     libgtk-3-dev \
     jq
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get install -y \
     software-properties-common \
     npm
+
 RUN npm install npm@latest -g && \
     npm install n -g && \
     n latest
@@ -40,7 +41,3 @@ RUN cargo install tomlq
 
 ARG ADDITIONAL_CMD
 RUN $ADDITIONAL_CMD
-
-RUN mkdir -p /test-dir
-
-WORKDIR /test-dir
