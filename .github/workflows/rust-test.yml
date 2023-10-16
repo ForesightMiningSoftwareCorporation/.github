@@ -33,18 +33,18 @@ on:
         type: string
         default: ""
         description: Additional script to run before the additional packages
-      working-directory:
+      workspaces:
         type: string
-        default: "."
-        description: Working directory to run the cargo command
+        default: '["."]'
+        description: JSON array of of Cargo workspaces. Double quotes only
       crates-directory:
         type: string
         default: "crates"
-        description: The location of sub-crates inside the working directory
+        description: The location of sub-crates inside a workspace
       custom_cargo_commands:
         type: string
         default: ""
-        description: Cusom cargo commands that will be run after login
+        description: Custom cargo commands that will be run after login
       fail-fast:
         type: string
         default: "true"
@@ -80,38 +80,44 @@ jobs:
 
       - name: Build Test Matrix
         id: build
-        working-directory: ${{ inputs.working-directory }}
+        shell: bash
         run: |
+          workspaces="${{ inputs.workspaces }}"
+          workspace_list=($(echo -n ${workspaces:1:${#workspaces}-2} | tr , " "))
+
           if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "matrix=[\".\"]" >> $GITHUB_OUTPUT
+            echo "matrix=$workspaces" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           git fetch origin ${{ github.base_ref }}
-          git_diff=$(git diff --name-only -r origin/${{ github.base_ref }} HEAD)
 
-          if [ "${{ runner.debug }}" = "1" ]; then
-            git diff --name-only -r origin/${{ github.base_ref }} HEAD
-          fi
-
-          workspace_changed="";
-          workspace_changed+=$(git diff --name-only --relative origin/main HEAD -- src)
-          workspace_changed+=$(git diff --name-only --relative origin/main HEAD -- Cargo.toml)
-
-          if [ "$workspace_changed" != "" ]; then
-            echo "matrix=[\".\"]" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          changed_paths=($(git diff --name-only -r origin/${{ github.base_ref }} HEAD | \
-                           grep "^${{ inputs.crates-directory }}/" | cut -d / -f 2 | sort | uniq | xargs))
           output_paths=''
-          for changed_path in "${changed_paths[@]}"; do
-            output_paths+=",\"${{ inputs.crates-directory }}/$changed_path\""
+          root_pwd="$PWD"
+
+          for workspace in "${workspace_list[@]}"; do
+            cd "$root_pwd"
+            cd "$workspace"
+
+            workspace_changed="";
+            workspace_changed+=$(git diff --name-only --relative origin/${{ github.base_ref }} HEAD -- src)
+            workspace_changed+=$(git diff --name-only --relative origin/${{ github.base_ref }} HEAD -- Cargo.toml)
+
+            if [ "$workspace_changed" != "" ]; then
+              output_paths+=",\"$workspace\""
+              continue
+            fi
+
+            changed_paths=($(git diff --name-only --relative origin/${{ github.base_ref }} HEAD | \
+                            grep "^${{ inputs.crates-directory }}/" | cut -d / -f 2 | sort | uniq | xargs)) || true
+            for changed_path in "${changed_paths[@]}"; do
+              output_paths+=",\"$workspace/${{ inputs.crates-directory }}/$changed_path\""
+            done
           done
 
           if [ output_paths = '' ]; then
-            output_paths=",\".\""
+            echo "matrix=$workspaces" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
           echo "matrix=[${output_paths:1}]" >> $GITHUB_OUTPUT
@@ -177,7 +183,7 @@ jobs:
       - name: Additional Script
         run: ${{ inputs.additional_script }}
         shell: bash
-        working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+        working-directory: ${{ matrix.path }}
 
       - name: Update Packages
         if: inputs.required_packages != ''
@@ -193,7 +199,7 @@ jobs:
       - name: Get crate name
         id: name
         shell: bash
-        working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+        working-directory: ${{ matrix.path }}
         run: |
           echo "value=$(tomlq package.name -f Cargo.toml)" >> $GITHUB_OUTPUT
 
@@ -209,7 +215,7 @@ jobs:
         continue-on-error: true
         with:
           command: ${{ inputs.custom_cargo_commands }}
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -222,7 +228,7 @@ jobs:
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success')
         with:
           command: "cargo fmt --verbose --all -- --check"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -233,8 +239,8 @@ jobs:
         id: check
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.fmt.outcome == 'success')
         with:
-          command: "cargo check ${{ matrix.path == '.' && '--workspace' || '' }} ${{ inputs.additional_args }}"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          command: "cargo check ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -245,8 +251,8 @@ jobs:
         id: clippy
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.check.outcome == 'success' && !cancelled())
         with:
-          command: "cargo clippy ${{ matrix.path == '.' && '--workspace' || '' }} ${{ inputs.additional_args }} -- -D warnings"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          command: "cargo clippy ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }} -- -D warnings"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -259,7 +265,7 @@ jobs:
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: 'RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace'
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -267,7 +273,7 @@ jobs:
 
       - name: Copy Default deny if not exists
         shell: bash
-        working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+        working-directory: ${{ matrix.path }}
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         run: |
           if [ ! -f deny.toml ]; then
@@ -281,7 +287,7 @@ jobs:
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check licenses"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -294,7 +300,7 @@ jobs:
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check bans"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -307,7 +313,7 @@ jobs:
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check advisories"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -320,7 +326,7 @@ jobs:
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check sources"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -333,7 +339,7 @@ jobs:
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo machete"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -345,8 +351,8 @@ jobs:
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
-          command: "cargo package ${{ matrix.path == '.' && '--workspace' || '' }} ${{ inputs.additional_args }}"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          command: "cargo package ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -357,8 +363,8 @@ jobs:
         id: tests
         if: matrix.type == 'test' && inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
         with:
-          command: "cargo test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ matrix.path == '.' && '--workspace' || '' }} ${{ inputs.additional_args }}"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          command: "cargo test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -370,8 +376,8 @@ jobs:
         continue-on-error: true
         if: matrix.type == 'miri' && inputs.skip-cargo-test == 'false' && inputs.skip-miri-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
         with:
-          command: "cargo miri test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ matrix.path == '.' && '--workspace' || '' }} ${{ inputs.additional_args }}"
-          working-directory: "${{ inputs.working-directory }}/${{ matrix.path }}"
+          command: "cargo miri test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
@@ -450,9 +456,15 @@ jobs:
             }
 
             const result_string = `${{ steps.read.outputs.result }}`;
-            const data = JSON.parse(result_string);
-            const first_val = data['check_outcome'];
-            const paths = [...new Set(Object.keys(first_val).map(key => key.split('-')[0]))].sort();
+            let data;
+            let paths;
+            try {
+              data = JSON.parse(result_string);
+              const first_val = data['check_outcome'];
+              paths = [...new Set(Object.keys(first_val).map(key => key.split('-')[0]))].sort();
+            } catch {
+              return "0";
+            }
 
             let test_output = '';
             const table_footer = '</table>\n';
@@ -465,6 +477,8 @@ jobs:
 
               start_time = fetch_string('start', 'check');
 
+              const workspace_args = path.indexOf('/${{ inputs.crates-directory }}/') === -1 ? '' : '--workspace';
+
               const entry = (name, outcome, required, logId) => `
             <tr>
             <td align="center">${ required ? '✓' : '' }</td>
@@ -476,17 +490,17 @@ jobs:
 
               const custom = entry('Custom: ${{ inputs.custom_cargo_commands }}', fetch_string('custom_outcome', 'check'), true, 'custom');
               const fmt = entry('cargo fmt --verbose --all -- --check', fetch_string('fmt_outcome', 'check'), true, 'fmt');
-              const check = entry(`cargo check ${ path === '.' && '--workspace' || '' } ${{ inputs.additional_args }}`, fetch_string('check_outcome', 'check'), true, 'check');
-              const clippy = entry(`cargo clippy ${ path === '.' && '--workspace' || '' } ${{ inputs.additional_args }} -- -D warnings`, fetch_string('clippy_outcome', 'check'), true, 'clippy');
+              const check = entry(`cargo check ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('check_outcome', 'check'), true, 'check');
+              const clippy = entry(`cargo clippy ${ workspace_args } ${{ inputs.additional_args }} -- -D warnings`, fetch_string('clippy_outcome', 'check'), true, 'clippy');
               const doc = entry('cargo doc', fetch_string('doc_outcome', 'check'), false, 'doc');
               const licenses = entry('cargo deny check licenses', fetch_string('deny-license_outcome', 'check'), false, 'deny-license');
               const bans = entry('cargo deny check bans', fetch_string('deny-bans_outcome', 'check'), false, 'deny-bans');
               const advisories = entry('cargo deny check advisories', fetch_string('deny-advisories_outcome', 'check'), false, 'deny-advisories');
               const sources = entry('cargo deny check sources', fetch_string('deny-sources_outcome', 'check'), false, 'deny-sources');
               const machete = entry('cargo machete', fetch_string('dependencies_outcome', 'check'), false, 'dependencies');
-              const test = entry(`cargo test ${ path === '.' && '--workspace' || '' } ${{ inputs.additional_args }}`, fetch_string('tests_outcome', 'test'), true, 'tests');
-              const miri = entry(`cargo miri test ${ path === '.' && '--workspace' || '' } ${{ inputs.additional_args }}`, fetch_string('miri_outcome', 'miri'), false, 'miri');
-              const publish = entry(`cargo publish --dry-run ${ path === '.' && '--workspace' || '' } ${{ inputs.additional_args }}`, fetch_string('publish-dryrun_outcome', 'check'), ${{ inputs.test-publish-required == 'true' }}, 'publish-dryrun');
+              const test = entry(`cargo test ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('tests_outcome', 'test'), true, 'tests');
+              const miri = entry(`cargo miri test ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('miri_outcome', 'miri'), false, 'miri');
+              const publish = entry(`cargo publish --dry-run ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('publish-dryrun_outcome', 'check'), ${{ inputs.test-publish-required == 'true' }}, 'publish-dryrun');
 
               const path_success = is_success(fetch_string('fmt_outcome', 'check'), fetch_string('check_outcome', 'check'), fetch_string('clippy_outcome', 'check'), fetch_string('tests_outcome', 'test'), (${{ inputs.test-publish-required }} ? fetch_string('publish-dryrun_outcome', 'check') : 'success'));
 
