@@ -35,8 +35,8 @@ on:
         description: Additional script to run before the additional packages
       workspaces:
         type: string
-        default: '["."]'
-        description: JSON array of of Cargo workspaces. Double quotes only
+        default: '[""]'
+        description: JSON array of of Cargo workspaces
       crates-directory:
         type: string
         default: "crates"
@@ -75,54 +75,17 @@ jobs:
   build-matrix:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Build Test Matrix
         id: build
-        shell: bash
-        run: |
-          workspaces="${{ inputs.workspaces }}"
-          workspace_list=($(echo -n ${workspaces:1:${#workspaces}-2} | tr , " "))
-
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "matrix=$workspaces" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          git fetch origin ${{ github.base_ref }}
-
-          output_paths=''
-          root_pwd="$PWD"
-
-          for workspace in "${workspace_list[@]}"; do
-            cd "$root_pwd"
-            cd "$workspace"
-
-            workspace_changed="";
-            workspace_changed+=$(git diff --name-only --relative origin/${{ github.base_ref }} HEAD -- src)
-            workspace_changed+=$(git diff --name-only --relative origin/${{ github.base_ref }} HEAD -- Cargo.toml)
-
-            if [ "$workspace_changed" != "" ]; then
-              output_paths+=",\"$workspace\""
-              continue
-            fi
-
-            changed_paths=($(git diff --name-only --relative origin/${{ github.base_ref }} HEAD | \
-                            grep "^${{ inputs.crates-directory }}/" | cut -d / -f 2 | sort | uniq | xargs)) || true
-            for changed_path in "${changed_paths[@]}"; do
-              output_paths+=",\"$workspace/${{ inputs.crates-directory }}/$changed_path\""
-            done
-          done
-
-          if [ output_paths = '' ]; then
-            echo "matrix=$workspaces" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "matrix=[${output_paths:1}]" >> $GITHUB_OUTPUT
+        uses: ForesightMiningSoftwareCorporation/action-changed-rust-workspaces@v0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workspaces: ${{ inputs.workspaces }}
+          base_ref: ${{ github.base_ref }}
+          head_ref: ${{ github.head_ref }}
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
+      fallback-matrix: ${{ steps.build.outputs.fallback }}
 
   check:
     name: Rust ${{ matrix.type }}
@@ -150,7 +113,7 @@ jobs:
           echo "deny.toml" >> ~/.gitignore_global
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         if: inputs.login_private_registry == 'true'
@@ -239,7 +202,7 @@ jobs:
         id: check
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.fmt.outcome == 'success')
         with:
-          command: "cargo check ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          command: "cargo check ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
@@ -251,7 +214,7 @@ jobs:
         id: clippy
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.check.outcome == 'success' && !cancelled())
         with:
-          command: "cargo clippy ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }} -- -D warnings"
+          command: "cargo clippy ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }} -- -D warnings"
           working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
@@ -351,7 +314,7 @@ jobs:
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
-          command: "cargo package ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          command: "cargo package ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
@@ -363,7 +326,7 @@ jobs:
         id: tests
         if: matrix.type == 'test' && inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
         with:
-          command: "cargo test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          command: "cargo test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
@@ -376,7 +339,7 @@ jobs:
         continue-on-error: true
         if: matrix.type == 'miri' && inputs.skip-cargo-test == 'false' && inputs.skip-miri-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
         with:
-          command: "cargo miri test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ contains(matrix.path, format('{0}{1}{0}', '/', inputs.crates-directory)) && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          command: "cargo miri test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
@@ -409,7 +372,9 @@ jobs:
   results:
     name: Rust Test Results
     runs-on: ubuntu-latest
-    needs: check
+    needs:
+      - check
+      - build-matrix
     if: always()
     steps:
       - name: Set end time as env variable
@@ -477,7 +442,7 @@ jobs:
 
               start_time = fetch_string('start', 'check');
 
-              const workspace_args = path.indexOf('/${{ inputs.crates-directory }}/') === -1 ? '' : '--workspace';
+              const workspace_args = ${{ needs.build-matrix.outputs.fallback-matrix }} ? '--workspace' : '';
 
               const entry = (name, outcome, required, logId) => `
             <tr>
