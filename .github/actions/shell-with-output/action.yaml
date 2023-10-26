@@ -53,7 +53,7 @@ runs:
     - name: Upload stdout
       uses: ForesightMiningSoftwareCorporation/upload-log-to-loki@releases/v1
       with:
-        log_file: ${{ inputs.working-directory }}/output.txt
+        log_file: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}/output.txt
         loki_url: ${{ inputs.loki_url }}
         loki_username: ${{ inputs.loki_username }}
         loki_password: ${{ inputs.loki_password }}
