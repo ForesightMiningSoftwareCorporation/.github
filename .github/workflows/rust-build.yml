@@ -5,6 +5,10 @@ on:
         type: string
         default: "false"
         description: "Should the tests be run"
+      skip-tests-no-changes:
+        type: string
+        default: "false"
+        description: Skip tests when no changes were detected in any cargo workspace
       skip-miri-test:
         type: string
         default: "true"
@@ -125,6 +129,7 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
       test-publish-required: ${{ inputs.force_nonrequired_publish_test == 'false' && (inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true') }}
+      skip-tests-no-changes: ${{ inputs.skip-tests-no-changes }}
       skip-miri-test: ${{ inputs.skip-miri-test }}
       nightly_toolchain: ${{ inputs.miri_toolchain }}
     secrets: inherit
