@@ -49,6 +49,10 @@ on:
         type: string
         default: "true"
         description: Should all the test ran or fail early
+      skip-tests-no-changes:
+        type: string
+        default: "false"
+        description: Skip tests when no changes were detected in any cargo workspace
       skip-cargo-test:
         type: string
         default: "false"
@@ -116,7 +120,7 @@ jobs:
         uses: actions/checkout@v4
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
-        if: inputs.login_private_registry == 'true'
+        if: inputs.login_private_registry == 'true' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -130,7 +134,7 @@ jobs:
       - name: Additional Cache
         id: additional-cache
         uses: actions/cache@v3
-        if: inputs.additional_cache_key != '' && inputs.additional_cache_path != ''
+        if: inputs.additional_cache_key != '' && inputs.additional_cache_path != '' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
         with:
           path: ${{ inputs.additional_cache_path }}
           key: ${{ inputs.additional_cache_key }}-${{ github.ref_name }}
@@ -139,21 +143,23 @@ jobs:
             ${{ inputs.additional_cache_key }}
 
       - name: Additional Cache Miss Command
-        if: steps.additional-cache.outputs.cache-hit != 'true'
+        if: steps.additional-cache.outputs.cache-hit != 'true' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
         shell: bash
         run: ${{ inputs.additional_cache_miss }}
 
       - name: Additional Script
         run: ${{ inputs.additional_script }}
+        if: inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true'
         shell: bash
         working-directory: ${{ matrix.path }}
 
       - name: Update Packages
-        if: inputs.required_packages != ''
+        if: inputs.required_packages != '' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
         run: apt-get update -yq && apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
+        if: inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true'
         with:
           shared-key: "${{ github.job }}-${{ matrix.type }}"
           env-vars: ""
@@ -168,13 +174,13 @@ jobs:
 
       - name: Set start time as env variable
         id: start_time
-        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'push' && github.event_name != 'workflow_dispatch' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
       - name: Run Cargo Custom command
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: custom
-        if: inputs.custom_cargo_commands != ''
+        if: inputs.custom_cargo_commands != '' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
         continue-on-error: true
         with:
           command: ${{ inputs.custom_cargo_commands }}
@@ -188,7 +194,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: fmt
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success')
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success')
         with:
           command: "cargo fmt --verbose --all -- --check"
           working-directory: ${{ matrix.path }}
@@ -200,7 +206,7 @@ jobs:
       - name: check
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: check
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.fmt.outcome == 'success')
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.fmt.outcome == 'success')
         with:
           command: "cargo check ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
@@ -212,7 +218,7 @@ jobs:
       - name: run clippy
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: clippy
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.check.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.check.outcome == 'success' && !cancelled())
         with:
           command: "cargo clippy ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }} -- -D warnings"
           working-directory: ${{ matrix.path }}
@@ -225,7 +231,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: doc
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: 'RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace'
           working-directory: ${{ matrix.path }}
@@ -237,7 +243,7 @@ jobs:
       - name: Copy Default deny if not exists
         shell: bash
         working-directory: ${{ matrix.path }}
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         run: |
           if [ ! -f deny.toml ]; then
             curl -o deny.toml https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
@@ -247,7 +253,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-license
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check licenses"
           working-directory: ${{ matrix.path }}
@@ -260,7 +266,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-bans
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check bans"
           working-directory: ${{ matrix.path }}
@@ -273,7 +279,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-advisories
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check advisories"
           working-directory: ${{ matrix.path }}
@@ -286,7 +292,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: deny-sources
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo deny check sources"
           working-directory: ${{ matrix.path }}
@@ -299,7 +305,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: dependencies
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo machete"
           working-directory: ${{ matrix.path }}
@@ -312,7 +318,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: publish-dryrun
         continue-on-error: true
-        if: matrix.type == 'check' && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
+        if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
           command: "cargo package ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
@@ -324,7 +330,7 @@ jobs:
       - name: Tests
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: tests
-        if: matrix.type == 'test' && inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
+        if: matrix.type == 'test' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && inputs.skip-cargo-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
         with:
           command: "cargo test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
@@ -337,7 +343,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v1
         id: miri
         continue-on-error: true
-        if: matrix.type == 'miri' && inputs.skip-cargo-test == 'false' && inputs.skip-miri-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
+        if: matrix.type == 'miri' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && inputs.skip-cargo-test == 'false' && inputs.skip-miri-test == 'false' && (inputs.fail-fast == 'false' || !cancelled())
         with:
           command: "cargo miri test ${{ inputs.fail-fast == 'false' && '--keep-going' || '' }} ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
           working-directory: ${{ matrix.path }}
@@ -401,6 +407,19 @@ jobs:
         with:
           result-encoding: string
           script: |
+            if (${{ inputs.skip-tests-no-changes != 'true' && false || needs.build-matrix.outputs.fallback-matrix == 'true' }}) {
+              if (context.eventName === 'pull_request' || context.eventName === 'pull_request_target') {
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: '###  No changes detected - tests skipped `⏭`'
+                });
+              }
+
+              return "0";
+            }
+
             function outcomeEmoji(outcome) {
               switch (outcome) {
                 case 'success':
