@@ -320,7 +320,7 @@ jobs:
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true') && (inputs.fail-fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
-          command: "cargo package ${{ needs.build-matrix.outputs.fallback-matrix == 'true' && '--workspace' || '' }} ${{ inputs.additional_args }}"
+          command: "cargo package"
           working-directory: ${{ matrix.path }}
           loki_url: ${{ vars.LOKI_URL }}
           loki_username: ${{ secrets.LOKI_GITHUB_USERNAME }}
@@ -476,7 +476,7 @@ jobs:
               const fmt = entry('cargo fmt --verbose --all -- --check', fetch_string('fmt_outcome', 'check'), true, 'fmt');
               const check = entry(`cargo check ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('check_outcome', 'check'), true, 'check');
               const clippy = entry(`cargo clippy ${ workspace_args } ${{ inputs.additional_args }} -- -D warnings`, fetch_string('clippy_outcome', 'check'), true, 'clippy');
-              const doc = entry('cargo doc', fetch_string('doc_outcome', 'check'), false, 'doc');
+              const doc = entry('cargo doc --no-deps', fetch_string('doc_outcome', 'check'), false, 'doc');
               const licenses = entry('cargo deny check licenses', fetch_string('deny-license_outcome', 'check'), false, 'deny-license');
               const bans = entry('cargo deny check bans', fetch_string('deny-bans_outcome', 'check'), false, 'deny-bans');
               const advisories = entry('cargo deny check advisories', fetch_string('deny-advisories_outcome', 'check'), false, 'deny-advisories');
@@ -484,7 +484,7 @@ jobs:
               const machete = entry('cargo machete', fetch_string('dependencies_outcome', 'check'), false, 'dependencies');
               const test = entry(`cargo test ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('tests_outcome', 'test'), true, 'tests');
               const miri = entry(`cargo miri test ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('miri_outcome', 'miri'), false, 'miri');
-              const publish = entry(`cargo publish --dry-run ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('publish-dryrun_outcome', 'check'), ${{ inputs.test-publish-required == 'true' }}, 'publish-dryrun');
+              const publish = entry(`cargo package`, fetch_string('publish-dryrun_outcome', 'check'), ${{ inputs.test-publish-required == 'true' }}, 'publish-dryrun');
 
               const path_success = is_success(fetch_string('fmt_outcome', 'check'), fetch_string('check_outcome', 'check'), fetch_string('clippy_outcome', 'check'), fetch_string('tests_outcome', 'test'), (${{ inputs.test-publish-required }} ? fetch_string('publish-dryrun_outcome', 'check') : 'success'));
 
