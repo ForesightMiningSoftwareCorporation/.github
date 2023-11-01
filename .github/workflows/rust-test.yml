@@ -356,7 +356,7 @@ jobs:
         id: out
         if: always()
         with:
-          matrix-step-name: "check-${{ fromJson(inputs.workspaces)[0] }}"
+          matrix-step-name: check
           matrix-key: ${{ matrix.path }}-${{ matrix.type }}
           outputs: |-
             check_outcome: ${{ steps.check.outcome }}
@@ -392,7 +392,7 @@ jobs:
         id: read
         if: always()
         with:
-          matrix-step-name: "check-${{ fromJson(inputs.workspaces)[0] }}"
+          matrix-step-name: check
 
       - uses: int128/hide-comment-action@v1
         if: always() && github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
