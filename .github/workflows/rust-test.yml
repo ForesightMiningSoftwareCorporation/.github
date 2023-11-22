@@ -130,6 +130,7 @@ jobs:
             ${{ secrets.FSE_SSH_PRIVATE_KEY }}
             ${{ secrets.BEVY_CLIPMAP_SSH_PRIVATE_KEY }}
             ${{ secrets.DAG_TABLES_SSH_PRIVATE_KEY }}
+            ${{ secrets.VOLUMESIGHT_SSH_PRIVATE_KEY }}
 
       - name: Additional Cache
         id: additional-cache
