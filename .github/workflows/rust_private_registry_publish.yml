@@ -88,6 +88,7 @@ jobs:
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
           additional_private_keys: |
             ${{ secrets.FSE_SSH_PRIVATE_KEY }}
+            ${{ secrets.VOLUMESIGHT_SSH_PRIVATE_KEY }}
 
       - name: Additional Script
         if: steps.check_exists.outputs.exists != 'true' && inputs.additional_script != ''
