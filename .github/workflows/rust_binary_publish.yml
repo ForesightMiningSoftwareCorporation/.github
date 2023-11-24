@@ -210,7 +210,8 @@ jobs:
 
       - name: Copy to bin folder linux
         if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
-        working-directory: ${{ inputs.working-directory }}
+#        `cargo build` put build inside of the workspace root target dir. If using working-drectory inside of a non-workspace repo this will not work anymore
+#        working-directory: ${{ inputs.working-directory }}
         shell: bash
         run: |
           artifacts_dir=${{ runner.temp }}/bin_output/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
