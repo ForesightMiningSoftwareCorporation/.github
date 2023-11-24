@@ -1,5 +1,18 @@
 on:
   workflow_call:
+    outputs:
+      private_registry_released:
+        description: Was it released to the private registry
+        value: ${{ jobs.publish_private_registry.outputs.released }}
+      public_registry_released:
+        description: Was it released to the public registry
+        value: ${{ jobs.publish_public_registry.outputs.released }}
+      docker_released:
+        description: Was it released to the docker registry
+        value: ${{ jobs.publish_docker.outputs.released }}
+      binary_released:
+        description: Was it released as binary
+        value: ${{ jobs.publish_binary.outputs.released }}
     inputs:
       skip-test:
         type: string
