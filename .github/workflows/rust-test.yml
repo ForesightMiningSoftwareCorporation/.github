@@ -477,7 +477,7 @@ jobs:
               const fmt = entry('cargo fmt --verbose --all -- --check', fetch_string('fmt_outcome', 'check'), true, 'fmt');
               const check = entry(`cargo check ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('check_outcome', 'check'), true, 'check');
               const clippy = entry(`cargo clippy ${ workspace_args } ${{ inputs.additional_args }} -- -D warnings`, fetch_string('clippy_outcome', 'check'), true, 'clippy');
-              const doc = entry('cargo doc --no-deps', fetch_string('doc_outcome', 'check'), false, 'doc');
+              const doc = entry('cargo doc --no-deps', fetch_string('doc_outcome', 'check'), ${{ inputs.test-publish-required == 'true' }}, 'doc');
               const licenses = entry('cargo deny check licenses', fetch_string('deny-license_outcome', 'check'), false, 'deny-license');
               const bans = entry('cargo deny check bans', fetch_string('deny-bans_outcome', 'check'), false, 'deny-bans');
               const advisories = entry('cargo deny check advisories', fetch_string('deny-advisories_outcome', 'check'), false, 'deny-advisories');
@@ -487,7 +487,7 @@ jobs:
               const miri = entry(`cargo miri test ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('miri_outcome', 'miri'), false, 'miri');
               const publish = entry(`cargo package`, fetch_string('publish-dryrun_outcome', 'check'), ${{ inputs.test-publish-required == 'true' }}, 'publish-dryrun');
 
-              const path_success = is_success(fetch_string('fmt_outcome', 'check'), fetch_string('check_outcome', 'check'), fetch_string('clippy_outcome', 'check'), fetch_string('tests_outcome', 'test'), (${{ inputs.test-publish-required }} ? fetch_string('publish-dryrun_outcome', 'check') : 'success'));
+              const path_success = is_success(fetch_string('fmt_outcome', 'check'), fetch_string('check_outcome', 'check'), fetch_string('clippy_outcome', 'check'), fetch_string('tests_outcome', 'test'), (${{ inputs.test-publish-required }} ? fetch_string('publish-dryrun_outcome', 'check') : 'success'), (${{ inputs.test-publish-required }} ? fetch_string('doc_outcome', 'check') : 'success'));
 
               test_output += `
             <h3>${ fetch_string('name', 'check') } - ${ path_success ? '✅' : '❌' }</h3>
