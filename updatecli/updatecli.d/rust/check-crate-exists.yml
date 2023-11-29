@@ -14,13 +14,13 @@ sources:
     kind: 'toml'
     spec:
       file: './Cargo.toml'
-      Key: 'package.name'
+      key: 'package.name'
   target_version:
     name: 'Get current crate version'
     kind: 'toml'
     spec:
       file: './Cargo.toml'
-      Key: 'package.version'
+      key: 'package.version'
 
 conditions:
   version_exists:
@@ -31,7 +31,7 @@ conditions:
     failwhen: true
     spec:
       package: '{{ source "crate_name" }}'
-      Version: '{{ source "target_version" }}'
+      version: '{{ source "target_version" }}'
 
 
 targets:
