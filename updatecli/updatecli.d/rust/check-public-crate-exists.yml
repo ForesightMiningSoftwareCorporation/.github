@@ -19,7 +19,6 @@ conditions:
     name: 'Check if package exists in registry'
     kind: 'cargopackage'
     disablesourceinput: true
-    failwhen: true
     spec:
       package: '{{ source "crate_name" }}'
       version: '{{ source "target_version" }}'
@@ -32,4 +31,4 @@ targets:
     spec:
       file: PACKAGE_EXISTS
       forcecreate: true
-      content: 'false'
+      content: 'true'

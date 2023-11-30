@@ -28,7 +28,6 @@ conditions:
     kind: 'cargopackage'
     scmid: 'private-reg'
     disablesourceinput: true
-    failwhen: true
     spec:
       package: '{{ source "crate_name" }}'
       version: '{{ source "target_version" }}'
@@ -41,4 +40,4 @@ targets:
     spec:
       file: PACKAGE_EXISTS
       forcecreate: true
-      content: 'false'
+      content: 'true'
