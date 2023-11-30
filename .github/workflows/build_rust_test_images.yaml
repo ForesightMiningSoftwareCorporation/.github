@@ -7,6 +7,10 @@ on:
         description: "Rust version to install"
         default: "1.70"
         type: string
+      github_runner_version:
+        description: "Github Runner Version"
+        default: "2.311.0"
+        type: string
       additional_tag:
         description: "Additional tag for docker building"
         default: "latest"
@@ -19,6 +23,10 @@ on:
       rust_version:
         description: "Rust version to install"
         default: "1.70"
+        type: string
+      github_runner_version:
+        description: "Github Runner Version"
+        default: "2.311.0"
         type: string
       context:
         type: string
@@ -47,6 +55,7 @@ jobs:
           push: true
           build-args: |
             RUST_VERSION=${{ inputs.rust_version }}
+            GITHUB_RUNNER_VERSION=${{ inputs.github_runner_version }}
             ADDITIONAL_CMD=${{ contains(inputs.rust_version, 'nightly') && 'rustup component add miri' || '' }}
           tags: |
             ghcr.io/foresightminingsoftwarecorporation/rust-test:${{ inputs.rust_version }}
