@@ -469,7 +469,7 @@ jobs:
             <td align="center">${ required ? '✓' : '' }</td>
             <td>${ name }</td>
             <td>${ outcomeEmoji(outcome) }</td>
-            <td><a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=${ logId }&from=${ start_time }&to=${{ steps.end_time.outputs.value }}">Logs</a></td>
+            <td><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Logs</a></td>
             </tr>
             `;
 
@@ -502,7 +502,6 @@ jobs:
             const footer = `
             Pushed by: ${{ github.actor }}, Action: ${{ github.event_name }};
             Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>
-            Logs: <a href="${{vars.GRAFANA_URL}}/d/${{vars.ACTION_LOG_DASHBOARD_ID}}var-run_id=${{ github.run_id }}&var-test=All&from=${ start_time }&to=${{ steps.end_time.outputs.value }}">Logs</a>
             `;
 
             const output = test_output + footer;
