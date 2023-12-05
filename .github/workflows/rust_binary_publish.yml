@@ -316,6 +316,7 @@ jobs:
         with:
           github-token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
           script: |
+            const AdmZip = require('adm-zip');
             const MAX_RETRY=7;
             const RETRY_TIMEOUT_S = 5 ;
             const now = new Date();
@@ -379,10 +380,38 @@ jobs:
                 return await callWithRetry(_waitForWorkflowRunCompletion, 60, 60);
             }
             
+            const getWorkflowArtifact = async (run_id, artifact_name) => {
+               const _getWorkflowArtifact = async () => {
+                   const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                       owner: gh_info[0],
+                       repo: gh_info[1],
+                       run_id,
+                   })
+                   if (!artifacts) return null;
+                   return artifacts.data.artifacts.find(a => a.name === artifact_name);
+               }
+               return await callWithRetry(_getWorkflowArtifact);
+            }
+            
+            const downloadArtifact = async (artifact_id, download_path) => {
+               const zip = await github.rest.actions.downloadArtifact({
+                   owner: gh_info[0],
+                   repo: gh_info[1],
+                   artifact_id,
+                   archive_format: "zip"
+               });
+               fs.mkdirSync(download_path, { recursive: true });
+               const adm = new AdmZip(Buffer.from(zip.data));
+               adm.extractAllTo(download_path, true);
+            } 
+            
             // Get data
             const gh_info = "${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}".split("/");
             const artifact_sas = "${{ steps.sas-url.outputs.sas }}";
             const artifact_name = "${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}";
+            const gh_artifact_name = "signed_artifacts";
+            const gh_artifact_name = "signed_artifacts";
+            const download_path = "${{ runner.temp }}/signed_artifacts/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}"
             const repository = "${{ github.repository }}";
             const run_id = "${{ github.run_id }}";
             
@@ -403,22 +432,16 @@ jobs:
             const workflow_id = await getWorkflowId(`Sign ${artifact_name} ${repository} ${run_id}`);
             // 3. Wait for the workflow_completion
             const completed_workflow = await waitForWorkflowRunCompletion(workflow_id);
+            // 4. Load workflow artifact
+            const artifact = await getWorkflowArtifact(workflow_id, gh_artifact_name);
+            // 5. Download artifact
+            await downloadArtifact(artifact, download_path);
             return {
                 status: completed_workflow.status,
                 conclusion: completed_workflow.conclusion,
                 url: completed_workflow.url,
                 id: completed_workflow.id,
             }
-      - name: Download artifact to sign
-        if: steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true' && fromJSON(steps.signer-workflow.outputs.result).conclusion == 'success'
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          github_token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
-          repo: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
-          run_id: ${{ fromJSON(steps.signer-workflow.outputs.result).id }}
-          name: signed_artifacts
-          path: ${{ runner.temp }}/signed_artifacts/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
 
       - name: Generate signed artifacts checksum linux
         if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
