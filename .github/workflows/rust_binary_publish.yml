@@ -421,7 +421,9 @@ jobs:
             const artifact_sas = "${{ steps.sas-url.outputs.sas }}";
             const artifact_name = "${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}";
             const gh_artifact_name = "signed_artifacts";
-            const download_path = "${{ runner.temp }}/signed_artifacts/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}"
+            const temp_dir = String.raw`${{ runner.temp }}`;
+            const dir_separator = temp_dir.indexOf("\\") == -1 ? "/" : "\\";
+            const download_path = `${temp_dir}${dir_separator}signed_artifacts${dir_separator}${{ steps.read_name.outputs.value }}${dir_separator}${{ steps.extract_branch.outputs.release_channel }}`;
             const repository = "${{ github.repository }}";
             const run_id = "${{ github.run_id }}";
             
