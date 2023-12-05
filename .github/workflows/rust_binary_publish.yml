@@ -126,7 +126,15 @@ jobs:
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
-          blob_name: ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ inputs.sign_build == 'true' && '-signed' || ''}}${{ matrix.os.extension }}
+          blob_name: ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
+
+      - uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
+        id: check_signed_exists
+        if: inputs.sign_build == 'true'
+        with:
+          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
+          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
+          blob_name: ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}
 
       - name: Cache Dependencies
         if: steps.check_exists.outputs.exists != 'true'
@@ -282,14 +290,14 @@ jobs:
           delete_if_exists: true
 
       - name: Generate Expiry for SAS Url
-        if: steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
         shell: bash
         id: sas-expiry
         run: |
           echo "expiry=$(date -u -d "30 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
 
       - name: Generate SAS Url for binary signing
-        if: steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
         shell: bash
         id: sas-url
         run: |
@@ -297,7 +305,7 @@ jobs:
           echo "sas=$sas" >> $GITHUB_OUTPUT
 
       - name: Retrieve signing secret from Vault
-        if: steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
         id: import-signing-secrets
         uses: hashicorp/vault-action@v2.7.3
         with:
@@ -309,14 +317,17 @@ jobs:
             kv-v2/data/whirlpool/signer PAT_TOKEN | WHIRLPOOL_SIGNER_PAT_TOKEN ;
             kv-v2/data/whirlpool/signer REPOSITORY | WHIRLPOOL_SIGNER_REPOSITORY ;
 
+      - run: npm install adm-zip
+        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
       - name: Trigger signer workflow
         uses: actions/github-script@v7
         id: signer-workflow
-        if: steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
         with:
           github-token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
           script: |
             const AdmZip = require('adm-zip');
+            const fs = require('fs');
             const MAX_RETRY=7;
             const RETRY_TIMEOUT_S = 5 ;
             const now = new Date();
@@ -410,7 +421,6 @@ jobs:
             const artifact_sas = "${{ steps.sas-url.outputs.sas }}";
             const artifact_name = "${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}";
             const gh_artifact_name = "signed_artifacts";
-            const gh_artifact_name = "signed_artifacts";
             const download_path = "${{ runner.temp }}/signed_artifacts/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}"
             const repository = "${{ github.repository }}";
             const run_id = "${{ github.run_id }}";
@@ -435,7 +445,7 @@ jobs:
             // 4. Load workflow artifact
             const artifact = await getWorkflowArtifact(workflow_id, gh_artifact_name);
             // 5. Download artifact
-            await downloadArtifact(artifact, download_path);
+            await downloadArtifact(artifact.id, download_path);
             return {
                 status: completed_workflow.status,
                 conclusion: completed_workflow.conclusion,
@@ -444,20 +454,20 @@ jobs:
             }
 
       - name: Generate signed artifacts checksum linux
-        if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: matrix.os.name == 'ubuntu-latest' && steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
         shell: bash
         run: |
           artifacts_dir=${{ runner.temp }}/signed_artifacts/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
           sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}-signed-sha-512.txt
 
       - name: Generate signed artifacts checksum windows
-        if: matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: matrix.os.name == 'windows-latest' && steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
         shell: pwsh
         run: |
           $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}" -Algorithm SHA512
           echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed-sha512.txt"
       - name: Upload signed artifacts to Azure Blob Upload
-        if: steps.check_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
