@@ -85,7 +85,7 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.matrix.outputs.matrix).os }}
     outputs:
-      released: ${{ steps.check_exists.outputs.exists == 'false' && 'true' || 'false' }}
+      released: ${{ (steps.check_exists.outputs.exists == 'false' && 'true' || 'false') || (steps.check_signed_exists.outputs.exists == 'false' && 'true' || 'false') }}
     runs-on: ${{ matrix.os.name }}${{ matrix.os.runner_flavour }}
     needs:
       - matrix
