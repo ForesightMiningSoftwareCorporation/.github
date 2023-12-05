@@ -192,7 +192,7 @@ jobs:
       registry: ${{ inputs.docker_registry }}
     secrets: inherit
   publish_binary:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@binary-signing
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v1
     if: always() && inputs.publish == 'true' && inputs.publish_binary == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
