@@ -5,7 +5,7 @@ on:
     outputs:
       released:
         description: Was the binary published
-        value: ${{ jobs.cargo_upload_binary.outputs.released }}
+        value: ${{ jobs.check_result.outputs.released }}
     inputs:
       required_packages:
         type: string
@@ -84,8 +84,6 @@ jobs:
     strategy:
       matrix:
         os: ${{ fromJson(needs.matrix.outputs.matrix).os }}
-    outputs:
-      released: ${{ (steps.check_exists.outputs.exists == 'false' && 'true' || 'false') || (steps.check_signed_exists.outputs.exists == 'false' && 'true' || 'false') }}
     runs-on: ${{ matrix.os.name }}${{ matrix.os.runner_flavour }}
     needs:
       - matrix
@@ -476,3 +474,50 @@ jobs:
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/signed_artifacts
           delete_if_exists: true
+
+      - name: Write results
+        id: results
+        uses: cloudposse/github-action-matrix-outputs-write@0.4.2
+        with:
+          matrix-step-name: upload
+          matrix-key: ${{ matrix.os.name }}
+          outputs: |-
+            exists: ${{ steps.check_exists.outputs.exists }}
+            signed_exists: ${{ steps.check_signed_exists.outputs.exists }}
+
+
+  check_result:
+    name: Check for new release
+    needs: cargo_upload_binary
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.emit.outputs.result == 'true' && 'true' || 'false' }}
+    steps:
+      - name: Read Results
+        uses: cloudposse/github-action-matrix-outputs-read@0.1.1
+        id: read
+        if: always()
+        with:
+          matrix-step-name: upload
+
+      - name: Emit Output
+        id: emit
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          result-encoding: string
+          script: |
+            const result_string = String.raw`${{ steps.read.outputs.result }}`;
+            let released = false;
+            let signed_released = false;
+            try {
+              const data = JSON.parse(result_string);
+              try {
+                released = Object.values(data['exists']).indexOf(false) != -1;
+              } catch {}
+              try {
+                signed_released = Object.values(data['signed_exists']).indexOf(false) != -1;
+              } catch {}
+            } catch {}
+
+            return (released || signed_released).toString();
