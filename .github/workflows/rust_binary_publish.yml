@@ -292,7 +292,7 @@ jobs:
         shell: bash
         id: sas-expiry
         run: |
-          echo "expiry=$(date -u -d "30 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
+          echo "expiry=$(date -u -d "120 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
 
       - name: Generate SAS Url for binary signing
         if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
