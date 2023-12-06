@@ -105,7 +105,7 @@ jobs:
           elif [ "$BRANCH_NAME" == "prod" ] ; then
             RELEASE_CHANNEL=prod
           fi
-          echo release_channel=${ACTION_RC:-${RELEASE_CHANNEL:-nightly}}$RELEASE_CHANNEL >> $GITHUB_OUTPUT
+          echo release_channel=${ACTION_RC:-${RELEASE_CHANNEL:-nightly}} >> $GITHUB_OUTPUT
 
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
