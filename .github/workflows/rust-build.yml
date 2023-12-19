@@ -212,7 +212,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     outputs:
-      report: ${{ steps.should_report.outputs.result }}
+      report: ${{ steps.report.outputs.result }}
     needs:
       - publish_private_registry
       - publish_public_registry

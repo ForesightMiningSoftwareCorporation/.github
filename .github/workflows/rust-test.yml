@@ -37,10 +37,12 @@ on:
         type: string
         default: '[""]'
         description: JSON array of of Cargo workspaces
+      # unused and obsolete
       crates-directory:
         type: string
         default: "crates"
         description: The location of sub-crates inside a workspace
+      # unused
       custom_cargo_commands:
         type: string
         default: ""
@@ -49,10 +51,12 @@ on:
         type: string
         default: "true"
         description: Should all the test ran or fail early
+      # unused
       skip-tests-no-changes:
         type: string
         default: "false"
         description: Skip tests when no changes were detected in any cargo workspace
+      # unused - only referenced in old fse repo
       skip-cargo-test:
         type: string
         default: "false"
@@ -65,6 +69,7 @@ on:
         type: string
         default: "false"
         description: "Should the publish dry-run test be marked as required"
+      # unused
       login_private_registry:
         type: string
         default: "true"
