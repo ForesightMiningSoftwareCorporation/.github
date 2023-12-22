@@ -97,7 +97,7 @@ jobs:
       fallback-matrix: ${{ steps.build.outputs.fallback }}
 
   check:
-    name: Rust ${{ matrix.type }}
+    name: Rust ${{ matrix.type }} ${{ matrix.path }}
     runs-on: [self-hosted, gpu]
     needs: build-matrix
     env:
