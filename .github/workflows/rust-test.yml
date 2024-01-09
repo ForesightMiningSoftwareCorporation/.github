@@ -8,11 +8,11 @@ on:
       toolchain:
         type: string
         default: "1.73"
-        description: Rust toolchain to install
+        description: Rust toolchain to install. Do not set this to moving targets like "stable", instead leave it empty and regularly bump the default in this file.
       nightly_toolchain:
         type: string
         default: "nightly-2023-08-02"
-        description: Rust toolchain to install
+        description: Rust toolchain to install. Do not set this to moving targets like "nightly", instead leave it empty and regularly bump the default in this file.
       additional_args:
         type: string
         default: ""
@@ -453,7 +453,16 @@ jobs:
               const first_val = data['check_outcome'];
               paths = [...new Set(Object.keys(first_val).map(key => key.split('-')[0]))].sort();
             } catch {
-              return "0";
+              if (context.eventName === 'pull_request' || context.eventName === 'pull_request_target') {
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: '###  Run failed - no results found `❌`'
+                });
+              }
+
+              return "1";
             }
 
             let test_output = '';
