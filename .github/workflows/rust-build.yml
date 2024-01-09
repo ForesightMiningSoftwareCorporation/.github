@@ -49,11 +49,17 @@ on:
       toolchain:
         type: string
         default: "1.73"
-        description: Rust toolchain to install
+        description:
+          Rust toolchain to install.
+          Do not set this to moving targets like "stable".
+          Instead, leave it empty and regularly bump the default in this file.
       miri_toolchain:
         type: string
         default: "nightly-2023-08-02"
-        description: Rust toolchain to use for Miri
+        description:
+          Rust toolchain to use for Miri.
+          Do not set this to moving targets like "nightly".
+          Instead, leave it empty and regularly bump the default in this file.
       release_channel:
         type: string
         default: ""
