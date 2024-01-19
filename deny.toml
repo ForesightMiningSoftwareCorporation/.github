@@ -23,4 +23,8 @@ allow = [
 unused-allowed-license = "allow"
 [licenses.private]
 ignore = true
-
+[sources]
+allow-registry = [
+    "https://github.com/rust-lang/crates.io-index",
+    "ssh://git@ssh.shipyard.rs/foresight-mining-software-corporation/crate-index.git"
+]
