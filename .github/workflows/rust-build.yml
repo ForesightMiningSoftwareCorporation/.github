@@ -48,7 +48,7 @@ on:
         description: "Should the binary be built and published"
       toolchain:
         type: string
-        default: "1.73"
+        default: "1.75"
         description:
           Rust toolchain to install.
           Do not set this to moving targets like "stable".
