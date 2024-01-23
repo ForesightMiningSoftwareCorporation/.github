@@ -28,3 +28,40 @@ allow-registry = [
     "https://github.com/rust-lang/crates.io-index",
     "ssh://git@ssh.shipyard.rs/foresight-mining-software-corporation/crate-index.git"
 ]
+[bans]
+multiple-versions = "deny"
+skip = [
+   { name = "toml" },
+   { name = "self_cell" },
+   { name = "memoffset" },
+   { name = "dirs-next" },
+   { name = "async-fs" },
+   { name = "async-io" },
+   { name = "serde_with" },
+   { name = "serde_with_macros" },
+   { name = "vector-expr" },
+   { name = "num" },
+   { name = "num-rational" },
+   { name = "num-complex" },
+   { name = "num-bigint" },
+   { name = "itertools" },
+   { name = "glam" },
+   { name = "strum" },
+   { name = "strum_macros" },
+   { name = "uom" },
+   { name = "ordered-float" },
+   { name = "pem" },
+   { name = "nix" },
+   { name = "robust" },
+   { name = "polling" },
+   { name = "miniz_oxide" },
+   # Doesn't seem to cause problems but is fsl internal
+   { name = "dag_tables" },
+   { name = "bevy_mod_raycast" },
+]
+skip-tree = [
+    { name = "bevy" },
+    { name = "azure_core" },
+    { name = "azure_storage" },
+    { name = "azure_storage_blobs" },
+]   
