@@ -22,7 +22,7 @@ runs:
   using: "composite"
   steps:
     - name: Access private registry
-      uses: archen/ssh-agent@update-nodejs
+      uses: ForesightMiningSoftwareCorporation/ssh-agent@master
       if: inputs.private_key != '' || inputs.additional_private_keys != ''
       with:
         ssh-private-key: |
@@ -31,6 +31,7 @@ runs:
     - name: Add Shipyard and github known hosts
       shell: bash
       run: |
+        echo "$HOME"
         if [ "$HOME" == "/github/home" ]; then
           SSH_DIR="/root/.ssh"
         else
