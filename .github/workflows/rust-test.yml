@@ -121,6 +121,11 @@ jobs:
           echo "output.txt" >> ~/.gitignore_global
           echo "deny.toml" >> ~/.gitignore_global
 
+      - name: "Update rustup only if version is different thant toolchain"
+        shell: bash
+        run: |
+          rustup set auto-self-update disable
+
       - name: Checkout
         uses: actions/checkout@v4
 
