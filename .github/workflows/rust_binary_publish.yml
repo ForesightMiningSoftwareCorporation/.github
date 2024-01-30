@@ -477,7 +477,7 @@ jobs:
 
       - name: Write results
         id: results
-        uses: cloudposse/github-action-matrix-outputs-write@0.4.2
+        uses: ForesightMiningSoftwareCorporation/github-action-matrix-outputs-write@main
         with:
           matrix-step-name: upload
           matrix-key: ${{ matrix.os.name }}

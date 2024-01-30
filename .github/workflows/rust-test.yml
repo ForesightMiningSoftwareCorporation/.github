@@ -358,7 +358,7 @@ jobs:
           loki_password: ${{ secrets.LOKI_GITHUB_PASSWORD }}
           loki_org_id: 1
 
-      - uses: cloudposse/github-action-matrix-outputs-write@0.4.2
+      - uses: ForesightMiningSoftwareCorporation/github-action-matrix-outputs-write@main
         id: out
         if: always()
         with:
