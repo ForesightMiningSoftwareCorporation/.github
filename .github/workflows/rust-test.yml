@@ -367,7 +367,7 @@ jobs:
         id: out
         if: always()
         with:
-          matrix-step-name: check
+          matrix-step-name: check-${{ github.run_attempt }}
           matrix-key: ${{ matrix.path }}-${{ matrix.type }}
           outputs: |-
             check_outcome: ${{ steps.check.outcome }}
@@ -403,7 +403,7 @@ jobs:
         id: read
         if: always()
         with:
-          matrix-step-name: check
+          matrix-step-name: check-${{ github.run_attempt }}
 
       - uses: int128/hide-comment-action@v1
         if: always() && github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
