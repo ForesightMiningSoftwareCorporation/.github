@@ -1,6 +1,6 @@
-ARG GITHUB_RUNNER_VERSION=2.311.0
+ARG GITHUB_RUNNER_VERSION=2.312.0
 FROM myoung34/github-runner:$GITHUB_RUNNER_VERSION
-ARG RUST_VERSION=1.70
+ARG RUST_VERSION=1.75
 
 RUN apt-get update && apt-get install -y software-properties-common build-essential curl make gcc
 
