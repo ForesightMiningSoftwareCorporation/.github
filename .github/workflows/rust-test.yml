@@ -183,6 +183,7 @@ jobs:
         if: inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true'
         with:
           shared-key: "${{ github.job }}-${{ matrix.type }}"
+          workspaces: ${{ matrix.path }}
           env-vars: ""
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
