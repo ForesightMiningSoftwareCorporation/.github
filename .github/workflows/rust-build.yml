@@ -153,6 +153,7 @@ jobs:
       required_packages: ${{ inputs.required_packages }}
       workspaces: ${{ inputs.workspaces }}
       additional_args: ${{ inputs.additional_args }}
+      working-directory: ${{ inputs.working-directory }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
       test-publish-required: ${{ inputs.force_nonrequired_publish_test == 'false' && (inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true') }}
