@@ -92,13 +92,23 @@ jobs:
           workspaces: ${{ inputs.workspaces }}
           base_ref: ${{ github.base_ref }}
           head_ref: ${{ github.head_ref }}
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: 'rust-toolchain.toml'
+
+      - name: Get rust channel
+        id: rust-channel
+        shell: bash
+        run: |
+          echo "value=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo 'stable')" >> $GITHUB_OUTPUT
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
+      rust-channel: ${{ steps.rust-channel.outputs.value }}
       fallback-matrix: ${{ steps.build.outputs.fallback }}
 
   check:
     name: Rust ${{ matrix.type }} ${{ matrix.path }}
-    runs-on: [self-hosted, "${{ github.run_id }}__${{ matrix.path }}__${{matrix.type}}__${{ github.run_attempt }}"]
+    runs-on: [self-hosted, "rust-${{ needs.build-matrix.outputs.rust-channel }}", "${{ github.run_id }}__${{ matrix.path }}__${{matrix.type}}__${{ github.run_attempt }}"]
     needs: build-matrix
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
@@ -182,7 +192,7 @@ jobs:
         shell: bash
         working-directory: ${{ matrix.path }}
         run: |
-          echo "value=$(tomlq package.name -f Cargo.toml)" >> $GITHUB_OUTPUT
+          echo "value=$(yq -p toml '.package.name' < Cargo.toml)" >> $GITHUB_OUTPUT
 
       - name: Set start time as env variable
         id: start_time
