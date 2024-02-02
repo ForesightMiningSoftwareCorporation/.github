@@ -37,6 +37,10 @@ on:
         type: string
         default: '[""]'
         description: JSON array of of Cargo workspaces
+      working-directory:
+        type: string
+        default: ""
+        description: Subdirectory to treat as repo root
       # unused and obsolete
       crates-directory:
         type: string
@@ -92,10 +96,10 @@ jobs:
           workspaces: ${{ inputs.workspaces }}
           base_ref: ${{ github.base_ref }}
           head_ref: ${{ github.head_ref }}
+          working-directory: ${{ inputs.working-directory }}
       - uses: actions/checkout@v4
         with:
           sparse-checkout: 'rust-toolchain.toml'
-
       - name: Get rust channel
         id: rust-channel
         shell: bash
