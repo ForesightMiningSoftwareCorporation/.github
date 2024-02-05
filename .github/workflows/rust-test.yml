@@ -104,7 +104,7 @@ jobs:
         id: rust-channel
         shell: bash
         run: |
-          echo "value=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo 'stable')" >> $GITHUB_OUTPUT
+          echo "value=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '${{ inputs.toolchain }}')" >> $GITHUB_OUTPUT
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
       rust-channel: ${{ steps.rust-channel.outputs.value }}
@@ -112,7 +112,7 @@ jobs:
 
   check:
     name: Rust ${{ matrix.type }} ${{ matrix.path }}
-    runs-on: [self-hosted, "rust-${{ needs.build-matrix.outputs.rust-channel }}", "${{ github.run_id }}__${{ matrix.path }}__${{matrix.type}}__${{ github.run_attempt }}"]
+    runs-on: [self-hosted, ${{ needs.build-matrix.outputs.rust-channel }}, "${{ github.run_id }}__${{ matrix.path }}__${{ matrix.type }}__${{ github.run_attempt }}"]
     needs: build-matrix
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
