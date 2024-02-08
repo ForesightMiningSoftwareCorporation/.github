@@ -112,7 +112,7 @@ jobs:
 
   check:
     name: Rust ${{ matrix.type }} ${{ matrix.path }}
-    runs-on: [self-hosted, "${{ needs.build-matrix.outputs.rust-channel }}", "${{ github.run_id }}__${{ matrix.path }}__${{ matrix.type }}__${{ github.run_attempt }}"]
+    runs-on: [self-hosted, "standard", "${{ needs.build-matrix.outputs.rust-channel }}", "${{ github.run_id }}__${{ matrix.path }}__${{ matrix.type }}__${{ github.run_attempt }}"]
     needs: build-matrix
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
