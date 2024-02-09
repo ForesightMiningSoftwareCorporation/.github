@@ -1,0 +1,115 @@
+name: "Build NAPI artifact"
+description: "Build and upload artifact from rust build"
+
+inputs:
+  runner_os:
+    required: true
+    description: "The OS of the runner"
+  runner_arch:
+    required: true
+    description: "The architecture of the runner"
+  runner_extension:
+    required: true
+    description: "The extension of the runner"
+  docker:
+    description: "Docker Image to use"
+  docker_build:
+    description: "Docker command that will run in the container"
+  with_rust:
+    description: "Should we setup Rust for this bin"
+    default: "true"
+  node_auth_token:
+    description: "node auth token"
+  npm_token:
+    description: "npm token"
+  shipyard:
+    description: "shipyard registry url"
+  shipyard_token:
+    description: "shipyard.rs token"
+  working-directory:
+    required: true
+    description: "directory of binary to build"
+  version:
+    required: true
+    description: "Version of the package to build"
+  bin:
+    required: true
+    description: "The binary to build"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup node
+      uses: actions/setup-node@v4
+      with:
+        check-latest: true
+        registry-url: https://npm.pkg.github.com/
+        scope: '@ForesightMiningSoftwareCorporation'
+
+    - name: Check if package with same version exists
+      id: check-version-exists
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if npm view @foresightminingsoftwarecorporation/${{ inputs.bin }} --json > package_info.json ; then
+          EXISTS=$(cat package_info.json | jq '.time | has("${{ inputs.version }}")')
+        else
+          EXISTS="false"
+        fi
+        echo "exists=$EXISTS" >> $GITHUB_OUTPUT
+        echo "home=$HOME" >> $GITHUB_OUTPUT
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.node_auth_token }}
+        NPM_TOKEN: ${{ inputs.npm_token }}
+
+    - name: Install rust toolchain
+      uses: actions-rs/toolchain@v1
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'windows') && inputs.with_rust == 'true' }}
+      with:
+        profile: minimal
+        override: true
+        toolchain: stable
+        target: ${{ inputs.runner_arch }}
+
+    - name: Build On Agent (native build)
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'windows') }}
+      env:
+        CARGO_HTTP_USER_AGENT: "shipyard ${{ inputs.shipyard_token }}"
+      run: |-
+        yarn install
+        if [ "${{ inputs.with_rust }}" == "true" ]; then
+          EXTRA_ARGS="--target ${{ inputs.runner_arch }} "
+        else
+          EXTRA_ARGS=""
+        fi
+        yarn build $EXTRA_ARGS
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Build in docker
+      uses: addnab/docker-run-action@v3
+      env:
+        CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+        SHIPYARD_REGISTRY: ${{ inputs.shipyard }}
+        SHIPYARD_TOKEN: ${{ inputs.shipyard_token }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'windows') }}
+      with:
+        image: ${{ inputs.docker }}
+        options: --user 0:0 -w /build/${{ inputs.working-directory }} -v ${{ github.workspace }}:/build -v ${{ env.SSH_AUTH_SOCK }}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent -v ${{ steps.check-version-exists.outputs.home }}/.gitconfig:/root/.gitconfig -v ${{ steps.check-version-exists.outputs.home }}/.ssh:/.ssh
+        run: /entrypoint.sh && cargo login --registry ${{ inputs.shipyard }} ${{ inputs.shipyard_token }} && export CARGO_HTTP_USER_AGENT="shipyard ${{ inputs.shipyard_token }}" && ${{ inputs.docker_build }}
+
+    - name: Upload artifact
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'windows') }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: bindings-${{ inputs.bin }}-x86_64-pc-windows-msvc
+        path: ${{ inputs.working-directory }}/${{ inputs.bin }}.*.node
+        if-no-files-found: error
+
+    - name: Upload artifact
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'windows')  }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: bindings-${{ inputs.bin }}-x86_64-unknown-linux-musl
+        path: ${{ inputs.working-directory }}/${{ inputs.bin }}.*.node
+        if-no-files-found: error
