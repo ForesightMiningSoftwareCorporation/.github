@@ -9,6 +9,10 @@ on:
         type: string
         description: "Binary to build"
         default: "."
+      toolchain:
+        type: string
+        description: "Rust toolchain to use"
+        default: "stable"
       docker-context:
         type: string
         description: "Path to docker context"
@@ -78,7 +82,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
-          toolchain: 1.73
+          toolchain: ${{ inputs.toolchain }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
