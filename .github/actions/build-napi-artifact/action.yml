@@ -29,6 +29,9 @@ inputs:
   version:
     required: true
     description: "Version of the package to build"
+  toolchain:
+    description: "Rust toolcahin to install"
+    default: "stable"
   bin:
     required: true
     description: "The binary to build"
@@ -59,14 +62,11 @@ runs:
         NODE_AUTH_TOKEN: ${{ inputs.node_auth_token }}
         NPM_TOKEN: ${{ inputs.npm_token }}
 
-    - name: Install rust toolchain
-      uses: actions-rs/toolchain@v1
+    - uses: dtolnay/rust-toolchain@master
       if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'ubuntu') }}
       with:
-        profile: minimal
-        override: true
-        toolchain: stable
-        target: ${{ inputs.runner_arch }}
+        toolchain: ${{ inputs.toolchain }}
+        targets: ${{ inputs.runner_arch }}
 
     - name: Build On Agent (native build)
       if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'ubuntu') }}

@@ -234,6 +234,7 @@ jobs:
       - test
     with:
       working-directory: ${{ inputs.working-directory }}
+      toolchain: ${{ inputs.toolchain }}
   should_report_release:
     runs-on: ubuntu-latest
     if: always() && inputs.publish == 'true'
