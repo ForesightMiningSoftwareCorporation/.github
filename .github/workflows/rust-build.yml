@@ -100,6 +100,10 @@ on:
         type: string
         default: ""
         description: Cusom cargo commands that will be run after login
+      docker-context:
+        type: string
+        description: "Path to docker context"
+        default: "default-docker-context-replace-me"
       dockerfile:
         type: string
         description: "The path to the Dockerfile to use"
@@ -194,6 +198,7 @@ jobs:
       - test
     with:
       working-directory: ${{ inputs.working-directory }}
+      docker-context: ${{ inputs.docker-context }}
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
       registry: ${{ inputs.docker_registry }}
