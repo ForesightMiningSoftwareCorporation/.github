@@ -16,7 +16,9 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v4
-
+        with:
+          sparse-checkout: |
+            ${{ inputs.working-directory }}/package.json
       - name: Get version in package.json
         id: read_package_json
         run: |
