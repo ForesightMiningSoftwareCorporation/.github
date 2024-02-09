@@ -5,7 +5,7 @@ on:
     outputs:
       released:
         description: Was the binary published
-        value: ${{ jobs.check_result.outputs.released }}
+        value: 'true'
     inputs:
       required_packages:
         type: string
@@ -27,14 +27,7 @@ on:
         type: string
         default: "release"
         description: Cargo build profile to use
-      login_private_registry:
-        type: string
-        default: "true"
-      skip-test:
-        type: boolean
-        default: false
-        description: Skip the test step
-      working-directory:
+      working_directory:
         type: string
         default: "."
         description: Working directory to run the cargo command
@@ -49,7 +42,7 @@ on:
       custom_cargo_commands:
         type: string
         default: ""
-        description: Cusom cargo commands that will be run after login
+        description: Custom cargo commands that will be run after login
       post_build_additional_script:
         type: string
         default: ""
@@ -65,38 +58,30 @@ env:
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
 
 jobs:
-  matrix:
-    name: Build Matrix for binary release
+  derive_info:
+    name: Derive build information from key files
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      matrix: ${{ steps.derive_info.outputs.matrix }}
+      toolchain: ${{ steps.derive_info.outputs.toolchain }}
+      release_channel: ${{ steps.derive_info.outputs.release_channel }}
+      package: ${{ steps.derive_info.outputs.package }}
+      version: ${{ steps.derive_info.outputs.version }}
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Create and set Build Matrix from matrix.json
-        id: set-matrix
-        shell: bash
-        run: |
-          MATRIX=$(jq -c . < ${{ inputs.matrix_file }} | tr -d '^J')
-          echo matrix=$MATRIX >> $GITHUB_OUTPUT
-  cargo_upload_binary:
-    name: Release new version as binary
-    strategy:
-      matrix:
-        os: ${{ fromJson(needs.matrix.outputs.matrix).os }}
-    runs-on: ${{ matrix.os.name }}${{ matrix.os.runner_flavour }}
-    needs:
-      - matrix
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Derive Release Channel
-        id: extract_branch
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            rust-toolchain.toml
+            ${{ inputs.matrix_file }}
+            ${{ inputs.working_directory }}/Cargo.toml
+      - id: derive_info
         shell: bash
         env:
           ACTION_RC: ${{ inputs.release_channel }}
+          DEFAULT_TOOLCHAIN: ${{ inputs.toolchain}}
         run: |
+          MATRIX=$(jq -c . < ${{ inputs.matrix_file }} | tr -d '^J')
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
           if [ "$BRANCH_NAME" == "alpha" ] ; then
             RELEASE_CHANNEL=alpha
@@ -105,49 +90,35 @@ jobs:
           elif [ "$BRANCH_NAME" == "prod" ] ; then
             RELEASE_CHANNEL=prod
           fi
+          echo matrix=$MATRIX >> $GITHUB_OUTPUT
           echo release_channel=${ACTION_RC:-${RELEASE_CHANNEL:-nightly}} >> $GITHUB_OUTPUT
+          echo toolchain=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '$DEFAULT_TOOLCHAIN') >> $GITHUB_OUTPUT
+          echo package=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/Cargo.toml) >> $GITHUB_OUTPUT
+          echo version=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/Cargo.toml) >> $GITHUB_OUTPUT
 
-      - uses: SebRollen/toml-action@v1.0.2
-        id: read_version
-        with:
-          file: "${{ inputs.working-directory }}/Cargo.toml"
-          field: "package.version"
-
-      - uses: SebRollen/toml-action@v1.0.2
-        id: read_name
-        with:
-          file: "${{ inputs.working-directory }}/Cargo.toml"
-          field: "package.name"
-
-      - uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
-        id: check_exists
-        with:
-          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
-          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
-          blob_name: ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
-
-      - uses: ForesightMiningSoftwareCorporation/azure-blob-storage-check-exists@v1
-        id: check_signed_exists
-        if: inputs.sign_build == 'true'
-        with:
-          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
-          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
-          blob_name: ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}
+  cargo_upload_binary:
+    name: Release new version as binary
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.derive_info.outputs.matrix).os }}
+    runs-on: ${{ matrix.os.name }}${{ matrix.os.runner_flavour }}
+    needs:
+      - derive_info
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Cache Dependencies
-        if: steps.check_exists.outputs.exists != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           env-vars: ""
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - uses: dtolnay/rust-toolchain@master
-        if: steps.check_exists.outputs.exists != 'true'
         with:
-          toolchain: ${{ inputs.toolchain }}
+          toolchain: ${{ needs.derive_info.outputs.toolchain }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
-        if: steps.check_exists.outputs.exists != 'true'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -158,130 +129,129 @@ jobs:
             ${{ secrets.BEVY_CLIPMAP_SSH_PRIVATE_KEY }}
             ${{ secrets.DAG_TABLES_SSH_PRIVATE_KEY }}
 
+      
       - name: Additional Linux Script from matrix
-        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
-        working-directory: ${{ inputs.working-directory }}
+        if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working_directory }}
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
         run: ${{ matrix.os.additional_script }}
         shell: bash
 
       - name: Additional Linux Script from input if not matrix
-        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
-        working-directory: ${{ inputs.working-directory }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Additional Windows Script from matrix
-        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
+        if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
-        working-directory: ${{ inputs.working-directory }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ matrix.os.additional_script }}
         shell: pwsh
 
       - name: Additional Windows Script from input if not matrix
-        if: steps.check_exists.outputs.exists != 'true' && matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
+        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
-        working-directory: ${{ inputs.working-directory }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.additional_script }}
         shell: pwsh
 
       - name: Update Packages
-        if: steps.check_exists.outputs.exists != 'true' && inputs.required_packages != '' && matrix.os.name == 'ubuntu-latest'
+        if: inputs.required_packages != '' && matrix.os.name == 'ubuntu-latest'
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Run custom cargo command
-        if: steps.check_exists.outputs.exists != 'true' && inputs.custom_cargo_commands != ''
+        if: inputs.custom_cargo_commands != ''
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.custom_cargo_commands }}
 
       - name: Build Binary
         shell: bash
-        if: steps.check_exists.outputs.exists != 'true'
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
 
       - name: Copy to bin folder linux
-        if: matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
+        if: matrix.os.name == 'ubuntu-latest'
 #        `cargo build` put build inside of the workspace root target dir. If using working-drectory inside of a non-workspace repo this will not work anymore
-#        working-directory: ${{ inputs.working-directory }}
+#        working-directory: ${{ inputs.working_directory }}
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
-          artifacts_dir=${{ runner.temp }}/bin_output/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
+          artifacts_dir=${{ runner.temp }}/bin_output/${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}
           mkdir -p $artifacts_dir
-          cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ steps.read_name.outputs.value }} $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
-          sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}-sha-512.txt
+          cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ needs.derive_info.outputs.package }} $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}
+          sha512sum $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}-sha-512.txt
 
       - name: Copy to bin folder windows
-        if: matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
+        if: matrix.os.name == 'windows-latest'
         shell: pwsh
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
-          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}" -ItemType "directory"
-          Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ steps.read_name.outputs.value }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}
-          $hash = Get-FileHash "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}" -Algorithm SHA512
-          echo $hash.Hash >> "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-sha512.txt"
+          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}" -ItemType "directory"
+          Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ needs.derive_info.outputs.package }}${{ matrix.os.extension }} $Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}
+          $hash = Get-FileHash "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}" -Algorithm SHA512
+          echo $hash.Hash >> "$Out\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha512.txt"
 
       - name: Additional Post build Linux Script from matrix
-        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
-        working-directory: ${{ inputs.working-directory }}
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
+        working-directory: ${{ inputs.working_directory }}
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
           TEMP_DIR: ${{ runner.temp }}
         run: ${{ matrix.os.post_build_additional_script }}
         shell: bash
 
       - name: Additional Post build Linux Script from input if not matrix
-        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest' && steps.check_exists.outputs.exists != 'true'
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
           TEMP_DIR: ${{ runner.temp }}
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.post_build_additional_script }}
         shell: bash
 
       - name: Additional Post build Windows Script from matrix
-        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
+        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
           TEMP_DIR: ${{ runner.temp }}
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ matrix.os.post_build_additional_script }}
         shell: pwsh
 
       - name: Additional Post build Windows Script from input if not matrix
-        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'windows-latest' && steps.check_exists.outputs.exists != 'true'
+        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
         env:
-          CRATE_NAME: ${{ steps.read_name.outputs.value }}
-          CRATE_VERSION: ${{ steps.read_version.outputs.value }}
-          RELEASE_CHANNEL: ${{ steps.extract_branch.outputs.release_channel }}
+          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
+          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
+          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
           TEMP_DIR: ${{ runner.temp }}
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.post_build_additional_script }}
         shell: pwsh
 
       - name: Azure Blob Upload
-        if: steps.check_exists.outputs.exists != 'true'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
@@ -290,22 +260,22 @@ jobs:
           delete_if_exists: true
 
       - name: Generate Expiry for SAS Url
-        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: inputs.sign_build == 'true'
         shell: bash
         id: sas-expiry
         run: |
           echo "expiry=$(date -u -d "120 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
 
       - name: Generate SAS Url for binary signing
-        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: inputs.sign_build == 'true'
         shell: bash
         id: sas-url
         run: |
-          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
+          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
           echo "sas=$sas" >> $GITHUB_OUTPUT
 
       - name: Retrieve signing secret from Vault
-        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: inputs.sign_build == 'true'
         id: import-signing-secrets
         uses: hashicorp/vault-action@v2.7.3
         with:
@@ -318,11 +288,12 @@ jobs:
             kv-v2/data/whirlpool/signer REPOSITORY | WHIRLPOOL_SIGNER_REPOSITORY ;
 
       - run: npm install adm-zip
-        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: inputs.sign_build == 'true'
+
       - name: Trigger signer workflow
         uses: actions/github-script@v7
         id: signer-workflow
-        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: inputs.sign_build == 'true'
         with:
           github-token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
           script: |
@@ -419,11 +390,11 @@ jobs:
             // Get data
             const gh_info = "${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}".split("/");
             const artifact_sas = "${{ steps.sas-url.outputs.sas }}";
-            const artifact_name = "${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}";
+            const artifact_name = "${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ matrix.os.extension }}";
             const gh_artifact_name = "signed_artifacts";
             const temp_dir = String.raw`${{ runner.temp }}`;
             const dir_separator = temp_dir.indexOf("\\") == -1 ? "/" : "\\";
-            const download_path = `${temp_dir}${dir_separator}signed_artifacts${dir_separator}${{ steps.read_name.outputs.value }}${dir_separator}${{ steps.extract_branch.outputs.release_channel }}`;
+            const download_path = `${temp_dir}${dir_separator}signed_artifacts${dir_separator}${{ needs.derive_info.outputs.package }}${dir_separator}${{ needs.derive_info.outputs.release_channel }}`;
             const repository = "${{ github.repository }}";
             const run_id = "${{ github.run_id }}";
             
@@ -456,20 +427,21 @@ jobs:
             }
 
       - name: Generate signed artifacts checksum linux
-        if: matrix.os.name == 'ubuntu-latest' && steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: matrix.os.name == 'ubuntu-latest' && inputs.sign_build == 'true'
         shell: bash
         run: |
-          artifacts_dir=${{ runner.temp }}/signed_artifacts/${{ steps.read_name.outputs.value }}/${{ steps.extract_branch.outputs.release_channel }}
-          sha512sum $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}${{ matrix.os.extension }}-signed-sha-512.txt
+          artifacts_dir=${{ runner.temp }}/signed_artifacts/${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}
+          sha512sum $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}-signed-sha-512.txt
 
       - name: Generate signed artifacts checksum windows
-        if: matrix.os.name == 'windows-latest' && steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: matrix.os.name == 'windows-latest' && inputs.sign_build == 'true'
         shell: pwsh
         run: |
-          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed${{ matrix.os.extension }}" -Algorithm SHA512
-          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ steps.read_name.outputs.value }}\${{ steps.extract_branch.outputs.release_channel }}\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ inputs.toolchain }}-v${{ steps.read_version.outputs.value }}-signed-sha512.txt"
+          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ matrix.os.extension }}" -Algorithm SHA512
+          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  steps.read_name.outputs.value }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed-sha512.txt"
+
       - name: Upload signed artifacts to Azure Blob Upload
-        if: steps.check_signed_exists.outputs.exists != 'true' && inputs.sign_build == 'true'
+        if: inputs.sign_build == 'true'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
@@ -477,49 +449,15 @@ jobs:
           source_folder: ${{ runner.temp }}/signed_artifacts
           delete_if_exists: true
 
-      - name: Write results
-        id: results
-        uses: ForesightMiningSoftwareCorporation/github-action-matrix-outputs-write@main
+      - name: Upload bin to github artifacts
+        uses: actions/upload-artifact@v4
         with:
-          matrix-step-name: upload
-          matrix-key: ${{ matrix.os.name }}
-          outputs: |-
-            exists: ${{ steps.check_exists.outputs.exists }}
-            signed_exists: ${{ steps.check_signed_exists.outputs.exists }}
+          name: release-binaries
+          path: ${{ runner.temp }}/bin_output
 
-
-  check_result:
-    name: Check for new release
-    needs: cargo_upload_binary
-    runs-on: ubuntu-latest
-    outputs:
-      released: ${{ steps.emit.outputs.result == 'true' && 'true' || 'false' }}
-    steps:
-      - name: Read Results
-        uses: cloudposse/github-action-matrix-outputs-read@0.1.1
-        id: read
-        if: always()
+      - name: Upload signed bin to github artifacts
+        if: inputs.sign_build == 'true'
+        uses: actions/upload-artifact@v4
         with:
-          matrix-step-name: upload
-
-      - name: Emit Output
-        id: emit
-        uses: actions/github-script@v6
-        if: always()
-        with:
-          result-encoding: string
-          script: |
-            const result_string = String.raw`${{ steps.read.outputs.result }}`;
-            let released = false;
-            let signed_released = false;
-            try {
-              const data = JSON.parse(result_string);
-              try {
-                released = Object.values(data['exists']).indexOf(false) != -1;
-              } catch {}
-              try {
-                signed_released = Object.values(data['signed_exists']).indexOf(false) != -1;
-              } catch {}
-            } catch {}
-
-            return (released || signed_released).toString();
+          name: signed-binaries
+          path: ${{ runner.temp }}/signed_artifacts

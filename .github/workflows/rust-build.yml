@@ -212,7 +212,7 @@ jobs:
       registry: ${{ inputs.docker_registry }}
     secrets: inherit
   publish_binary:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v1
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v2
     if: always() && inputs.publish == 'true' && inputs.publish_binary == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     needs:
       - test
@@ -221,7 +221,7 @@ jobs:
       release_channel: ${{ inputs.release_channel }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      working-directory: ${{ inputs.working-directory }}
+      working_directory: ${{ inputs.working-directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       matrix_file: ${{ inputs.matrix_file }}
@@ -284,7 +284,7 @@ jobs:
       - publish_binary
       - publish_npm_napi
       - should_report_release
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v1
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v2
     if: always() && needs.should_report_release.outputs.report == 'true'
     with:
       working-directory: ${{ inputs.working-directory }}

@@ -127,6 +127,6 @@ jobs:
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         run: |
           docker buildx imagetools create \
-            --tag oricacrplatformfslabs001.azurecr.io/${{ inputs.image }}:latest \
-            --tag oricacrplatformfslabs001.azurecr.io/${{ inputs.image }}:${{ steps.read_version.outputs.value }} \
+            --tag ${{ inputs.registry }}/${{ inputs.image }}:latest \
+            --tag ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }} \
             ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
