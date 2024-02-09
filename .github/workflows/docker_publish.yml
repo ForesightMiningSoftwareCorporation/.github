@@ -9,6 +9,10 @@ on:
         type: string
         description: "Binary to build"
         default: "."
+      docker-context:
+        type: string
+        description: "Path to docker context"
+        default: "default-docker-context-replace-me"
       dockerfile:
         type: string
         description: "The path to the Dockerfile to use"
@@ -100,7 +104,7 @@ jobs:
         uses: docker/build-push-action@v3
         if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
-          context: ${{ inputs.working-directory }}
+          context: ${{ inputs.docker-context == 'default-docker-context-replace-me' && inputs.working-directory || inputs.docker-context }}
           push: true
           file: "${{ inputs.working-directory }}/${{ inputs.dockerfile }}"
           ssh: default=${{ env.SSH_AUTH_SOCK }}
