@@ -59,10 +59,10 @@ jobs:
     strategy:
       matrix:
         os:
-          - name: ubuntu-latest
+          - name: ubuntu-latest-16-cores
             arch: x86_64-unknown-linux-gnu
             ext: ''
-          - name: windows-latest
+          - name: windows-latest-16-cores-custom
             arch: x86_64-pc-windows-msvc
             ext: .exe
           - name: macos-13-large
