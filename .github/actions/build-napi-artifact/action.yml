@@ -72,7 +72,7 @@ runs:
         target: ${{ inputs.runner_arch }}
 
     - name: Build On Agent (native build)
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'windows') }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'ubuntu') }}
       env:
         CARGO_HTTP_USER_AGENT: "shipyard ${{ inputs.shipyard_token }}"
       run: |-
@@ -92,24 +92,16 @@ runs:
         CARGO_NET_GIT_FETCH_WITH_CLI: "true"
         SHIPYARD_REGISTRY: ${{ inputs.shipyard }}
         SHIPYARD_TOKEN: ${{ inputs.shipyard_token }}
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'windows') }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'ubuntu') }}
       with:
         image: ${{ inputs.docker }}
         options: --user 0:0 -w /build/${{ inputs.working-directory }} -v ${{ github.workspace }}:/build -v ${{ env.SSH_AUTH_SOCK }}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent -v ${{ steps.check-version-exists.outputs.home }}/.gitconfig:/root/.gitconfig -v ${{ steps.check-version-exists.outputs.home }}/.ssh:/.ssh
         run: /entrypoint.sh && cargo login --registry ${{ inputs.shipyard }} ${{ inputs.shipyard_token }} && export CARGO_HTTP_USER_AGENT="shipyard ${{ inputs.shipyard_token }}" && ${{ inputs.docker_build }}
 
     - name: Upload artifact
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'windows') }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' }}
       uses: actions/upload-artifact@v4
       with:
-        name: bindings-${{ inputs.bin }}-x86_64-pc-windows-msvc
-        path: ${{ inputs.working-directory }}/${{ inputs.bin }}.*.node
-        if-no-files-found: error
-
-    - name: Upload artifact
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'windows')  }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: bindings-${{ inputs.bin }}-x86_64-unknown-linux-musl
+        name: bindings-${{ inputs.bin }}-${{ inputs.runner_arch }}
         path: ${{ inputs.working-directory }}/${{ inputs.bin }}.*.node
         if-no-files-found: error
