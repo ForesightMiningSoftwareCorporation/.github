@@ -1,5 +1,9 @@
 on:
   workflow_call:
+    outputs:
+      released:
+        description: Was the crate released
+        value: ${{ jobs.create_release_npm.outputs.released }}
     inputs:
         working-directory:
             type: string
@@ -95,6 +99,8 @@ jobs:
   create_release_npm:
     name: Publish NPM Packages
     runs-on: "ubuntu-latest"
+    outputs:
+      released: ${{ steps.publish.outputs.released }}
     needs:
       - check_release_npm
       - build_artifacts_rust
@@ -127,11 +133,18 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Publish
+        id: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.GH_REGISTRY_PACKAGES }}
         if: ${{ false && needs.check_release_npm.outputs.exists == 'false' }}
         run: |
-          npm publish
+          released=npm publish && "true" || "false"
+          if npm publish 2>&1 | ts "%Y-%m-%dT%H:%M:%.SZ; " | tee output.txt; then
+            released=true
+          else
+            rc=false
+          fi
+          echo "released=$released" >> $GITHUB_OUTPUT
         working-directory: ${{ inputs.working-directory }}

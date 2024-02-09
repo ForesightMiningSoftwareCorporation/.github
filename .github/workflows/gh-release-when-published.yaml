@@ -18,6 +18,10 @@ on:
         type: string
         default: 'false'
         description: 'Was the crate released as binary'
+      npm_napi_release:
+        type: string
+        default: 'false'
+        description: 'Was the crate released as a napi binding'
       working-directory:
         type: string
         default: "."
@@ -86,6 +90,14 @@ jobs:
           name: release-binaries
           path: binaries
 
+      - name: Generate NPM URL
+        id: npm_napi_url
+        if: inputs.npm_napi_release == 'true'
+        shell: bash
+        run: |
+          url=https://github.com/${{ github.repository_owner }}/${{ github.repository }}/pkgs/npm/${{ steps.read_name.outputs.value }}
+          echo "value=$url" >> $GITHUB_OUTPUT
+
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
         id: release
@@ -100,6 +112,7 @@ jobs:
             * Public Registry: ${{ steps.pubic_registry_url.outputs.value || 'NA' }}
             * Docker: ${{ steps.docker_registry_url.outputs.value || 'NA' }}
             * Binary: ${{ inputs.binary_release == 'true' && 'See artifacts' || 'NA' }}
+            * NPM Napi: ${{ steps.npm_napi_url.outputs.value || 'NA' }}
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}
 

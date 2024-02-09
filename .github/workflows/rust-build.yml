@@ -13,6 +13,9 @@ on:
       binary_released:
         description: Was it released as binary
         value: ${{ jobs.publish_binary.outputs.released }}
+      npm_napi_released:
+        description: Was it released as npm package
+        value: ${{ jobs.publish_npm_napi.outputs.released }}
     inputs:
       skip-test:
         type: string
@@ -46,6 +49,10 @@ on:
         type: string
         default: "false"
         description: "Should the binary be built and published"
+      publish_npm_napi:
+        type: string
+        default: "false"
+        description: "Should the npm napi package be built and published"
       toolchain:
         type: string
         default: "1.75"
@@ -220,9 +227,16 @@ jobs:
       post_build_additional_script: ${{ inputs.post_build_additional_script }}
       sign_build: ${{ inputs.binary_sign_build }}
     secrets: inherit
+  publish_npm_napi:
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@v1
+    if: always() && inputs.publish == 'true' && inputs.publish_npm_napi == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs:
+      - test
+    with:
+      working-directory: ${{ inputs.working-directory }}
   should_report_release:
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && inputs.publish == 'true'
     outputs:
       report: ${{ steps.report.outputs.result }}
     needs:
@@ -230,6 +244,7 @@ jobs:
       - publish_public_registry
       - publish_docker
       - publish_binary
+      - publish_npm_napi
     steps:
       - uses: actions/github-script@v7
         name: Report status on PR
@@ -254,6 +269,7 @@ jobs:
               [${{ inputs.publish_public_registry }}, ${{ needs.publish_public_registry.outputs.released || 'false' }}],
               [${{ inputs.publish_docker }}, ${{ needs.publish_docker.outputs.released || 'false' }}],
               [${{ inputs.publish_binary }}, ${{ needs.publish_binary.outputs.released || 'false' }}],
+              [${{ inputs.publish_npm_napi }}, ${{ needs.publish_npm_napi.outputs.released || 'false' }}],
             ];
             return releases.filter(release => release[0] && release[1]).length > 0 ? "true" : "false";
 
@@ -263,6 +279,7 @@ jobs:
       - publish_public_registry
       - publish_docker
       - publish_binary
+      - publish_npm_napi
       - should_report_release
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v1
     if: always() && needs.should_report_release.outputs.report == 'true'
@@ -272,4 +289,5 @@ jobs:
       public_registry_release: ${{ inputs.publish_public_registry == 'true' && needs.publish_public_registry.outputs.released == 'true' }}
       docker_release: ${{ inputs.publish_docker == 'true' && needs.publish_docker.outputs.released == 'true' }}
       binary_release: ${{ inputs.publish_binary == 'true' && needs.publish_binary.outputs.released == 'true' }}
+      npm_napi_release: ${{ inputs.publish_binary == 'true' && needs.publish_npm_napi.outputs.released == 'true' }}
     secrets: inherit
