@@ -15,9 +15,6 @@ inputs:
     description: "Docker Image to use"
   docker_build:
     description: "Docker command that will run in the container"
-  with_rust:
-    description: "Should we setup Rust for this bin"
-    default: "true"
   node_auth_token:
     description: "node auth token"
   npm_token:
@@ -64,7 +61,7 @@ runs:
 
     - name: Install rust toolchain
       uses: actions-rs/toolchain@v1
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'windows') && inputs.with_rust == 'true' }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'ubuntu') }}
       with:
         profile: minimal
         override: true
