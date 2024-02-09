@@ -110,6 +110,9 @@ jobs:
       - check_release_npm
       - build_artifacts_rust
     steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+
       - name: Install dependencies
         if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         run: yarn install
