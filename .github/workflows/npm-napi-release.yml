@@ -65,14 +65,13 @@ jobs:
       matrix:
         os:
           - name: ubuntu-latest-16-cores
-            rust_arch: x86_64-unknown-linux-gnu
+            arch: x86_64-unknown-linux-gnu
             ext: ''
           - name: windows-latest-16-cores-custom
-            rust_arch: x86_64-pc-windows-msvc
+            arch: x86_64-pc-windows-msvc
             ext: .exe
           - name: macos-latest-xlarge
-            rust_arch: aarch64-apple-darwin
-            napi_arch: darwin-arm64
+            arch: aarch64-apple-darwin
     runs-on: ${{ matrix.os.name }}
 
     steps:
@@ -90,8 +89,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-napi-artifact@napi-rs
         with:
           runner_os: ${{ matrix.os.name }}
-          runner_arch: ${{ matrix.os.rust_arch }}
-          napi_arch: ${{ matrix.os.napi_arch }}
+          runner_arch: ${{ matrix.os.arch }}
           runner_extension: ${{ matrix.os.ext }}
           docker: ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:latest
           docker_build: yarn install && yarn build --target x86_64-unknown-linux-musl --js=false
@@ -148,7 +146,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.GH_REGISTRY_PACKAGES }}
-        if: ${{ false && needs.check_release_npm.outputs.exists == 'false' }}
+        if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         run: |
           released=npm publish && "true" || "false"
           if npm publish 2>&1 | ts "%Y-%m-%dT%H:%M:%.SZ; " | tee output.txt; then
