@@ -8,6 +8,9 @@ inputs:
   runner_arch:
     required: true
     description: "The architecture of the runner"
+  napi_arch:
+    required: true
+    description: "The architecture of the runner"
   runner_extension:
     required: true
     description: "The extension of the runner"
@@ -99,6 +102,6 @@ runs:
       if: ${{ steps.check-version-exists.outputs.exists == 'false' }}
       uses: actions/upload-artifact@v4
       with:
-        name: bindings-${{ inputs.bin }}-${{ inputs.runner_arch }}
+        name: bindings-${{ inputs.bin }}-${{ inputs.napi_arch || inputs.runner_arch }}
         path: ${{ inputs.working-directory }}/${{ inputs.bin }}.*.node
         if-no-files-found: error
