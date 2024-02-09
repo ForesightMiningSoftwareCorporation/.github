@@ -112,7 +112,7 @@ jobs:
 
   check:
     name: Rust ${{ matrix.type }} ${{ matrix.path }}
-    runs-on: [self-hosted, "standard", "${{ needs.build-matrix.outputs.rust-channel }}", "${{ github.run_id }}__${{ matrix.path }}__${{ matrix.type }}__${{ github.run_attempt }}"]
+    runs-on: [self-hosted, "gpu", "${{ needs.build-matrix.outputs.rust-channel }}", "${{ github.run_id }}__${{ matrix.path }}__${{ matrix.type }}__${{ github.run_attempt }}"]
     needs: build-matrix
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
@@ -158,9 +158,13 @@ jobs:
 
       - name: Additional Cache
         id: additional-cache
-        uses: actions/cache@v3
+        uses: tespkg/actions-cache@v1
         if: inputs.additional_cache_key != '' && inputs.additional_cache_path != '' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
         with:
+          endpoint: ${{ vars.CI_CACHE_ENDPOINT }}
+          accessKey: ${{ secrets.CI_CACHE_ACCESS_KEY }}
+          secretKey: ${{ secrets.CI_CACHE_SECRET_KEY }}
+          bucket: ${{ vars.CI_CACHE_BUCKET }}
           path: ${{ inputs.additional_cache_path }}
           key: ${{ inputs.additional_cache_key }}-${{ github.ref_name }}
           restore-keys: |
@@ -168,7 +172,7 @@ jobs:
             ${{ inputs.additional_cache_key }}
 
       - name: Additional Cache Miss Command
-        if: steps.additional-cache.outputs.cache-hit != 'true' && (inputs.skip-tests-no-changes != 'true' && true || needs.build-matrix.outputs.fallback-matrix != 'true')
+        if: steps.additional-cache.outputs.cache-hit == 'false'
         shell: bash
         run: ${{ inputs.additional_cache_miss }}
 
