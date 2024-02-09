@@ -48,7 +48,7 @@ on:
         description: "Should the binary be built and published"
       toolchain:
         type: string
-        default: "1.75"
+        default: "1.76"
         description:
           Rust toolchain to install.
           Do not set this to moving targets like "stable".
@@ -197,6 +197,7 @@ jobs:
     needs:
       - test
     with:
+      toolchain: ${{ inputs.toolchain }}
       working-directory: ${{ inputs.working-directory }}
       docker-context: ${{ inputs.docker-context }}
       dockerfile: ${{ inputs.dockerfile }}
