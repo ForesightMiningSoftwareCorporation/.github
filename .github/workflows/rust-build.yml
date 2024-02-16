@@ -17,15 +17,15 @@ on:
         description: Was it released as npm package
         value: ${{ jobs.publish_npm_napi.outputs.released }}
     inputs:
-      skip-test:
+      skip_test:
         type: string
         default: "false"
         description: "Should the tests be run"
-      skip-tests-no-changes:
+      skip_tests_no_changes:
         type: string
         default: "false"
         description: Skip tests when no changes were detected in any cargo workspace
-      skip-miri-test:
+      skip_miri_test:
         type: string
         default: "true"
         description: "Should miri tests be run"
@@ -95,7 +95,7 @@ on:
         type: string
         default: '[""]'
         description: JSON array of of Cargo workspaces
-      working-directory:
+      working_directory:
         type: string
         default: "."
         description: Working directory to run the cargo command
@@ -107,7 +107,7 @@ on:
         type: string
         default: ""
         description: Cusom cargo commands that will be run after login
-      docker-context:
+      docker_context:
         type: string
         description: "Path to docker context"
         default: "default-docker-context-replace-me"
@@ -152,7 +152,7 @@ jobs:
     secrets: inherit
   test:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1
-    if: ${{ inputs.skip-test != 'true' }}
+    if: ${{ inputs.skip_test != 'true' }}
     needs:
       - build_rust_ci_images
     with:
@@ -164,12 +164,12 @@ jobs:
       required_packages: ${{ inputs.required_packages }}
       workspaces: ${{ inputs.workspaces }}
       additional_args: ${{ inputs.additional_args }}
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.working_directory }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
       test-publish-required: ${{ inputs.force_nonrequired_publish_test == 'false' && (inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true') }}
-      skip-tests-no-changes: ${{ inputs.skip-tests-no-changes }}
-      skip-miri-test: ${{ inputs.skip-miri-test }}
+      skip-tests-no-changes: ${{ inputs.skip_tests_no_changes }}
+      skip-miri-test: ${{ inputs.skip_miri_test }}
       nightly_toolchain: ${{ inputs.miri_toolchain }}
     secrets: inherit
   publish_private_registry:
@@ -181,7 +181,7 @@ jobs:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
@@ -194,7 +194,7 @@ jobs:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
@@ -205,8 +205,8 @@ jobs:
       - test
     with:
       toolchain: ${{ inputs.toolchain }}
-      working-directory: ${{ inputs.working-directory }}
-      docker-context: ${{ inputs.docker-context }}
+      working-directory: ${{ inputs.working_directory }}
+      docker-context: ${{ inputs.docker_context }}
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
       registry: ${{ inputs.docker_registry }}
@@ -221,7 +221,7 @@ jobs:
       release_channel: ${{ inputs.release_channel }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      working_directory: ${{ inputs.working-directory }}
+      working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       matrix_file: ${{ inputs.matrix_file }}
@@ -234,7 +234,7 @@ jobs:
     needs:
       - test
     with:
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.working_directory }}
       toolchain: ${{ inputs.toolchain }}
     secrets: inherit
   should_report_release:
@@ -287,7 +287,7 @@ jobs:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v2
     if: always() && needs.should_report_release.outputs.report == 'true'
     with:
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.working_directory }}
       private_registry_release: ${{ inputs.publish_private_registry == 'true' && needs.publish_private_registry.outputs.released == 'true' }}
       public_registry_release: ${{ inputs.publish_public_registry == 'true' && needs.publish_public_registry.outputs.released == 'true' }}
       docker_release: ${{ inputs.publish_docker == 'true' && needs.publish_docker.outputs.released == 'true' }}

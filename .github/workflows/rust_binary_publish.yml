@@ -76,6 +76,7 @@ jobs:
             ${{ inputs.matrix_file }}
             ${{ inputs.working_directory }}/Cargo.toml
       - id: derive_info
+        name: Derive info
         shell: bash
         env:
           ACTION_RC: ${{ inputs.release_channel }}
