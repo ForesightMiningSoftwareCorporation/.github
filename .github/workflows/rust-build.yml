@@ -145,74 +145,42 @@ on:
         description: Should the release be reported
 
 jobs:
-  build_rust_ci_images:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/setup_rust_test_images.yaml@v1
-    with:
-      rust_versions: "${{ inputs.toolchain }} ${{ inputs.miri_toolchain }}"
-    secrets: inherit
-  test:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v2
-    if: ${{ inputs.skip_test != 'true' }}
-    needs:
-      - build_rust_ci_images
-    with:
-      toolchain: ${{ inputs.toolchain }}
-      nightly_toolchain: ${{ inputs.miri_toolchain }}
-      additional_cache_path: ${{ inputs.additional_cache_path }}
-      additional_cache_key: ${{ inputs.additional_cache_key }}
-      additional_cache_miss: ${{ inputs.additional_cache_miss }}
-      additional_script: ${{ inputs.additional_script }}
-      required_packages: ${{ inputs.required_packages }}
-      additional_args: ${{ inputs.additional_args }}
-      working_directory: ${{ inputs.working_directory }}
-      custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
-      test_publish_required: ${{ inputs.force_nonrequired_publish_test == 'false' && (inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true') }}
-      skip_miri_test: ${{ inputs.skip_miri_test }}
-    secrets: inherit
   publish_private_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1
-    if: always() && inputs.publish == 'true' && inputs.publish_private_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    needs:
-      - test
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v2
+    if: inputs.publish_private_registry == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      working-directory: ${{ inputs.working_directory }}
+      working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
   publish_public_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@v1
-    if: always() && inputs.publish == 'true' && inputs.publish_public_registry == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    needs:
-      - test
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@v2
+    if: inputs.publish_public_registry == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      working-directory: ${{ inputs.working_directory }}
+      working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
   publish_docker:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v1
-    if: always() && inputs.publish == 'true' && inputs.publish_docker == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    needs:
-      - test
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v2
+    if: inputs.publish_docker == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
-      working-directory: ${{ inputs.working_directory }}
-      docker-context: ${{ inputs.docker_context }}
+      working_directory: ${{ inputs.working_directory }}
+      docker_context: ${{ inputs.docker_context }}
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
       registry: ${{ inputs.docker_registry }}
     secrets: inherit
   publish_binary:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v2
-    if: always() && inputs.publish == 'true' && inputs.publish_binary == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    needs:
-      - test
+    if: inputs.publish_binary == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
       release_channel: ${{ inputs.release_channel }}
@@ -226,12 +194,10 @@ jobs:
       sign_build: ${{ inputs.binary_sign_build }}
     secrets: inherit
   publish_npm_napi:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@v1
-    if: always() && inputs.publish == 'true' && inputs.publish_npm_napi == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    needs:
-      - test
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@v2
+    if: inputs.publish_npm_napi == 'true'
     with:
-      working-directory: ${{ inputs.working_directory }}
+      working_directory: ${{ inputs.working_directory }}
       toolchain: ${{ inputs.toolchain }}
     secrets: inherit
   should_report_release:

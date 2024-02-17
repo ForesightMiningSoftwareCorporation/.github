@@ -3,9 +3,9 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: ${{ jobs.create_release_npm.outputs.released }}
+        value: 'true'
     inputs:
-        working-directory:
+        working_directory:
           type: string
           default: ""
           description: Subdirectory to treat as repo root
@@ -15,52 +15,8 @@ on:
           description: Rust toolchain to install
 
 jobs:
-  check_release_npm:
-    name: Check NPM Packages
-    runs-on: "ubuntu-latest"
-    outputs:
-      name: ${{ steps.read_package_json.outputs.name }}
-      current-version: ${{ steps.read_package_json.outputs.current-version }}
-      exists: ${{ steps.check-version-exists.outputs.exists }}
-    steps:
-      - name: Git checkout
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            ${{ inputs.working-directory }}/package.json
-      - name: Get version in package.json
-        id: read_package_json
-        run: |
-          echo "name=$(cat package.json | jq -r '.name' | rev | cut -d'/' -f 1 | rev)" >> $GITHUB_OUTPUT
-          echo "current-version=$(cat package.json | jq -r '.version')" >> $GITHUB_OUTPUT
-        working-directory: ${{ inputs.working-directory }}
-
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          check-latest: true
-          registry-url: https://npm.pkg.github.com/
-          scope: "@foresightminingsoftwarecorporation"
-
-      - name: Check if package with same version exists
-        id: check-version-exists
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.GH_REGISTRY_PACKAGES }}
-        run: |
-          if npm view @foresightminingsoftwarecorporation/${{ steps.read_package_json.outputs.name }} --json > package_info.json ; then
-            EXISTS=$(cat package_info.json | jq '.time | has("${{ steps.read_package_json.outputs.current-version }}")')
-          else
-            EXISTS="false"
-          fi
-          echo "exists=$EXISTS" >> $GITHUB_OUTPUT
-        working-directory: ${{ inputs.working-directory }}
-
   build_artifacts_rust:
     name: Build napi artifacts
-    needs:
-      - check_release_npm
-    if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
     strategy:
       matrix:
         os:
@@ -73,7 +29,6 @@ jobs:
           - name: macos-latest-xlarge
             arch: aarch64-apple-darwin
     runs-on: ${{ matrix.os.name }}
-
     steps:
       - name: Git checkout
         uses: actions/checkout@v4
@@ -97,35 +52,29 @@ jobs:
           npm_token: ${{ secrets.GH_REGISTRY_PACKAGES }}
           shipyard: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           shipyard_token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
-          working-directory: ${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working_directory }}
           bin: ${{ needs.check_release_npm.outputs.name }}
           version: ${{ needs.check_release_npm.outputs.current_version }}
 
   create_release_npm:
     name: Publish NPM Packages
     runs-on: "ubuntu-latest"
-    outputs:
-      released: ${{ steps.publish.outputs.released }}
     needs:
-      - check_release_npm
       - build_artifacts_rust
     steps:
       - name: Git checkout
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         run: yarn install
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
 
       - name: Download all artifacts
-        if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         uses: actions/download-artifact@v4
         with:
-          path: ${{ inputs.working-directory }}/raw_artifacts
+          path: ${{ inputs.working_directory }}/raw_artifacts
 
       - name: Move Artifacts and rename
-        if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         shell: bash
         run: |-
           mkdir -p artifacts
@@ -133,15 +82,13 @@ jobs:
               NEW_NAME="${f/-${{ needs.check_release_npm.outputs.name }}/}"
               mv -- "$f" "${NEW_NAME/raw_artifacts/artifacts}"
           done
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
 
       - name: Move artifacts
-        if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         run: yarn artifacts
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
-        if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -162,4 +109,4 @@ jobs:
             rc=false
           fi
           echo "released=$released" >> $GITHUB_OUTPUT
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}

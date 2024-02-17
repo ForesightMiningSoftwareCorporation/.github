@@ -5,11 +5,8 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: ${{ jobs.cargo_publish_public_registry.outputs.released }}
+        value: 'true'
     inputs:
-      runner:
-        type: string
-        default: "ubuntu-latest"
       required_packages:
         type: string
         default: ""
@@ -22,15 +19,7 @@ on:
         type: string
         default: "1.73"
         description: Rust toolchain to install
-      initial_event_name:
-        type: string
-        default: "push"
-        description: Event that triggered the workflow
-      skip-test:
-        type: boolean
-        default: false
-        description: Skip the test step
-      working-directory:
+      working_directory:
         type: string
         default: "."
         description: Working directory to run the cargo command
@@ -55,58 +44,46 @@ jobs:
   cargo_publish_public_registry:
     name: Release new version to public registry
     runs-on: "ubuntu-latest"
-    outputs:
-      released: ${{ steps.check_exists.outputs.exists == 'false' && 'true' || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
         with:
-          file: "${{ inputs.working-directory }}/Cargo.toml"
+          file: "${{ inputs.working_directory }}/Cargo.toml"
           field: "package.version"
 
       - uses: SebRollen/toml-action@v1.0.2
         id: read_name
         with:
-          file: "${{ inputs.working-directory }}/Cargo.toml"
+          file: "${{ inputs.working_directory }}/Cargo.toml"
           field: "package.name"
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-public-crate-exists@v1
-        name: Check if the package exists
-        id: check_exists
-        with:
-          working-directory: ${{ inputs.working-directory }}
-
       - name: Cache Dependencies
-        if: steps.check_exists.outputs.exists == 'false'
         uses: Swatinem/rust-cache@v2
         with:
           env-vars: ""
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - uses: dtolnay/rust-toolchain@master
-        if: steps.check_exists.outputs.exists == 'false'
         with:
           toolchain: ${{ inputs.toolchain }}
 
       - name: Login to public Registry
         shell: bash
-        if: steps.check_exists.outputs.exists == 'false'
         run: |
           cargo login ${{ secrets.CARGO_PUBLIC_REGISTRY_TOKEN }}
 
       - name: Generate token
         id: generate_token
-        if: steps.check_exists.outputs.exists == 'false'
         uses: tibdex/github-app-token@v1
         with:
           app_id: ${{ secrets.ACTIONS_APPROVERS_APP_ID }}
           private_key: ${{ secrets.ACTIONS_APPROVERS_APP_PRIVATE_KEY }}
 
       - name: Tell people about the release
-        if: steps.check_exists.outputs.exists != 'true' && env.DISCORD_WEBHOOK != ''
+        if: env.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -115,29 +92,27 @@ jobs:
 
       - name: Approve Release
         uses: trstringer/manual-approval@v1
-        if: steps.check_exists.outputs.exists == 'false'
         with:
           secret: ${{ steps.generate_token.outputs.token }}
           approvers: "Publishers"
           minimum-approvals: 1
 
       - name: Additional Script
-        if: steps.check_exists.outputs.exists != 'true' && inputs.additional_script != ''
+        if: inputs.additional_script != ''
         run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Update Packages
-        if: steps.check_exists.outputs.exists != 'true' && inputs.required_packages != ''
+        if: inputs.required_packages != ''
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Run custom cargo command
-        if: steps.check_exists.outputs.exists != 'true' && inputs.custom_cargo_commands != ''
+        if: inputs.custom_cargo_commands != ''
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.custom_cargo_commands }}
 
       - name: Publish to public registry
-        if: steps.check_exists.outputs.exists == 'false'
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: cargo publish

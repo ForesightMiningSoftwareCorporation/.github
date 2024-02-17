@@ -5,7 +5,7 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: ${{ jobs.cargo_publish_private_registry.outputs.released }}
+        value: 'true'
     inputs:
       required_packages:
         type: string
@@ -19,14 +19,7 @@ on:
         type: string
         default: "1.73"
         description: Rust toolchain to install
-      login_private_registry:
-        type: string
-        default: "true"
-      skip-test:
-        type: boolean
-        default: false
-        description: Skip the test step
-      working-directory:
+      working_directory:
         type: string
         default: "."
         description: Working directory to run the cargo command
@@ -52,35 +45,21 @@ jobs:
   cargo_publish_private_registry:
     name: Release new version to private registry
     runs-on: "ubuntu-latest"
-    outputs:
-      released: ${{ steps.check_exists.outputs.exists == 'false' && 'true' || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/cargo-crate-exists@v1
-        name: Check if the package exists
-        id: check_exists
-        with:
-          working-directory: ${{ inputs.working-directory }}
-          cargo_private_registry_git_http_url: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_URL }}
-          cargo_private_registry_git_http_username: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_USERNAME }}
-          cargo_private_registry_git_http_password: ${{ secrets.CARGO_PRIVATE_REGISTRY_GIT_HTTP_PASSWORD }}
+        uses: actions/checkout@v4
 
       - name: Cache Dependencies
-        if: steps.check_exists.outputs.exists != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           env-vars: ""
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - uses: dtolnay/rust-toolchain@master
-        if: steps.check_exists.outputs.exists != 'true'
         with:
           toolchain: ${{ inputs.toolchain }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
-        if: steps.check_exists.outputs.exists != 'true'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -91,22 +70,21 @@ jobs:
             ${{ secrets.VOLUMESIGHT_SSH_PRIVATE_KEY }}
 
       - name: Additional Script
-        if: steps.check_exists.outputs.exists != 'true' && inputs.additional_script != ''
+        if: inputs.additional_script != ''
         run: ${{ inputs.additional_script }}
         shell: bash
 
       - name: Update Packages
-        if: steps.check_exists.outputs.exists != 'true' && inputs.required_packages != ''
+        if: inputs.required_packages != ''
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Run custom cargo command
-        if: steps.check_exists.outputs.exists != 'true' && inputs.custom_cargo_commands != ''
+        if: inputs.custom_cargo_commands != ''
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.custom_cargo_commands }}
 
       - name: Publish to private registry
-        if: steps.check_exists.outputs.exists != 'true'
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }} ${{ inputs.additional_args }}

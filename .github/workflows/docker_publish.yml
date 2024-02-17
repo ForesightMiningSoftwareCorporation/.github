@@ -3,9 +3,9 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: ${{ jobs.docker_publish.outputs.released }}
+        value: 'true'
     inputs:
-      working-directory:
+      working_directory:
         type: string
         description: "Binary to build"
         default: "."
@@ -13,7 +13,7 @@ on:
         type: string
         description: "Rust toolchain to use"
         default: "stable"
-      docker-context:
+      docker_context:
         type: string
         description: "Path to docker context"
         default: "default-docker-context-replace-me"
@@ -33,17 +33,14 @@ on:
 jobs:
   docker_publish:
     runs-on: [self-hosted, gpu]
-    # runs-on: ubuntu-latest
-    outputs:
-      released: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false && 'true' || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: SebRollen/toml-action@v1.0.2
         id: read_version
         with:
-          file: "${{ inputs.working-directory }}/Cargo.toml"
+          file: "${{ inputs.working_directory }}/Cargo.toml"
           field: "package.version"
 
       # Login to registry (ACR)
@@ -69,23 +66,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check Docker version exists
-        id: check_version_exists
-        uses: foresightminingsoftwarecorporation/docker-check-exists@v1
-        with:
-          repository: ${{ inputs.registry }}
-          username: ${{ inputs.registry == 'oreprohub.azurecr.io' && secrets.ACR_USERNAME || github.actor }}
-          password: ${{ inputs.registry == 'oreprohub.azurecr.io' && secrets.ACR_PASSWORD || secrets.GITHUB_TOKEN }}
-          image_name: ${{ inputs.image }}
-          version: ${{ steps.read_version.outputs.value }}
-
       - uses: dtolnay/rust-toolchain@master
-        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
           toolchain: ${{ inputs.toolchain }}
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
-        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -95,22 +80,19 @@ jobs:
             ${{ secrets.OREPROLIB_SSH_PRIVATE_KEY }}
 
       - name: Set up Docker Buildx
-        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         uses: docker/setup-buildx-action@v2
 
       - name: Use user-agent for private registry
-        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         shell: bash
         run: |
           echo "\"shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}\"" > ./shipyard_token
 
       - name: Build & Push
         uses: docker/build-push-action@v3
-        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         with:
-          context: ${{ inputs.docker-context == 'default-docker-context-replace-me' && inputs.working-directory || inputs.docker-context }}
+          context: ${{ inputs.docker_context == 'default-docker-context-replace-me' && inputs.working_directory || inputs.docker_context }}
           push: true
-          file: "${{ inputs.working-directory }}/${{ inputs.dockerfile }}"
+          file: "${{ inputs.working_directory }}/${{ inputs.dockerfile }}"
           ssh: default=${{ env.SSH_AUTH_SOCK }}
           secrets: |
             node_auth_token="${{ secrets.GITHUB_TOKEN }}"
@@ -124,7 +106,6 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Push image to oricacrplatformfslabs001
-        if: ${{ fromJSON(steps.check_version_exists.outputs.exists) == false }}
         run: |
           docker buildx imagetools create \
             --tag ${{ inputs.registry }}/${{ inputs.image }}:latest \
