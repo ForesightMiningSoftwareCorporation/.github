@@ -5,21 +5,9 @@ inputs:
   command:
     required: true
     description: "The command"
-  working-directory:
+  working_directory:
     required: true
     description: "The working directory"
-  loki_url:
-    required: true
-    description: "URL to contact loki"
-  loki_org_id:
-    required: true
-    description: "Loki Org Id"
-  loki_username:
-    required: true
-    description: "Username to talk to loki"
-  loki_password:
-    required: true
-    description: "Password to talk to loki"
 outputs:
   stdout:
     description: "Command STDOUT"
@@ -37,7 +25,7 @@ runs:
       shell: bash
       id: command
       continue-on-error: true
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.working_directory }}
       run: |
         if ${{ inputs.command }} 2>&1 | ts "%Y-%m-%dT%H:%M:%.SZ; " | tee output.txt; then
           rc=0

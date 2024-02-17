@@ -151,26 +151,23 @@ jobs:
       rust_versions: "${{ inputs.toolchain }} ${{ inputs.miri_toolchain }}"
     secrets: inherit
   test:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v1
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust-test.yml@v2
     if: ${{ inputs.skip_test != 'true' }}
     needs:
       - build_rust_ci_images
     with:
       toolchain: ${{ inputs.toolchain }}
+      nightly_toolchain: ${{ inputs.miri_toolchain }}
       additional_cache_path: ${{ inputs.additional_cache_path }}
       additional_cache_key: ${{ inputs.additional_cache_key }}
       additional_cache_miss: ${{ inputs.additional_cache_miss }}
       additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
-      workspaces: ${{ inputs.workspaces }}
       additional_args: ${{ inputs.additional_args }}
-      working-directory: ${{ inputs.working_directory }}
+      working_directory: ${{ inputs.working_directory }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
-      login_private_registry: ${{ inputs.publish_public_registry != 'true' }}
-      test-publish-required: ${{ inputs.force_nonrequired_publish_test == 'false' && (inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true') }}
-      skip-tests-no-changes: ${{ inputs.skip_tests_no_changes }}
-      skip-miri-test: ${{ inputs.skip_miri_test }}
-      nightly_toolchain: ${{ inputs.miri_toolchain }}
+      test_publish_required: ${{ inputs.force_nonrequired_publish_test == 'false' && (inputs.publish_docker == 'true' || inputs.publish_private_registry == 'true' || inputs.publish_public_registry == 'true') }}
+      skip_miri_test: ${{ inputs.skip_miri_test }}
     secrets: inherit
   publish_private_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v1
