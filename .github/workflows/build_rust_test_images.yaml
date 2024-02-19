@@ -5,19 +5,19 @@ on:
     inputs:
       rust_version:
         description: "Rust version to install"
-        default: "1.70"
+        default: "1.74"
         type: string
       github_runner_version:
         description: "Github Runner Version"
-        default: "2.311.0"
+        default: "2.313.0"
         type: string
       additional_tag:
         description: "Additional tag for docker building"
-        default: "latest"
+        default: "rust-1.74"
         type: string
       context:
         type: string
-        default: https://github.com/ForesightMiningSoftwareCorporation/github.git#v1:docker/rust-tests
+        default: https://github.com/ForesightMiningSoftwareCorporation/github.git#v2:docker/rust-tests
   workflow_call:
     inputs:
       rust_version:
@@ -30,7 +30,7 @@ on:
         type: string
       context:
         type: string
-        default: https://github.com/ForesightMiningSoftwareCorporation/github.git#v1:docker/rust-tests
+        default: https://github.com/ForesightMiningSoftwareCorporation/github.git#v2:docker/rust-tests
 
 jobs:
   build-rust-test-image:
@@ -38,7 +38,7 @@ jobs:
     if: ${{ inputs.rust_version != 'none' }}
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Login to ACR
         uses: docker/login-action@v3
         with:
