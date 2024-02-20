@@ -71,8 +71,10 @@ jobs:
         shell: bash
         run: |
           echo "value=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '${{ inputs.toolchain }}')" >> $GITHUB_OUTPUT
+          echo "sanitized_working_directory=${${{ inputs.working_directory }}//\//_}" >> $GITHUB_OUTPUT
     outputs:
       rust-channel: ${{ steps.rust-channel.outputs.value }}
+      sanitized_working_directory: ${{ steps.rust-channel.outputs.sanitized_working_directory }}
 
   check:
     name: Rust ${{ matrix.type }} ${{ inputs.working_directory }}
@@ -304,8 +306,8 @@ jobs:
         id: out
         if: always()
         with:
-          matrix-step-name: check-${{ inputs.working_directory }}-${{ github.run_attempt }}
-          matrix-key: ${{ inputs.working_directory }}-${{ matrix.type }}
+          matrix-step-name: check-${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ github.run_attempt }}
+          matrix-key: ${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ matrix.type }}
           outputs: |-
             check_outcome: ${{ steps.check.outcome }}
             clippy_outcome: ${{ steps.clippy.outcome }}
@@ -328,6 +330,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - check
+      - derive_runner
     if: always()
     steps:
       - name: Set end time as env variable
@@ -339,7 +342,7 @@ jobs:
         id: read
         if: always()
         with:
-          matrix-step-name: check-${{ inputs.working_directory }}-${{ github.run_attempt }}
+          matrix-step-name: check-${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ github.run_attempt }}
 
       - uses: int128/hide-comment-action@v1
         if: always() && github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
