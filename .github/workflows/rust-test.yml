@@ -190,7 +190,7 @@ jobs:
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success' && !cancelled())
         with:
-          command: "cargo fmt --verbose --all -- --check"
+          command: "cargo fmt --verbose -- --check"
           working_directory: ${{ inputs.working_directory }}
 
       - name: check
