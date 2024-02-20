@@ -65,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: 'rust-toolchain.toml'
+          sparse-checkout: "rust-toolchain.toml"
       - name: Get rust channel
         id: rust-channel
         shell: bash
@@ -76,7 +76,13 @@ jobs:
 
   check:
     name: Rust ${{ matrix.type }} ${{ inputs.working_directory }}
-    runs-on: [self-hosted, "gpu", "${{ needs.derive_runner.outputs.rust-channel }}", "${{ github.run_id }}__${{ inputs.working_directory }}__${{ matrix.type }}__${{ github.run_attempt }}"]
+    runs-on:
+      [
+        self-hosted,
+        "gpu",
+        "${{ needs.derive_runner.outputs.rust-channel }}",
+        "${{ github.run_id }}__${{ inputs.working_directory }}__${{ matrix.type }}__${{ github.run_attempt }}",
+      ]
     needs: derive_runner
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
@@ -298,7 +304,7 @@ jobs:
         id: out
         if: always()
         with:
-          matrix-step-name: check-${{ github.run_attempt }}
+          matrix-step-name: check-${{ inputs.working_directory }}-${{ github.run_attempt }}
           matrix-key: ${{ inputs.working_directory }}-${{ matrix.type }}
           outputs: |-
             check_outcome: ${{ steps.check.outcome }}
@@ -333,7 +339,7 @@ jobs:
         id: read
         if: always()
         with:
-          matrix-step-name: check-${{ github.run_attempt }}
+          matrix-step-name: check-${{ inputs.working_directory }}-${{ github.run_attempt }}
 
       - uses: int128/hide-comment-action@v1
         if: always() && github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
