@@ -35,7 +35,7 @@ jobs:
     runs-on:
       [
         self-hosted,
-        standard,
+        gpu,
         "${{ github.run_id }}__${{ inputs.working_directory }}__docker__${{ github.run_attempt }}",
       ]
     steps:
@@ -47,7 +47,7 @@ jobs:
         with:
           file: "${{ inputs.working_directory }}/Cargo.toml"
           field: "package.version"
-
+      #
       # Login to registry (ACR)
       - name: Login to oreprohub
         uses: docker/login-action@v3
@@ -56,6 +56,7 @@ jobs:
           registry: ${{ inputs.registry }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
+          logout: false
 
       - name: Login to oricacrplatformfslabs001
         uses: docker/login-action@v3
@@ -63,6 +64,7 @@ jobs:
           registry: oricacrplatformfslabs001.azurecr.io
           username: ${{ secrets.DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_USERNAME }}
           password: ${{ secrets.DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_PASSWORD }}
+          logout: false
 
       - name: Login to ghcr.io
         uses: docker/login-action@v3
@@ -70,6 +72,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          logout: false
 
       - uses: dtolnay/rust-toolchain@master
         with:
