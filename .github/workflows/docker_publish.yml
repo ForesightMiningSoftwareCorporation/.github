@@ -3,7 +3,7 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: 'true'
+        value: "true"
     inputs:
       working_directory:
         type: string
@@ -32,7 +32,12 @@ on:
 
 jobs:
   docker_publish:
-    runs-on: [self-hosted, gpu, docker]
+    runs-on:
+      [
+        self-hosted,
+        standard,
+        "${{ github.run_id }}__${{ inputs.working_directory }}__docker__${{ github.run_attempt }}",
+      ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
