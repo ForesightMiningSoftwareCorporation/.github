@@ -3,16 +3,16 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: 'true'
+        value: "true"
     inputs:
-        working_directory:
-          type: string
-          default: ""
-          description: Subdirectory to treat as repo root
-        toolchain:
-          type: string
-          default: "1.73"
-          description: Rust toolchain to install
+      working_directory:
+        type: string
+        default: ""
+        description: Subdirectory to treat as repo root
+      toolchain:
+        type: string
+        default: "1.73"
+        description: Rust toolchain to install
 
 jobs:
   build_artifacts_rust:
@@ -22,7 +22,10 @@ jobs:
         os:
           - name: ubuntu-latest-16-cores
             arch: x86_64-unknown-linux-gnu
-            ext: ''
+            ext: ""
+          - name: ubuntu-latest-16-cores
+            arch: x86_64-unknown-linux-gnu
+            ext: ""
           - name: windows-latest-16-cores-custom
             arch: x86_64-pc-windows-msvc
             ext: .exe
