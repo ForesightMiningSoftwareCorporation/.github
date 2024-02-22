@@ -71,7 +71,9 @@ jobs:
         shell: bash
         run: |
           echo "value=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '${{ inputs.toolchain }}')" >> $GITHUB_OUTPUT
-          echo "sanitized_working_directory=${${{ inputs.working_directory }}//\//_}" >> $GITHUB_OUTPUT
+          sanitized_working_directory="${{ inputs.working_directory }}"
+          sanitized_working_directory="${sanitized_working_directory//\//_}"
+          echo "sanitized_working_directory=${sanitized_working_directory}" >> "$GITHUB_OUTPUT"
     outputs:
       rust-channel: ${{ steps.rust-channel.outputs.value }}
       sanitized_working_directory: ${{ steps.rust-channel.outputs.sanitized_working_directory }}
