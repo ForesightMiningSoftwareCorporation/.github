@@ -87,8 +87,8 @@ jobs:
           additional_private_keys: |
             ${{ secrets.OREPROLIB_SSH_PRIVATE_KEY }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v2
 
       - name: Use user-agent for private registry
         shell: bash
@@ -110,5 +110,5 @@ jobs:
           tags: |
             ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
             ${{ inputs.registry }}/${{ inputs.image }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          #cache-from: type=gha
+          #cache-to: type=gha,mode=max
