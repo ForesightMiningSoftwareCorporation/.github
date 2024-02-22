@@ -11,10 +11,8 @@ inputs:
   runner_extension:
     required: true
     description: "The extension of the runner"
-  docker:
+  docker_image:
     description: "Docker Image to use"
-  docker_build:
-    description: "Docker command that will run in the container"
   node_auth_token:
     description: "node auth token"
   npm_token:
@@ -44,7 +42,7 @@ runs:
       with:
         check-latest: true
         registry-url: https://npm.pkg.github.com/
-        scope: '@ForesightMiningSoftwareCorporation'
+        scope: "@ForesightMiningSoftwareCorporation"
 
     - name: Check if package with same version exists
       id: check-version-exists
@@ -63,23 +61,18 @@ runs:
         NPM_TOKEN: ${{ inputs.npm_token }}
 
     - uses: dtolnay/rust-toolchain@master
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'ubuntu') }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.docker_image == '' }}
       with:
         toolchain: ${{ inputs.toolchain }}
         targets: ${{ inputs.runner_arch }}
 
     - name: Build On Agent (native build)
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && !contains(inputs.runner_os, 'ubuntu') }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.docker_image == '' }}
       env:
         CARGO_HTTP_USER_AGENT: "shipyard ${{ inputs.shipyard_token }}"
       run: |-
         yarn install
-        if [ "${{ inputs.with_rust }}" == "true" ]; then
-          EXTRA_ARGS="--target ${{ inputs.runner_arch }} "
-        else
-          EXTRA_ARGS=""
-        fi
-        yarn build $EXTRA_ARGS
+        yarn build --target ${{ inputs.runner_arch }}
       shell: bash
       working-directory: ${{ inputs.working-directory }}
 
@@ -89,11 +82,16 @@ runs:
         CARGO_NET_GIT_FETCH_WITH_CLI: "true"
         SHIPYARD_REGISTRY: ${{ inputs.shipyard }}
         SHIPYARD_TOKEN: ${{ inputs.shipyard_token }}
-      if: ${{ steps.check-version-exists.outputs.exists == 'false' && contains(inputs.runner_os, 'ubuntu') }}
+      if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.docker_image != '' }}
       with:
-        image: ${{ inputs.docker }}
+        image: ${{ inputs.docker_image }}
         options: --user 0:0 -w /build/${{ inputs.working-directory }} -v ${{ github.workspace }}:/build -v ${{ env.SSH_AUTH_SOCK }}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent -v ${{ steps.check-version-exists.outputs.home }}/.gitconfig:/root/.gitconfig -v ${{ steps.check-version-exists.outputs.home }}/.ssh:/.ssh
-        run: /entrypoint.sh && cargo login --registry ${{ inputs.shipyard }} ${{ inputs.shipyard_token }} && export CARGO_HTTP_USER_AGENT="shipyard ${{ inputs.shipyard_token }}" && ${{ inputs.docker_build }}
+        run: |
+          /entrypoint.sh
+          cargo login --registry ${{ inputs.shipyard }} ${{ inputs.shipyard_token }}
+          export CARGO_HTTP_USER_AGENT="shipyard ${{ inputs.shipyard_token }}"
+          yarn install
+          yarn build --target ${{ inputs.runner_arch }} --js=false
 
     - name: Upload artifact
       if: ${{ steps.check-version-exists.outputs.exists == 'false' }}

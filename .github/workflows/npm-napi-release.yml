@@ -3,7 +3,7 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: "true"
+        value: ${{ jobs.create_release_npm.outputs.released }}
     inputs:
       working_directory:
         type: string
@@ -15,28 +15,53 @@ on:
         description: Rust toolchain to install
 
 jobs:
+  derive_info:
+    name: Check NPM Packages
+    runs-on: "ubuntu-latest"
+    outputs:
+      name: ${{ steps.read_package_json.outputs.name }}
+      current-version: ${{ steps.read_package_json.outputs.current-version }}
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ${{ inputs.working_directory }}/package.json
+      - name: Get version in package.json
+        id: read_package_json
+        run: |
+          echo "name=$(cat package.json | jq -r '.name' | rev | cut -d'/' -f 1 | rev)" >> $GITHUB_OUTPUT
+          echo "current-version=$(cat package.json | jq -r '.version')" >> $GITHUB_OUTPUT
+        working-directory: ${{ inputs.working_directory }}
+
   build_artifacts_rust:
     name: Build napi artifacts
+    needs:
+      - derive_info
     strategy:
       matrix:
         os:
           - name: ubuntu-latest-16-cores
-            arch: x86_64-unknown-linux-gnu
+            arch: x86_64-unknown-linux-musl
             ext: ""
+            docker_image: ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:latest
           - name: ubuntu-latest-16-cores
             arch: x86_64-unknown-linux-gnu
             ext: ""
+            docker_image: ""
           - name: windows-latest-16-cores-custom
             arch: x86_64-pc-windows-msvc
             ext: .exe
+            docker_image: ""
           - name: macos-latest-xlarge
             arch: aarch64-apple-darwin
+            docker_image: ""
     runs-on: ${{ matrix.os.name }}
     steps:
       - name: Git checkout
         uses: actions/checkout@v4
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v2
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -44,25 +69,27 @@ jobs:
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
       - name: Build rust package
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-napi-artifact@v1
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-napi-artifact@v2
         with:
           runner_os: ${{ matrix.os.name }}
           runner_arch: ${{ matrix.os.arch }}
           runner_extension: ${{ matrix.os.ext }}
-          docker: ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:latest
-          docker_build: yarn install && yarn build --target x86_64-unknown-linux-musl --js=false
+          docker_image: ${{ matrix.os.docker_image }}
           node_auth_token: ${{ secrets.GITHUB_TOKEN }}
           npm_token: ${{ secrets.GH_REGISTRY_PACKAGES }}
           shipyard: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           shipyard_token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
           working-directory: ${{ inputs.working_directory }}
-          bin: ${{ needs.check_release_npm.outputs.name }}
-          version: ${{ needs.check_release_npm.outputs.current_version }}
+          bin: ${{ needs.derive_info.outputs.name }}
+          version: ${{ needs.derive_info.outputs.current_version }}
 
   create_release_npm:
     name: Publish NPM Packages
     runs-on: "ubuntu-latest"
+    outputs:
+      released: ${{ steps.publish.outputs.released }}
     needs:
+      - derive_info
       - build_artifacts_rust
     steps:
       - name: Git checkout
@@ -81,8 +108,8 @@ jobs:
         shell: bash
         run: |-
           mkdir -p artifacts
-          for f in raw_artifacts/bindings-${{ needs.check_release_npm.outputs.name }}-*; do
-              NEW_NAME="${f/-${{ needs.check_release_npm.outputs.name }}/}"
+          for f in raw_artifacts/bindings-${{ needs.derive_info.outputs.name }}-*; do
+              NEW_NAME="${f/-${{ needs.derive_info.outputs.name }}/}"
               mv -- "$f" "${NEW_NAME/raw_artifacts/artifacts}"
           done
         working-directory: ${{ inputs.working_directory }}
@@ -91,7 +118,7 @@ jobs:
         run: yarn artifacts
         working-directory: ${{ inputs.working_directory }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v2
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -104,7 +131,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.GH_REGISTRY_PACKAGES }}
-        if: ${{ needs.check_release_npm.outputs.exists == 'false' }}
         run: |
           if npm publish ; then
             released=true
