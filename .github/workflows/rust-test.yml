@@ -454,6 +454,10 @@ jobs:
 
             const output = test_output + footer;
 
+            await core.summary
+              .addHeading("Test Results")
+              .addRaw(output, true);
+
             if (context.eventName === 'pull_request' || context.eventName === 'pull_request_target') {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
