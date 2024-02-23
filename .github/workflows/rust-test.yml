@@ -53,6 +53,10 @@ on:
         type: string
         default: "false"
         description: "Should the publish dry-run test be marked as required"
+      test_doc_required:
+        type: string
+        default: "false"
+        description: "Should the doc test be required"
 
 env:
   CARGO_TERM_COLOR: never
@@ -304,68 +308,103 @@ jobs:
           command: "cargo miri test ${{ inputs.fail_fast == 'false' && '--keep-going' || '' }} ${{ inputs.additional_args }}"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: Derive check outputs
-        if: always() & matrix.type == 'check'
-        run: |
-          echo '
       - name: Write output to file
         shell: bash
         if: always()
         working-directory: ${{ runner.temp }}
         run: |
-
-          tee -a ${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ matrix.type }}.json <<EOF
+          tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
           {
             "name": "${{ steps.name.outputs.value }}",
             "start_time": "${{ steps.start_time.outputs.value }}",
             "end_time": "$(date +'%s')000",
             "working_directory": "${{ inputs.working_directory }}",
             "type": "${{ matrix.type }}",
+            "server_url": "${{ github.server_url }}",
+            "repository": "${{ github.repository }}",
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "actor": "${{ github.actor }}",
+            "event_name": "${{ github.event_name }}",
             "outputs": {
-              "check": "${{ steps.check.outcome }}",
-              "clippy": "${{ steps.clippy.outcome }}",
-              "doc": "${{ steps.doc.outcome }}",
-              "custom": "${{ steps.custom.outcome }}",
-              "deny-advisories": "${{ steps.deny-advisories.outcome }}",
-              "deny-bans": "${{ steps.deny-bans.outcome }}",
-              "deny-license": "${{ steps.deny-license.outcome }}",
-              "deny-sources": "${{ steps.deny-sources.outcome }}",
-              "dependencies": "${{ steps.dependencies.outcome }}",
-              "fmt": "${{ steps.fmt.outcome }}",
-              "publish-dryrun": "${{ steps.publish-dryrun.outcome }}",
-            }
-          }
           EOF
 
           case "${{ matrix.type }}" in
             "check")
-              cat <<'END' >>EOF
-                "check": "${{ steps.check.outcome }}",
-                "clippy": "${{ steps.clippy.outcome }}",
-                "doc": "${{ steps.doc.outcome }}",
-                "custom": "${{ steps.custom.outcome }}",
-                "dependencies": "${{ steps.dependencies.outcome }}",
-                "fmt": "${{ steps.fmt.outcome }}",
-                "tests": "${{ steps.tests.outcome }}"
-          END
+              tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+                "custom": {
+                  "outcome": "${{ steps.custom.outcome }}",
+                  "required": false
+                },
+                "fmt": {
+                  "outcome": "${{ steps.fmt.outcome }}",
+                  "required": true
+                },
+                "check": {
+                  "outcome": "${{ steps.check.outcome }}",
+                  "required": true
+                },
+                "clippy": {
+                  "outcome": "${{ steps.clippy.outcome }}",
+                  "required": true
+                },
+                "doc": {
+                  "outcome": "${{ steps.doc.outcome }}",
+                  "required": ${{ inputs.test_doc_required }}
+                },
+                "dependencies": {
+                  "outcome": "${{ steps.dependencies.outcome }}",
+                  "required": false
+                },
+                "deny-advisories": {
+                  "outcome": "${{ steps.deny-advisories.outcome }}",
+                  "required": false
+                },
+                "deny-bans": {
+                  "outcome": "${{ steps.deny-bans.outcome }}",
+                  "required": false
+                },
+                "deny-license": {
+                  "outcome": "${{ steps.deny-license.outcome }}",
+                  "required": false
+                },
+                "deny-sources": {
+                  "outcome": "${{ steps.deny-sources.outcome }}",
+                  "required": false
+                },
+                "publish-dryrun": {
+                  "outcome": "${{ steps.publish-dryrun.outcome }}",
+                  "required": ${{ inputs.test_publish_required }}
+                }
+              }
+          EOF
               ;;
             "miri")
-              cat <<'END' >>EOF
-                "miri": "${{ steps.miri.outcome }}",
-          END
+              tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+                "miri": {
+                  "outcome": "${{ steps.miri.outcome }}",
+                  "required": false
+                }
+              }
+          EOF
               ;;
             "test")
-              cat <<'END' >>EOF
-                "tests": "${{ steps.tests.outcome }}"
-          END
+              tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+                "tests": {
+                  "outcome": "${{ steps.tests.outcome }}",
+                  "required": true
+                }
+              }
+          EOF
               ;;
             *)
           esac
 
-          echo "}" >> EOF
+          tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+          }
           EOF
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fslabs__checks__${{ github.run_id }}__${{ github.run_attempt }}__${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ matrix.type }}
-          path: ${{ runner.temp }}/${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ matrix.type }}.json
+          name: fslabs__checks__${{ github.run_id }}__${{ github.run_attempt }}__${{ steps.name.outputs.value }}-${{ matrix.type }}
+          path: ${{ runner.temp }}/${{ steps.name.outputs.value }}-${{ matrix.type }}.json
