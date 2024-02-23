@@ -183,7 +183,7 @@ jobs:
         id: start_time
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
-      - name: Run Cargo Custom command
+      - name: custom
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: custom
         if: inputs.custom_cargo_commands != ''
