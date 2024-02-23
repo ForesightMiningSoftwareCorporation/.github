@@ -1,0 +1,22 @@
+on:
+  workflow_call:
+    inputs:
+      run_type:
+        type: string
+        default: "checks"
+        description: "Type of run (`checks` or `publishing`)"
+jobs:
+  results:
+    name: ${{ inputs.run_type }} summaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        id: download
+        with:
+          pattern: fslabs__${{ inputs.run_type }}__${{ github.run_id }}__${{ github.run_attempt }}__*
+          merge-multiple: true
+
+      - name: List files
+        shell: bash
+        run: |
+          ls -alh ${{ steps.download.outputs.download-path }}
