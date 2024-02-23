@@ -193,8 +193,8 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
 
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: fmt
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success' && !cancelled())
         with:
@@ -202,26 +202,26 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: check
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || steps.fmt.outcome == 'success' && !cancelled())
         with:
           command: "cargo check ${{ inputs.additional_args }}" # todo: feed back the `workspace
           working_directory: ${{ inputs.working_directory }}
 
-      - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
+      - name: clippy
         id: clippy
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || steps.check.outcome == 'success' && !cancelled())
         with:
           command: "cargo clippy ${{ inputs.additional_args }} -- -D warnings"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: documentation
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
+      - name: doc
         id: doc
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
@@ -237,7 +237,7 @@ jobs:
             curl -o deny.toml https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
 
-      - name: check license
+      - name: deny-license
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-license
         continue-on-error: true
@@ -246,7 +246,7 @@ jobs:
           command: "cargo deny check licenses"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: check bans
+      - name: deny-bans
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-bans
         continue-on-error: true
@@ -255,7 +255,7 @@ jobs:
           command: "cargo deny check bans"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: check advisories
+      - name: deny-advisories
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-advisories
         continue-on-error: true
@@ -264,7 +264,7 @@ jobs:
           command: "cargo deny check advisories"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: check sources
+      - name: deny-sources
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-sources
         continue-on-error: true
@@ -273,7 +273,7 @@ jobs:
           command: "cargo deny check sources"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: unused dependencies
+      - name: dependencies
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: dependencies
         continue-on-error: true
@@ -282,7 +282,7 @@ jobs:
           command: "cargo machete"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: Publishing DryRun
+      - name: publish-dryrun
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: publish-dryrun
         continue-on-error: true
@@ -291,7 +291,7 @@ jobs:
           command: "cargo package"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: Tests
+      - name: tests
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: tests
         if: matrix.type == 'test' && (inputs.fail_fast == 'false' || !cancelled())
@@ -299,7 +299,7 @@ jobs:
           command: "cargo test ${{ inputs.fail_fast == 'false' && '--no-fail_fast' || '' }} ${{ inputs.additional_args }}"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: Miri
+      - name: miri
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: miri
         continue-on-error: true
