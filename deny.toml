@@ -19,6 +19,8 @@ allow = [
     "Unicode-DFS-2016",
     "Unlicense",
     "Zlib",
+    "OFL-1.1",
+    "LicenseRef-UFL-1.0",
 ]
 unused-allowed-license = "allow"
 [licenses.private]
