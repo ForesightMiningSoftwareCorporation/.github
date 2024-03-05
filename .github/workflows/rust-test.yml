@@ -53,6 +53,10 @@ on:
         type: string
         default: "false"
         description: "Should the publish dry-run test be marked as required"
+      test_doc_required:
+        type: string
+        default: "false"
+        description: "Should the doc test be required"
 
 env:
   CARGO_TERM_COLOR: never
@@ -179,7 +183,7 @@ jobs:
         id: start_time
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
 
-      - name: Run Cargo Custom command
+      - name: custom
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: custom
         if: inputs.custom_cargo_commands != ''
@@ -189,8 +193,8 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
 
       - name: fmt
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: fmt
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || inputs.custom_cargo_commands == '' || steps.custom.outcome == 'success' && !cancelled())
         with:
@@ -198,26 +202,26 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
 
       - name: check
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: check
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || steps.fmt.outcome == 'success' && !cancelled())
         with:
           command: "cargo check ${{ inputs.additional_args }}" # todo: feed back the `workspace
           working_directory: ${{ inputs.working_directory }}
 
-      - name: run clippy
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
+      - name: clippy
         id: clippy
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || steps.check.outcome == 'success' && !cancelled())
         with:
           command: "cargo clippy ${{ inputs.additional_args }} -- -D warnings"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: documentation
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
+      - name: doc
         id: doc
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         continue-on-error: true
         if: matrix.type == 'check' && (inputs.fail_fast == 'false' || steps.clippy.outcome == 'success' && !cancelled())
         with:
@@ -233,7 +237,7 @@ jobs:
             curl -o deny.toml https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
 
-      - name: check license
+      - name: deny-license
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-license
         continue-on-error: true
@@ -242,7 +246,7 @@ jobs:
           command: "cargo deny check licenses"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: check bans
+      - name: deny-bans
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-bans
         continue-on-error: true
@@ -251,7 +255,7 @@ jobs:
           command: "cargo deny check bans"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: check advisories
+      - name: deny-advisories
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-advisories
         continue-on-error: true
@@ -260,7 +264,7 @@ jobs:
           command: "cargo deny check advisories"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: check sources
+      - name: deny-sources
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-sources
         continue-on-error: true
@@ -269,7 +273,7 @@ jobs:
           command: "cargo deny check sources"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: unused dependencies
+      - name: dependencies
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: dependencies
         continue-on-error: true
@@ -278,7 +282,7 @@ jobs:
           command: "cargo machete"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: Publishing DryRun
+      - name: publish-dryrun
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: publish-dryrun
         continue-on-error: true
@@ -287,7 +291,7 @@ jobs:
           command: "cargo package"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: Tests
+      - name: tests
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: tests
         if: matrix.type == 'test' && (inputs.fail_fast == 'false' || !cancelled())
@@ -295,7 +299,7 @@ jobs:
           command: "cargo test ${{ inputs.fail_fast == 'false' && '--no-fail_fast' || '' }} ${{ inputs.additional_args }}"
           working_directory: ${{ inputs.working_directory }}
 
-      - name: Miri
+      - name: miri
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: miri
         continue-on-error: true
@@ -304,173 +308,103 @@ jobs:
           command: "cargo miri test ${{ inputs.fail_fast == 'false' && '--keep-going' || '' }} ${{ inputs.additional_args }}"
           working_directory: ${{ inputs.working_directory }}
 
-      - uses: ForesightMiningSoftwareCorporation/github-action-matrix-outputs-write@main
-        id: out
+      - name: Write output to file
+        shell: bash
         if: always()
-        with:
-          matrix-step-name: check-${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ github.run_attempt }}
-          matrix-key: ${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ matrix.type }}
-          outputs: |-
-            check_outcome: ${{ steps.check.outcome }}
-            clippy_outcome: ${{ steps.clippy.outcome }}
-            doc_outcome: ${{ steps.doc.outcome }}
-            custom_outcome: ${{ steps.custom.outcome }}
-            deny-advisories_outcome: ${{ steps.deny-advisories.outcome }}
-            deny-bans_outcome: ${{ steps.deny-bans.outcome }}
-            deny-license_outcome: ${{ steps.deny-license.outcome }}
-            deny-sources_outcome: ${{ steps.deny-sources.outcome }}
-            dependencies_outcome: ${{ steps.dependencies.outcome }}
-            fmt_outcome: ${{ steps.fmt.outcome }}
-            miri_outcome: ${{ steps.miri.outcome }}
-            name: ${{ steps.name.outputs.value }}
-            publish-dryrun_outcome: ${{ steps.publish-dryrun.outcome }}
-            start: ${{ steps.start_time.outputs.value }}
-            tests_outcome: ${{ steps.tests.outcome }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+          {
+            "name": "${{ steps.name.outputs.value }}",
+            "start_time": "${{ steps.start_time.outputs.value }}",
+            "end_time": "$(date +'%s')000",
+            "working_directory": "${{ inputs.working_directory }}",
+            "type": "${{ matrix.type }}",
+            "server_url": "${{ github.server_url }}",
+            "repository": "${{ github.repository }}",
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "actor": "${{ github.actor }}",
+            "event_name": "${{ github.event_name }}",
+            "outputs": {
+          EOF
 
-  results:
-    name: Rust Test Results
-    runs-on: ubuntu-latest
-    needs:
-      - check
-      - derive_runner
-    if: always()
-    steps:
-      - name: Set end time as env variable
-        id: end_time
-        if: always()
-        run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
-
-      - uses: cloudposse/github-action-matrix-outputs-read@0.1.1
-        id: read
-        if: always()
-        with:
-          matrix-step-name: check-${{ needs.derive_runner.outputs.sanitized_working_directory }}-${{ github.run_attempt }}
-
-      - uses: int128/hide-comment-action@v1
-        if: always() && github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        with:
-          authors: |
-            github-actions
-
-      - uses: actions/github-script@v6
-        name: Report status on PR
-        id: comment
-        if: always()
-        with:
-          result-encoding: string
-          script: |
-            if (context.eventName !== 'pull_request' && context.eventName !== 'pull_request_target') {
-              return "0";
-            }
-            function outcomeEmoji(outcome) {
-              switch (outcome) {
-                case 'success':
-                  return '✅';
-                case 'skipped':
-                  return '⏭';
-                case 'cancelled':
-                  return '⛔';
-                case 'failure':
-                  return '❌';
-                default:
-                  return '❔';
+          case "${{ matrix.type }}" in
+            "check")
+              tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+                "custom": {
+                  "outcome": "${{ steps.custom.outcome }}",
+                  "required": false
+                },
+                "fmt": {
+                  "outcome": "${{ steps.fmt.outcome }}",
+                  "required": true
+                },
+                "check": {
+                  "outcome": "${{ steps.check.outcome }}",
+                  "required": true
+                },
+                "clippy": {
+                  "outcome": "${{ steps.clippy.outcome }}",
+                  "required": true
+                },
+                "doc": {
+                  "outcome": "${{ steps.doc.outcome }}",
+                  "required": ${{ inputs.test_doc_required }}
+                },
+                "dependencies": {
+                  "outcome": "${{ steps.dependencies.outcome }}",
+                  "required": false
+                },
+                "deny-advisories": {
+                  "outcome": "${{ steps.deny-advisories.outcome }}",
+                  "required": false
+                },
+                "deny-bans": {
+                  "outcome": "${{ steps.deny-bans.outcome }}",
+                  "required": false
+                },
+                "deny-license": {
+                  "outcome": "${{ steps.deny-license.outcome }}",
+                  "required": false
+                },
+                "deny-sources": {
+                  "outcome": "${{ steps.deny-sources.outcome }}",
+                  "required": false
+                },
+                "publish-dryrun": {
+                  "outcome": "${{ steps.publish-dryrun.outcome }}",
+                  "required": ${{ inputs.test_publish_required }}
+                }
               }
-            }
-
-            function is_success(...args) {
-              return args.reduce((acc, x) => acc && (x === 'success'), true);
-            }
-
-            const result_string = `${{ steps.read.outputs.result }}`;
-            let data;
-            let paths;
-            try {
-              data = JSON.parse(result_string);
-              const first_val = data['check_outcome'];
-              paths = [...new Set(Object.keys(first_val).map(key => key.split('-')[0]))].sort();
-            } catch {
-              if (context.eventName === 'pull_request' || context.eventName === 'pull_request_target') {
-                github.rest.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: '###  Run failed - no results found `❌`'
-                });
+          EOF
+              ;;
+            "miri")
+              tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+                "miri": {
+                  "outcome": "${{ steps.miri.outcome }}",
+                  "required": false
+                }
               }
+          EOF
+              ;;
+            "test")
+              tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+                "tests": {
+                  "outcome": "${{ steps.tests.outcome }}",
+                  "required": true
+                }
+              }
+          EOF
+              ;;
+            *)
+          esac
 
-              return "1";
-            }
-
-            let test_output = '';
-            const table_footer = '</table>\n';
-            let start_time = '';
-            let success = true;
-
-            for (let path of paths) {
-
-              const fetch_string = (name, type) => data[name]['' + path + '-' + type];
-
-              start_time = fetch_string('start', 'check');
-
-              const workspace_args = ''; 
-
-              const entry = (name, outcome, required, logId) => `
-            <tr>
-            <td align="center">${ required ? '✓' : '' }</td>
-            <td>${ name }</td>
-            <td>${ outcomeEmoji(outcome) }</td>
-            <td><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">Logs</a></td>
-            </tr>
-            `;
-
-              const custom = entry('Custom: ${{ inputs.custom_cargo_commands }}', fetch_string('custom_outcome', 'check'), true, 'custom');
-              const fmt = entry('cargo fmt --verbose --all -- --check', fetch_string('fmt_outcome', 'check'), true, 'fmt');
-              const check = entry(`cargo check ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('check_outcome', 'check'), true, 'check');
-              const clippy = entry(`cargo clippy ${ workspace_args } ${{ inputs.additional_args }} -- -D warnings`, fetch_string('clippy_outcome', 'check'), true, 'clippy');
-              const doc = entry('cargo doc --no-deps', fetch_string('doc_outcome', 'check'), ${{ inputs.test_publish_required == 'true' }}, 'doc');
-              const licenses = entry('cargo deny check licenses', fetch_string('deny-license_outcome', 'check'), false, 'deny-license');
-              const bans = entry('cargo deny check bans', fetch_string('deny-bans_outcome', 'check'), false, 'deny-bans');
-              const advisories = entry('cargo deny check advisories', fetch_string('deny-advisories_outcome', 'check'), false, 'deny-advisories');
-              const sources = entry('cargo deny check sources', fetch_string('deny-sources_outcome', 'check'), false, 'deny-sources');
-              const machete = entry('cargo machete', fetch_string('dependencies_outcome', 'check'), false, 'dependencies');
-              const test = entry(`cargo test ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('tests_outcome', 'test'), true, 'tests');
-              const miri = entry(`cargo miri test ${ workspace_args } ${{ inputs.additional_args }}`, fetch_string('miri_outcome', 'miri'), false, 'miri');
-              const publish = entry(`cargo package`, fetch_string('publish-dryrun_outcome', 'check'), ${{ inputs.test_publish_required == 'true' }}, 'publish-dryrun');
-
-              const path_success = is_success(fetch_string('fmt_outcome', 'check'), fetch_string('check_outcome', 'check'), fetch_string('clippy_outcome', 'check'), fetch_string('tests_outcome', 'test'), (${{ inputs.test_publish_required }} ? fetch_string('publish-dryrun_outcome', 'check') : 'success'), (${{ inputs.test_publish_required }} ? fetch_string('doc_outcome', 'check') : 'success'));
-
-              test_output += `
-            <h3>${ fetch_string('name', 'check') } - ${ path_success ? '✅' : '❌' }</h3>
-            <table>
-            <tr><th>required</th><th>step</th><th>result</th><th>details</th></tr>
-            `;
-              test_output += custom + fmt + check + clippy + doc + licenses + bans + advisories + sources + machete + test + miri + publish;
-              test_output += table_footer;
-              success &= path_success;
-            }
-
-            const footer = `
-            Pushed by: ${{ github.actor }}, Action: ${{ github.event_name }};
-            Run: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.run_id }}</a>
-            `;
-
-            const output = test_output + footer;
-
-            await core.summary
-              .addHeading("Test Results")
-              .addRaw(output, true);
-
-            if (context.eventName === 'pull_request' || context.eventName === 'pull_request_target') {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: output
-              });
-            }
-
-            return success ? "0" : "1";
-
-      - name: Rust Test status
-        if: steps.read.outputs.result && ((inputs.custom_cargo_commands != '' && fromJson(steps.read.outputs.result).custom_outcome.check != 'success') || fromJson(steps.read.outputs.result).fmt_outcome.check != 'success' || fromJson(steps.read.outputs.result).check_outcome.check != 'success' || fromJson(steps.read.outputs.result).clippy_outcome.check != 'success' || fromJson(steps.read.outputs.result).tests_outcome.test != 'success' || (inputs.test-publish-required == 'true' && fromJson(steps.read.outputs.result).publish-dryrun_outcome.check != 'success'))
-        run: exit ${{ steps.comment.outputs.result }}
+          tee -a ${{ steps.name.outputs.value }}-${{ matrix.type }}.json <<EOF
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fslabs__checks__${{ github.run_id }}__${{ github.run_attempt }}__${{ steps.name.outputs.value }}-${{ matrix.type }}
+          path: ${{ runner.temp }}/${{ steps.name.outputs.value }}-${{ matrix.type }}.json
