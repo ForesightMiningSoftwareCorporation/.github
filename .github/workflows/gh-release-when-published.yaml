@@ -1,27 +1,26 @@
-
 on:
   workflow_call:
     inputs:
       private_registry_release:
         type: string
-        default: 'false'
+        default: "false"
         description: "Was the crate released on the private registry"
       public_registry_release:
         type: string
-        default: 'false'
-        description: 'Was the crate released on the public registry'
+        default: "false"
+        description: "Was the crate released on the public registry"
       docker_release:
         type: string
-        default: 'false'
-        description: 'Was the crate released on docker'
+        default: "false"
+        description: "Was the crate released on docker"
       binary_release:
         type: string
-        default: 'false'
-        description: 'Was the crate released as binary'
+        default: "false"
+        description: "Was the crate released as binary"
       npm_napi_release:
         type: string
-        default: 'false'
-        description: 'Was the crate released as a napi binding'
+        default: "false"
+        description: "Was the crate released as a napi binding"
       working-directory:
         type: string
         default: "."
@@ -34,36 +33,40 @@ jobs:
   create-github-release:
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout
-        uses: actions/checkout@v3
-
-      - uses: SebRollen/toml-action@v1.0.2
-        id: read_version
+        uses: actions/checkout@v4
         with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.version'
+          sparse-checkout: |
+            ${{ inputs.working-directory }}/Cargo.toml
 
-      - uses: SebRollen/toml-action@v1.0.2
-        id: read_name
+      - id: derive_info
+        name: Derive info
+        shell: bash
+        run: |
+          echo package=$(yq -p toml '.package.name' < ${{ inputs.working-directory }}/Cargo.toml) >> $GITHUB_OUTPUT
+          echo version=$(yq -p toml '.package.version' < ${{ inputs.working-directory }}/Cargo.toml) >> $GITHUB_OUTPUT
+
+      - id: generate_token
+        name: Generate token
+        uses: tibdex/github-app-token@v2.1.0
         with:
-          file: '${{ inputs.working-directory }}/Cargo.toml'
-          field: 'package.name'
+          app_id: ${{ secrets.FMSC_BOT_GITHUB_APP_ID }}
+          private_key: ${{ secrets.FMSC_BOT_GITHUB_APP_PRIVATE_KEY }}
 
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.1
         with:
-          github_token: "${{ secrets.GITHUB_TOKEN }}"
-          custom_tag: "${{ steps.read_version.outputs.value }}"
-          tag_prefix:  "${{ steps.read_name.outputs.value }}-"
+          github_token: "${{ steps.generate_token.outputs.token }}"
+          custom_tag: "${{ steps.derive_info.outputs.version }}"
+          tag_prefix: "${{ steps.derive_info.outputs.package }}-"
 
       - name: Generate Private Registry url
         id: private_registry_url
         if: inputs.private_registry_release == 'true'
         shell: bash
         run: |
-          url="https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
+          url="https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/crates/${{ steps.derive_info.outputs.package }}/${{ steps.derive_info.outputs.version }}"
           echo "value=$url" >> $GITHUB_OUTPUT
 
       - name: Generate Public Registry url
@@ -71,7 +74,7 @@ jobs:
         if: inputs.public_registry_release == 'true'
         shell: bash
         run: |
-          url="https://crates.io/crates/${{ steps.read_name.outputs.value }}/${{ steps.read_version.outputs.value }}"
+          url="https://crates.io/crates/${{ steps.derive_info.outputs.package }}/${{ steps.derive_info.outputs.version }}"
           echo "value=$url" >> $GITHUB_OUTPUT
 
       - name: Generate Docker URL
@@ -79,7 +82,7 @@ jobs:
         if: inputs.docker_release == 'true'
         shell: bash
         run: |
-          url="oreprohub.azurecr.io/${{ steps.read_name.outputs.value }}:${{ steps.read_version.outputs.value }}"
+          url="oreprohub.azurecr.io/${{ steps.derive_info.outputs.package }}:${{ steps.derive_info.outputs.version }}"
           echo "value=$url" >> $GITHUB_OUTPUT
 
       - name: Download artifacts
@@ -95,16 +98,17 @@ jobs:
         if: inputs.npm_napi_release == 'true'
         shell: bash
         run: |
-          url=https://github.com/${{ github.repository_owner }}/${{ github.repository }}/pkgs/npm/${{ steps.read_name.outputs.value }}
+          url=https://github.com/${{ github.repository_owner }}/${{ github.repository }}/pkgs/npm/${{ steps.derive_info.outputs.package }}
           echo "value=$url" >> $GITHUB_OUTPUT
 
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
         id: release
         with:
+          token: ${{ steps.generate_token.outputs.token }}
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          name: ${{ steps.read_name.outputs.value }} - ${{ steps.read_version.outputs.value }}
-          artifacts: "binaries/${{ steps.read_name.outputs.value }}/**/*"
+          name: ${{ steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.version }}
+          artifacts: "binaries/${{ steps.derive_info.outputs.package }}/**/*"
           skipIfReleaseExists: true
           body: |
             ## Releases
@@ -123,4 +127,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_EMBEDS: '[{"title": "Release", "url": "${{steps.release.outputs.html_url}}"}]'
         with:
-          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} has been released"
+          args: "Version ${{ steps.derive_info.outputs.version }} of ${{ steps.derive_info.outputs.package }} has been released"
