@@ -89,7 +89,7 @@ jobs:
         self-hosted,
         "gpu",
         "${{ needs.derive_runner.outputs.rust-channel }}",
-        "${{ github.run_id }}__${{ inputs.working_directory }}__${{ matrix.type }}__${{ github.run_attempt }}",
+        "${{ github.run_id }}__${{ needs.deriver_runner.outputs.sanitized_working_directory }}__${{ matrix.type }}__${{ github.run_attempt }}",
       ]
     needs: derive_runner
     env:
