@@ -164,7 +164,7 @@ jobs:
         run: apt-get update -yq && apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
 
       - name: Cache Dependencies
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
         env:
           SSCACHE_BUCKET: ${{ vars.CI_CACHE_BUCKET }}
           SSCACHE_REGION: "auto"
