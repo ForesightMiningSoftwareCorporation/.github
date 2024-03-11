@@ -86,6 +86,7 @@ jobs:
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
           additional_private_keys: |
             ${{ secrets.OREPROLIB_SSH_PRIVATE_KEY }}
+            ${{ secrets.SPARKL_BLAST_SSH_PRIVATE_KEY }}
 
       # - name: Set up Docker Buildx
       #   uses: docker/setup-buildx-action@v2
