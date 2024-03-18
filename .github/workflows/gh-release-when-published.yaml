@@ -85,13 +85,13 @@ jobs:
           url="oreprohub.azurecr.io/${{ steps.derive_info.outputs.package }}:${{ steps.derive_info.outputs.version }}"
           echo "value=$url" >> $GITHUB_OUTPUT
 
-      - name: Download artifacts
-        id: download_artifacts
-        if: inputs.binary_release == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: release-binaries
-          path: binaries
+#      - name: Download artifacts
+#        id: download_artifacts
+#        if: inputs.binary_release == 'true'
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: release-binaries
+#          path: binaries
 
       - name: Generate NPM URL
         id: npm_napi_url
@@ -108,7 +108,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: ${{ steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.version }}
-          artifacts: "binaries/${{ steps.derive_info.outputs.package }}/**/*"
+#          artifacts: "binaries/${{ steps.derive_info.outputs.package }}/**/*"
           skipIfReleaseExists: true
           body: |
             ## Releases

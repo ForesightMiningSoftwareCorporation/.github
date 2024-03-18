@@ -16,6 +16,9 @@ on:
       npm_napi_released:
         description: Was it released as npm package
         value: ${{ jobs.publish_npm_napi.outputs.released }}
+      installer_released:
+        description: Was it released as an installer
+        value: ${{ jobs.publish_installer.outputs.released }}
     inputs:
       skip_test:
         type: string
@@ -53,6 +56,10 @@ on:
         type: string
         default: "false"
         description: "Should the npm napi package be built and published"
+      publish_installer:
+        type: string
+        default: "false"
+        description: "Should the installer be built and published"
       toolchain:
         type: string
         default: "1.76"
@@ -133,6 +140,10 @@ on:
         type: string
         default: "false"
         description: Should the binary bin be signed
+      application_name:
+        type: string
+        description: Name of the application
+        default: ""
       report_release:
         type: string
         default: "true"
@@ -173,7 +184,7 @@ jobs:
       registry: ${{ inputs.docker_registry }}
     secrets: inherit
   publish_binary:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v2-installer
     if: inputs.publish_binary == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
@@ -185,6 +196,15 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       post_build_additional_script: ${{ inputs.post_build_additional_script }}
       sign_build: ${{ inputs.binary_sign_build }}
+      application_name: ${{ inputs.application_name }}
+    secrets: inherit
+  publish_installer:
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_installer_publish.yml@v2-installer
+    if: inputs.publish_installer == 'true'
+    with:
+      sign_build: ${{ inputs.binary_sign_build }}
+      application_name: ${{ inputs.application_name }}
+      working_directory: ${{ inputs.working_directory }}
     secrets: inherit
   publish_npm_napi:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@v2
@@ -204,6 +224,7 @@ jobs:
       - publish_docker
       - publish_binary
       - publish_npm_napi
+      - publish_installer
     steps:
       - uses: actions/github-script@v7
         name: Report status on PR
@@ -238,9 +259,10 @@ jobs:
       - publish_public_registry
       - publish_docker
       - publish_binary
+      - publish_installer
       - publish_npm_napi
       - should_report_release
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v2-installer
     if: always() && needs.should_report_release.outputs.report == 'true'
     with:
       working-directory: ${{ inputs.working_directory }}
