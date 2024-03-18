@@ -95,9 +95,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - arch: x86_64-unknown-linux-gnu
-            name: ubuntu-latest
-            extension: ""
           - arch: x86_64-pc-windows-msvc
             name: windows-latest
             runner_flavour: -16-cores-custom
