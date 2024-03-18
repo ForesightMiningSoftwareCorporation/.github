@@ -56,15 +56,13 @@ on:
       toolchain:
         type: string
         default: "1.76"
-        description:
-          Rust toolchain to install.
+        description: Rust toolchain to install.
           Do not set this to moving targets like "stable".
           Instead, leave it empty and regularly bump the default in this file.
       miri_toolchain:
         type: string
         default: "nightly-2023-08-02"
-        description:
-          Rust toolchain to use for Miri.
+        description: Rust toolchain to use for Miri.
           Do not set this to moving targets like "nightly".
           Instead, leave it empty and regularly bump the default in this file.
       release_channel:
@@ -123,10 +121,6 @@ on:
         type: string
         default: "oreprohub.azurecr.io"
         description: "Docker registry"
-      matrix_file:
-        type: string
-        default: ".github/workflows/matrix.json"
-        description: "Matrix file to load"
       post_build_additional_script:
         type: string
         default: ""
@@ -189,7 +183,6 @@ jobs:
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
-      matrix_file: ${{ inputs.matrix_file }}
       post_build_additional_script: ${{ inputs.post_build_additional_script }}
       sign_build: ${{ inputs.binary_sign_build }}
     secrets: inherit
