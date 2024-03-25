@@ -1,6 +1,52 @@
 name: Publish Release to Private Registry
 
 on:
+  workflow_dipatch:
+    outputs:
+      released:
+        description: Was the binary published
+        value: "true"
+    inputs:
+      required_packages:
+        type: string
+        default: ""
+        description: Package that needs to be installed before Rust compilation can happens
+      additional_args:
+        type: string
+        default: ""
+        description: Additional arguments to pass to the cargo command
+      toolchain:
+        type: string
+        default: "1.73"
+        description: Rust toolchain to install
+      release_channel:
+        type: string
+        default: ""
+        description: Hard coded release channel
+      profile:
+        type: string
+        default: "release"
+        description: Cargo build profile to use
+      working_directory:
+        type: string
+        default: "."
+        description: Working directory to run the cargo command
+      additional_script:
+        type: string
+        default: ""
+        description: Additional script to run before the additional packages
+      custom_cargo_commands:
+        type: string
+        default: ""
+        description: Custom cargo commands that will be run after login
+      post_build_additional_script:
+        type: string
+        default: ""
+        description: Post Build Additional script to run after the additional packages
+      sign_build:
+        type: string
+        default: "false"
+        description: Should the binary bin be signed
   workflow_call:
     outputs:
       released:
