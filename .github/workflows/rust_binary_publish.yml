@@ -183,7 +183,7 @@ jobs:
         env:
           CARGO_TARGET_DIR: target
           LAUNCHER_APP_NAME: ${{ needs.derive_info.outputs.LAUNCHER_APP_NAME }}
-          FALLBACK_BINARY: ${{ needs.derive_info.outputs.FALLBACK_BINARY }}
+          LAUNCHER_APP_FALLBACK: ${{ needs.derive_info.outputs.LAUNCHER_APP_FALLBACK }}
 
       - name: Copy to bin artifact folder
         shell: bash

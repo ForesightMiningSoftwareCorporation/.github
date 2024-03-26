@@ -64,7 +64,7 @@ env:
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
   CARGO_PROFILE_TEST_DEBUG: false
   LAUNCHER_APP_NAME: ""
-  FALLBACK_BINARY: ""
+  LAUNCHER_APP_FALLBACK: ""
 
 jobs:
   derive_runner:
