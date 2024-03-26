@@ -104,7 +104,7 @@ jobs:
       package: ${{ steps.derive_info.outputs.package }}
       version: ${{ steps.derive_info.outputs.version }}
       launcher_app_name: ${{ steps.derive_info.outputs.launcher_app_name }}
-      fallback_binary: ${{ steps.derive_info.outputs.fallback_binary }}
+      launcher_app_fallback: ${{ steps.derive_info.outputs.launcher_app_fallback }}
       matrix: ${{ steps.derive_info.outputs.matrix }}
     runs-on: "ubuntu-latest"
     steps:
@@ -140,7 +140,7 @@ jobs:
           echo package=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/Cargo.toml) >> $GITHUB_OUTPUT
           echo version=${version} >> $GITHUB_OUTPUT
           echo launcher_app_name=${RELEASE_APP_NAME} >> $GITHUB_OUTPUT
-          echo fallback_binary="${RELEASE_APP_NAME// /_}_${main_version//./_}" >> $GITHUB_OUTPUT
+          echo launcher_app_fallback="${RELEASE_APP_NAME// /_}_${main_version//./_}" >> $GITHUB_OUTPUT
           echo matrix='{"x86_64-pc-windows-msvc":{"extension":".exe","runner":"windows-latest-16-cores-custom"},"x86_64-unknown-linux-gnu":{"extennsion":"","runner":"ubuntu-latest-16-cores"}}' >> $GITHUB_OUTPUT
 
   cargo_build_and_sign_binary:
