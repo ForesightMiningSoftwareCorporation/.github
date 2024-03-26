@@ -112,7 +112,7 @@ jobs:
         id: upgrade_code
         with:
           file: "${{ inputs.working_directory }}/Cargo.toml"
-          field: "package.metadata.fslabs.publish.installer.${{ steps.channel.outputs.release_channel }}.upgrade_code"
+          field: "package.metadata.fslabs.publish.binary.installer.${{ steps.channel.outputs.release_channel }}.upgrade_code"
   generate_wxs:
     runs-on: ubuntu-latest
     needs:
@@ -223,7 +223,6 @@ jobs:
           echo "sas=$sas" >> $GITHUB_OUTPUT
 
       - name: Retrieve signing secret from Vault
-        if: inputs.sign_build == 'true'
         id: import-signing-secrets
         uses: hashicorp/vault-action@v2.7.3
         with:

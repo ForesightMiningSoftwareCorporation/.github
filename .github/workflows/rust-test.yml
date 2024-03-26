@@ -63,6 +63,8 @@ env:
   CARGO_NET_GIT_FETCH_WITH_CLI: true
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
   CARGO_PROFILE_TEST_DEBUG: false
+  LAUNCHER_APP_NAME: ""
+  FALLBACK_BINARY: ""
 
 jobs:
   derive_runner:

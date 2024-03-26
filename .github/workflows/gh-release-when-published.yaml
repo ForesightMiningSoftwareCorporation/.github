@@ -21,6 +21,10 @@ on:
         type: string
         default: "false"
         description: "Was the crate released as a napi binding"
+      installer_release:
+        type: string
+        default: "false"
+        description: "Was the crate released as installer"
       working-directory:
         type: string
         default: "."
