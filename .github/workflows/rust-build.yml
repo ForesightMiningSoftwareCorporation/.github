@@ -16,6 +16,9 @@ on:
       npm_napi_released:
         description: Was it released as npm package
         value: ${{ jobs.publish_npm_napi.outputs.released }}
+      installer_released:
+        description: Was it released as an installer
+        value: ${{ jobs.publish_installer.outputs.released }}
     inputs:
       skip_test:
         type: string
@@ -53,6 +56,10 @@ on:
         type: string
         default: "false"
         description: "Should the npm napi package be built and published"
+      publish_installer:
+        type: string
+        default: "false"
+        description: "Should the installer be built and published"
       toolchain:
         type: string
         default: "1.76"
@@ -133,6 +140,14 @@ on:
         type: string
         default: "false"
         description: Should the binary bin be signed
+      binary_application_name:
+        type: string
+        description: Name of the application
+        default: ""
+      binary_targets:
+        type: string
+        description: Binary Targets
+        default: "[]"
       report_release:
         type: string
         default: "true"
@@ -141,7 +156,7 @@ on:
 jobs:
   publish_private_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v2
-    if: inputs.publish_private_registry == 'true'
+    if: inputs.publish == 'true' && inputs.publish_private_registry == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
@@ -152,7 +167,7 @@ jobs:
     secrets: inherit
   publish_public_registry:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@v2
-    if: inputs.publish_public_registry == 'true'
+    if: inputs.publish == 'true' && inputs.publish_public_registry == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
@@ -163,7 +178,7 @@ jobs:
     secrets: inherit
   publish_docker:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v2
-    if: inputs.publish_docker == 'true'
+    if: inputs.publish == 'true' && inputs.publish_docker == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
       working_directory: ${{ inputs.working_directory }}
@@ -174,74 +189,42 @@ jobs:
     secrets: inherit
   publish_binary:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v2
-    if: inputs.publish_binary == 'true'
+    if: inputs.publish == 'true' && inputs.publish_binary == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
       release_channel: ${{ inputs.release_channel }}
-      additional_script: ${{ inputs.additional_script }}
       required_packages: ${{ inputs.required_packages }}
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
-      custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
-      post_build_additional_script: ${{ inputs.post_build_additional_script }}
       sign_build: ${{ inputs.binary_sign_build }}
+      application_name: ${{ inputs.binary_application_name }}
+      targets: ${{ inputs.binary_targets }}
+    secrets: inherit
+  publish_installer:
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_installer_publish.yml@v2
+    if: inputs.publish == 'true' && inputs.publish_installer == 'true'
+    with:
+      sign_build: ${{ inputs.binary_sign_build }}
+      application_name: ${{ inputs.application_name }}
+      working_directory: ${{ inputs.working_directory }}
     secrets: inherit
   publish_npm_napi:
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@v2
-    if: inputs.publish_npm_napi == 'true'
+    if: inputs.publish == 'true' && inputs.publish_npm_napi == 'true'
     with:
       working_directory: ${{ inputs.working_directory }}
       toolchain: ${{ inputs.toolchain }}
     secrets: inherit
-  should_report_release:
-    runs-on: ubuntu-latest
-    if: always() && inputs.publish == 'true'
-    outputs:
-      report: ${{ steps.report.outputs.result }}
-    needs:
-      - publish_private_registry
-      - publish_public_registry
-      - publish_docker
-      - publish_binary
-      - publish_npm_napi
-    steps:
-      - uses: actions/github-script@v7
-        name: Report status on PR
-        id: report
-        with:
-          result-encoding: string
-          script: |
-            if (!${{ inputs.report_release }}) {
-              return "false";
-            }
-            if (!${{ inputs.publish }}) {
-              return "false";
-            }
-            if (${{ contains(needs.*.result, 'failure') }}) {
-              return "false";
-            }
-            if (${{ contains(needs.*.result, 'cancelled') }}) {
-              return "false";
-            }
-            const releases = [
-              [${{ inputs.publish_private_registry }}, ${{ needs.publish_private_registry.outputs.released || 'false' }}],
-              [${{ inputs.publish_public_registry }}, ${{ needs.publish_public_registry.outputs.released || 'false' }}],
-              [${{ inputs.publish_docker }}, ${{ needs.publish_docker.outputs.released || 'false' }}],
-              [${{ inputs.publish_binary }}, ${{ needs.publish_binary.outputs.released || 'false' }}],
-              [${{ inputs.publish_npm_napi }}, ${{ needs.publish_npm_napi.outputs.released || 'false' }}],
-            ];
-            return releases.filter(release => release[0] && release[1]).length > 0 ? "true" : "false";
-
   report_release:
     needs:
       - publish_private_registry
       - publish_public_registry
       - publish_docker
       - publish_binary
+      - publish_installer
       - publish_npm_napi
-      - should_report_release
     uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v2
-    if: always() && needs.should_report_release.outputs.report == 'true'
+    if: ${{ always() && inputs.report_release == 'true' && inputs.publish == 'true' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && ((inputs.publish_private_registry == 'true' && (needs.publish_private_registry.outputs.released || 'false') == 'true') || (inputs.publish_public_registry == 'true' && (needs.publish_public_binary.outputs.released || 'false') == 'true') || (inputs.publish_docker == 'true' && (needs.publish_docker.outputs.released || 'false') == 'true') || (inputs.publish_binary == 'true' && (needs.publish_binary.outputs.released || 'false') == 'true') || (inputs.publish_npm_napi == 'true' && (needs.publish_npm_napi.outputs.released || 'false') == 'true')) }}
     with:
       working-directory: ${{ inputs.working_directory }}
       private_registry_release: ${{ inputs.publish_private_registry == 'true' && needs.publish_private_registry.outputs.released == 'true' }}

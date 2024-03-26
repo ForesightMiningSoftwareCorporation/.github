@@ -1,4 +1,4 @@
-name: Publish Release to Private Registry
+name: Publish Release as binary
 
 on:
   workflow_dispatch:
@@ -53,6 +53,13 @@ on:
         description: Was the binary published
         value: "true"
     inputs:
+      application_name:
+        type: string
+        description: Name of the application
+      targets:
+        description: Binaries Targets
+        type: string
+        default: "[]"
       required_packages:
         type: string
         default: ""
@@ -77,18 +84,6 @@ on:
         type: string
         default: "."
         description: Working directory to run the cargo command
-      additional_script:
-        type: string
-        default: ""
-        description: Additional script to run before the additional packages
-      custom_cargo_commands:
-        type: string
-        default: ""
-        description: Custom cargo commands that will be run after login
-      post_build_additional_script:
-        type: string
-        default: ""
-        description: Post Build Additional script to run after the additional packages
       sign_build:
         type: string
         default: "false"
@@ -105,49 +100,57 @@ jobs:
     outputs:
       toolchain: ${{ steps.derive_info.outputs.toolchain }}
       release_channel: ${{ steps.derive_info.outputs.release_channel }}
+      features: ${{ steps.derive_info.outputs.features }}
       package: ${{ steps.derive_info.outputs.package }}
       version: ${{ steps.derive_info.outputs.version }}
+      launcher_app_name: ${{ steps.derive_info.outputs.launcher_app_name }}
+      fallback_binary: ${{ steps.derive_info.outputs.fallback_binary }}
+      matrix: ${{ steps.derive_info.outputs.matrix }}
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            rust-toolchain.toml
-            ${{ inputs.matrix_file }}
-            ${{ inputs.working_directory }}/Cargo.toml
       - id: derive_info
         name: Derive info
         shell: bash
         env:
           ACTION_RC: ${{ inputs.release_channel }}
-          DEFAULT_TOOLCHAIN: ${{ inputs.toolchain}}
+          DEFAULT_TOOLCHAIN: ${{ inputs.toolchain }}
         run: |
+          RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
           if [ "$BRANCH_NAME" == "alpha" ] ; then
             RELEASE_CHANNEL=alpha
+            RELEASE_APP_NAME="${{ inputs.application_name }} Alpha"
           elif [ "$BRANCH_NAME" == "beta" ] ; then
             RELEASE_CHANNEL=beta
+            RELEASE_APP_NAME="${{ inputs.application_name }} Beta"
           elif [ "$BRANCH_NAME" == "prod" ] ; then
             RELEASE_CHANNEL=prod
+            RELEASE_APP_NAME="${{ inputs.application_name }}"
+          fi
+          version=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/Cargo.toml)
+          if test -f ${{ inputs.working_directory }}/../Cargo.toml; then
+            main_version=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/../Cargo.toml)
+          else
+            main_version=${version}
           fi
           echo release_channel=${ACTION_RC:-${RELEASE_CHANNEL:-nightly}} >> $GITHUB_OUTPUT
           echo toolchain=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '$DEFAULT_TOOLCHAIN') >> $GITHUB_OUTPUT
           echo package=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/Cargo.toml) >> $GITHUB_OUTPUT
-          echo version=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/Cargo.toml) >> $GITHUB_OUTPUT
+          echo version=${version} >> $GITHUB_OUTPUT
+          echo launcher_app_name=${RELEASE_APP_NAME} >> $GITHUB_OUTPUT
+          echo fallback_binary="${RELEASE_APP_NAME// /_}_${main_version//./_}" >> $GITHUB_OUTPUT
+          echo matrix='{"x86_64-pc-windows-msvc":{"extension":".exe","runner":"windows-latest-16-cores-custom"},"x86_64-unknown-linux-gnu":{"extennsion":"","runner":"ubuntu-latest-16-cores"}}' >> $GITHUB_OUTPUT
 
-  cargo_upload_binary:
+  cargo_build_and_sign_binary:
     name: Release new version as binary
-    strategy:
-      matrix:
-        os:
-          - arch: x86_64-pc-windows-msvc
-            name: windows-latest
-            runner_flavour: -16-cores-custom
-            extension: ".exe"
-    runs-on: ${{ matrix.os.name }}${{ matrix.os.runner_flavour }}
+    runs-on: ${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].runner }}
     needs:
       - derive_info
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -173,131 +176,37 @@ jobs:
             ${{ secrets.BEVY_CLIPMAP_SSH_PRIVATE_KEY }}
             ${{ secrets.DAG_TABLES_SSH_PRIVATE_KEY }}
 
-      - name: Additional Linux Script from matrix
-        if: matrix.os.additional_script != '' && matrix.os.name == 'ubuntu-latest'
-        working-directory: ${{ inputs.working_directory }}
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-        run: ${{ matrix.os.additional_script }}
-        shell: bash
-
-      - name: Additional Linux Script from input if not matrix
-        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'ubuntu-latest'
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-        working-directory: ${{ inputs.working_directory }}
-        run: ${{ inputs.additional_script }}
-        shell: bash
-
-      - name: Additional Windows Script from matrix
-        if: matrix.os.additional_script != '' && matrix.os.name == 'windows-latest'
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-        working-directory: ${{ inputs.working_directory }}
-        run: ${{ matrix.os.additional_script }}
-        shell: pwsh
-
-      - name: Additional Windows Script from input if not matrix
-        if: matrix.os.additional_script == '' && inputs.additional_script != '' && matrix.os.name == 'windows-latest'
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-        working-directory: ${{ inputs.working_directory }}
-        run: ${{ inputs.additional_script }}
-        shell: pwsh
-
-      - name: Update Packages
-        if: inputs.required_packages != '' && matrix.os.name == 'ubuntu-latest'
-        run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
-
-      - name: Run custom cargo command
-        if: inputs.custom_cargo_commands != ''
-        shell: bash
-        working-directory: ${{ inputs.working_directory }}
-        run: ${{ inputs.custom_cargo_commands }}
-
       - name: Build Binary
         shell: bash
         working-directory: ${{ inputs.working_directory }}
-        run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.os.arch }} ${{ inputs.additional_args }}
+        run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.target }} --features ${{needs.derive_info.outputs.release_channel}} ${{ inputs.additional_args }}
         env:
           CARGO_TARGET_DIR: target
+          LAUNCHER_APP_NAME: ${{ needs.derive_info.outputs.LAUNCHER_APP_NAME }}
+          FALLBACK_BINARY: ${{ needs.derive_info.outputs.FALLBACK_BINARY }}
 
-      - name: Copy to bin folder linux
-        if: matrix.os.name == 'ubuntu-latest'
-        #        `cargo build` put build inside of the workspace root target dir. If using working-drectory inside of a non-workspace repo this will not work anymore
-        #        working-directory: ${{ inputs.working_directory }}
+      - name: Copy to bin artifact folder
         shell: bash
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         working-directory: ${{ inputs.working_directory }}
         run: |
           artifacts_dir=${{ runner.temp }}/bin_output/${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}
           mkdir -p $artifacts_dir
-          cp target/${{ matrix.os.arch }}/${{ inputs.profile }}/${{ needs.derive_info.outputs.package }} $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}
-          sha512sum $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}-sha-512.txt
+          cp target/${{ matrix.target }}/${{ inputs.profile }}/${{ needs.derive_info.outputs.package }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain }}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}
+          sha512sum $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain }}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha-512.txt
 
       - name: Copy to bin folder windows
-        if: matrix.os.name == 'windows-latest'
+        if: matrix.target == 'x86_64-pc-windows-msvc'
         shell: pwsh
         working-directory: ${{ inputs.working_directory }}
         run: |
           $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}" -ItemType "directory"
-          Copy-Item target\${{ matrix.os.arch }}\${{ inputs.profile }}\${{ needs.derive_info.outputs.package }}${{ matrix.os.extension }} $Out\${{  needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}
-          $hash = Get-FileHash "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}" -Algorithm SHA512
-          echo $hash.Hash >> "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha512.txt"
-
-      - name: Additional Post build Linux Script from matrix
-        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
-        working-directory: ${{ inputs.working_directory }}
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-          TEMP_DIR: ${{ runner.temp }}
-        run: ${{ matrix.os.post_build_additional_script }}
-        shell: bash
-
-      - name: Additional Post build Linux Script from input if not matrix
-        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'ubuntu-latest'
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-          TEMP_DIR: ${{ runner.temp }}
-        working-directory: ${{ inputs.working_directory }}
-        run: ${{ inputs.post_build_additional_script }}
-        shell: bash
-
-      - name: Additional Post build Windows Script from matrix
-        if: matrix.os.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-          TEMP_DIR: ${{ runner.temp }}
-        working-directory: ${{ inputs.working_directory }}
-        run: ${{ matrix.os.post_build_additional_script }}
-        shell: pwsh
-
-      - name: Additional Post build Windows Script from input if not matrix
-        if: matrix.os.post_build_additional_script == '' && inputs.post_build_additional_script != '' && matrix.os.name == 'windows-latest'
-        env:
-          CRATE_NAME: ${{ needs.derive_info.outputs.package }}
-          CRATE_VERSION: ${{ needs.derive_info.outputs.version }}
-          RELEASE_CHANNEL: ${{ needs.derive_info.outputs.release_channel }}
-          TEMP_DIR: ${{ runner.temp }}
-        working-directory: ${{ inputs.working_directory }}
-        run: ${{ inputs.post_build_additional_script }}
-        shell: pwsh
+          Copy-Item target\${{ matrix.target }}\${{ inputs.profile }}\${{ needs.derive_info.outputs.package }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} $Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}
+          $hash = Get-FileHash "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}" -Algorithm SHA512
+          echo $hash.Hash >> "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha512.txt"
 
       - name: Azure Blob Upload
-        uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
@@ -316,7 +225,7 @@ jobs:
         shell: bash
         id: sas-url
         run: |
-          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
+          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
           echo "sas=$sas" >> $GITHUB_OUTPUT
 
       - name: Retrieve signing secret from Vault
@@ -435,7 +344,7 @@ jobs:
             // Get data
             const gh_info = "${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}".split("/");
             const artifact_sas = "${{ steps.sas-url.outputs.sas }}";
-            const artifact_name = "${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ matrix.os.extension }}";
+            const artifact_name = "${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}";
             const gh_artifact_name = "signed_artifacts";
             const temp_dir = String.raw`${{ runner.temp }}`;
             const dir_separator = temp_dir.indexOf("\\") == -1 ? "/" : "\\";
@@ -471,23 +380,16 @@ jobs:
                 id: completed_workflow.id,
             }
 
-      - name: Generate signed artifacts checksum linux
-        if: matrix.os.name == 'ubuntu-latest' && inputs.sign_build == 'true'
-        shell: bash
-        run: |
-          artifacts_dir=${{ runner.temp }}/signed_artifacts/${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}
-          sha512sum $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ matrix.os.extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ matrix.os.extension }}-signed-sha-512.txt
-
       - name: Generate signed artifacts checksum windows
-        if: matrix.os.name == 'windows-latest' && inputs.sign_build == 'true'
+        if: inputs.sign_build == 'true'
         shell: pwsh
         run: |
-          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ matrix.os.extension }}" -Algorithm SHA512
-          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.os.arch }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed-sha512.txt"
+          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}" -Algorithm SHA512
+          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed-sha512.txt"
 
       - name: Upload signed artifacts to Azure Blob Upload
         if: inputs.sign_build == 'true'
-        uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
@@ -497,12 +399,14 @@ jobs:
       - name: Upload bin to github artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-binaries
+          name: release-binaries-unsigned-${{ matrix.target }}
           path: ${{ runner.temp }}/bin_output
+          overwrite: true
 
       - name: Upload signed bin to github artifacts
         if: inputs.sign_build == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: signed-binaries
+          name: release-binaries-signed-${{ matrix.target }}
           path: ${{ runner.temp }}/signed_artifacts
+          overwrite: true
