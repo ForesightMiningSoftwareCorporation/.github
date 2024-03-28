@@ -72,10 +72,6 @@ on:
         description: Rust toolchain to use for Miri.
           Do not set this to moving targets like "nightly".
           Instead, leave it empty and regularly bump the default in this file.
-      release_channel:
-        type: string
-        default: ""
-        description: Hard coded release channel
       additional_cache_path:
         type: string
         default: ""
@@ -184,7 +180,6 @@ jobs:
     if: inputs.publish == 'true' && inputs.publish_binary == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
-      release_channel: ${{ inputs.release_channel }}
       required_packages: ${{ inputs.required_packages }}
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
