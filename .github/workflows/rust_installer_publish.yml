@@ -43,24 +43,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Derive Release Channel
-        id: channel
-        shell: bash
-        run: |
-          RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          if [ "$BRANCH_NAME" == "alpha" ] ; then
-            RELEASE_CHANNEL=alpha
-            RELEASE_APP_NAME="${{ inputs.application_name }} Alpha"
-          elif [ "$BRANCH_NAME" == "beta" ] ; then
-            RELEASE_CHANNEL=beta
-            RELEASE_APP_NAME="${{ inputs.application_name }} Beta"
-          elif [ "$BRANCH_NAME" == "prod" ] ; then
-            RELEASE_CHANNEL=prod
-            RELEASE_APP_NAME="${{ inputs.application_name }}"
-          fi
-          echo release_channel=${RELEASE_CHANNEL:-nightly} >> $GITHUB_OUTPUT
-          echo release_app_name=${RELEASE_APP_NAME} >> $GITHUB_OUTPUT
       - uses: SebRollen/toml-action@v1.0.2
         name: Read App name
         id: read_app_name
@@ -79,6 +61,30 @@ jobs:
         with:
           file: "${{ inputs.working_directory }}/launcher/Cargo.toml"
           field: "package.version"
+      - name: Derive Release Channel
+        id: channel
+        shell: bash
+        run: |
+          PACKAGE=${{ steps.channel.outputs.release_app_name }}
+          RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
+          if [[ $GITHUB_REF == refs/heads/main ]] ; then
+            RELEASE_CHANNEL=nightly
+            RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
+          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-alpha-$VERSION" ]] ; then
+            RELEASE_CHANNEL=alpha
+            RELEASE_APP_NAME="${{ inputs.application_name }} Alpha"
+          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-beta-$VERSION" ]] ; then
+            RELEASE_CHANNEL=beta
+            RELEASE_APP_NAME="${{ inputs.application_name }} Beta"
+          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-prod-$VERSION" ]] ; then
+            RELEASE_CHANNEL=prod
+            RELEASE_APP_NAME="${{ inputs.application_name }}"
+          else
+            echo "No matching release channel found for $GITHUB_REF, check that the version in Cargo.toml matches the tag."
+            exit 1
+          fi
+          echo release_channel=${RELEASE_CHANNEL} >> $GITHUB_OUTPUT
+          echo release_app_name=${RELEASE_APP_NAME} >> $GITHUB_OUTPUT
       - name: Derive path name
         id: path_name
         shell: bash
