@@ -1,0 +1,42 @@
+name: "Update pre-commit repo version"
+scms:
+  default:
+    kind: github
+    spec:
+      owner: "{{ .github.owner }}"
+      repository: "{{ requiredEnv .github.repository }}"
+      username: "{{ requiredEnv .github.username }}"
+      token: "{{ requiredEnv .github.token }}"
+      branch: "{{ requiredEnv .github.branch }}"
+
+actions:
+  update-precommit:
+    kind: "github/pullrequest"
+    scmid: "default"
+    spec:
+      automerge: false
+      description: "Prepend description"
+      draft: false
+      title: "Update fslabs pre-commit repo"
+      labels:
+        - "ci"
+
+sources:
+  lastGithubRelease:
+    kind: githubrelease
+    spec:
+      owner: "{{ .github.owner }}"
+      repository: "pre-commit"
+      username: "{{ requiredEnv .github.username }}"
+      token: "{{ requiredEnv .github.token }}"
+
+targets:
+  pre-commit-repo-version:
+    name: Bump fslabs pre-commit repo version
+    kind: yaml
+    scmid: default
+    source_id: lastGithubRelease
+    spec:
+      file: ".pre-commit-config.yaml"
+      key: "$.repos[?(@.repo=='https://github.com/ForesightMiningSoftwareCorporation/pre-commit')].rev"
+      engine: "yamlpath"
