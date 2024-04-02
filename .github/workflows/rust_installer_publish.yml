@@ -181,7 +181,7 @@ jobs:
           path: ${{ inputs.working_directory }}/installer
       - name: Download Launcher and Application
         shell: bash
-        working-directory: whirlpool
+        working-directory: ${{ inputs.working_directory }}
         run: |
           out=target/x86_64-pc-windows-msvc/release
           mkdir -p $out
