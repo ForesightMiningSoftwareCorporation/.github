@@ -164,7 +164,7 @@ jobs:
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - uses: actions/upload-artifact@v4
         with:
-          name: installer.wxs
+          name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
           path: ${{ inputs.working_directory }}/installer/installer.wxs
   package_installer:
     runs-on: windows-latest
@@ -177,7 +177,7 @@ jobs:
       - name: Download WXS
         uses: actions/download-artifact@v4
         with:
-          name: installer.wxs
+          name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
           path: ${{ inputs.working_directory }}/installer
       - name: Download Launcher and Application
         shell: bash
