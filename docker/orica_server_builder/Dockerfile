@@ -7,38 +7,44 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
   apt-get install \
-    -yq --no-install-recommends \
-    software-properties-common \
-    lsb-release \
-    libudev-dev \
-    libasound2-dev \
-    libxcb-composite0-dev \
-    openssh-client \
-    wget \
-    curl \
-    gnupg2 \
-    tzdata \
-    pkg-config \
-    libssl-dev \
-    musl-dev \
-    musl-tools \
-    build-essential \
-    cmake \
-    curl \
-    git \
-    gfortran \
-    libfontconfig-dev \
-    libfreetype-dev \
-    libexpat1-dev \
-    libmkl-full-dev \
-    libomp-8-dev
+  -yq --no-install-recommends \
+  build-essential \
+  cmake \
+  curl \
+  gfortran \
+  git \
+  gnupg2 \
+  gobject-introspection \
+  libasound2-dev \
+  libatk1.0-0 \
+  libcairo-gobject2 \
+  libexpat1-dev \
+  libfontconfig-dev \
+  libfreetype-dev \
+  libgdk-pixbuf2.0-0 \
+  libglib2.0-0 \
+  libgtk-3-dev \
+  libmkl-full-dev \
+  libomp-8-dev \
+  libpango-1.0-0 \
+  libssl-dev \
+  libudev-dev \
+  libxcb-composite0-dev \
+  lsb-release \
+  musl-dev \
+  musl-tools \
+  openssh-client \
+  pkg-config \
+  software-properties-common \
+  tzdata \
+  wget
 
 # Static linking for C++ code
 RUN ln -s "/usr/bin/g++" "/usr/bin/musl-g++"
 
 # install Rust
 RUN curl https://sh.rustup.rs -sSf | \
-    sh -s -- --default-toolchain 1.71 -y -t x86_64-unknown-linux-musl --profile minimal
+  sh -s -- --default-toolchain 1.77 -y -t x86_64-unknown-linux-musl --profile minimal
 
 ENV PATH=/root/.cargo/bin:$PATH
 RUN rustup target add x86_64-unknown-linux-musl
