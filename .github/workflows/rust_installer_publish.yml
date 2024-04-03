@@ -65,7 +65,8 @@ jobs:
         id: channel
         shell: bash
         run: |
-          PACKAGE=${{ steps.channel.outputs.release_app_name }}
+          PACKAGE=${{ steps.read_app_name.outputs.value }}
+          VERSION=${{ steps.read_app_version.outputs.value }}
           RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
           if [[ $GITHUB_REF == refs/heads/main ]] ; then
             RELEASE_CHANNEL=nightly
