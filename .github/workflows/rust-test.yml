@@ -90,7 +90,7 @@ jobs:
     runs-on:
       [
         self-hosted,
-        "gpu",
+        "standard",
         "${{ needs.derive_runner.outputs.rust-channel }}",
         "${{ github.run_id }}__${{ needs.derive_runner.outputs.sanitized_working_directory }}__${{ matrix.type }}__${{ github.run_attempt }}",
       ]
