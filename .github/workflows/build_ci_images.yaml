@@ -5,11 +5,11 @@ on:
     inputs:
       rust_version:
         description: "Rust version to install"
-        default: "1.75"
+        default: "1.77"
         type: string
       github_runner_version:
         description: "Github Runner Version"
-        default: "2.313.0"
+        default: "latest"
         type: string
       context:
         type: string
@@ -45,3 +45,4 @@ jobs:
           tags: |
             ghcr.io/foresightminingsoftwarecorporation/ci:latest
             ${{ inputs.additional_tag && format('ghcr.io/foresightminingsoftwarecorporation/ci:{0}', inputs.additional_tag) || '' }}
+            ${{ format('ghcr.io/foresightminingsoftwarecorporation/ci:{0}', inputs.rust_version) }}
