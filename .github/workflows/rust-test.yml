@@ -57,6 +57,10 @@ on:
         type: string
         default: "false"
         description: "Should the doc test be required"
+      service_database:
+        type: string
+        default: "false"
+        description: "Should a database be deployed alongside for testing"
 
 env:
   CARGO_TERM_COLOR: never
@@ -98,6 +102,23 @@ jobs:
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
       RUSTC_WRAPPER: "sccache"
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: ${{ inputs.service_database == 'true' && 'postgres' || '' }}
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432
     strategy:
       matrix:
         type: [check, test, miri]
@@ -107,6 +128,11 @@ jobs:
             toolchain: ${{ inputs.nightly_toolchain }}
       fail-fast: ${{ inputs.fail_fast == 'true' }}
     steps:
+      - name: Set DATABASE_URL
+        if: inputs.service_database == 'true'
+        shell: bash
+        run: |
+          echo "DATABASE_URL=postgres://postgres:postres@postgres:${{ job.services.postgres.ports[5432] }}/postgres" >> "$GITHUB_ENV"
       - name: Configure Git to use global ignore file
         shell: bash
         run: git config --global core.excludesfile ~/.gitignore_global
