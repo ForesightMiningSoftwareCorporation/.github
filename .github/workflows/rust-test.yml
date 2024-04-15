@@ -57,6 +57,10 @@ on:
         type: string
         default: "false"
         description: "Should the doc test be required"
+      service_database:
+        type: string
+        default: "false"
+        description: "Should a database be deployed alongside for testing"
 
 env:
   CARGO_TERM_COLOR: never
@@ -107,6 +111,15 @@ jobs:
             toolchain: ${{ inputs.nightly_toolchain }}
       fail-fast: ${{ inputs.fail_fast == 'true' }}
     steps:
+      - name: Set DATABASE_URL
+        if: inputs.service_database == 'true'
+        shell: bash
+        run: |
+          service postgresql start
+          pg_isready
+          sudo -u postgres createuser -s -i -d -r -l -w runner
+          sudo -u postgres psql -c "ALTER ROLE runner WITH PASSWORD 'runner';"
+          echo "DATABASE_URL=postgresql://runner:runner@localhost/postgres" >> "$GITHUB_ENV"
       - name: Configure Git to use global ignore file
         shell: bash
         run: git config --global core.excludesfile ~/.gitignore_global

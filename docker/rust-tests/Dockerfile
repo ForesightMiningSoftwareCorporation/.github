@@ -3,7 +3,11 @@ FROM myoung34/github-runner:$GITHUB_RUNNER_VERSION
 ARG RUST_VERSION=1.77
 ARG SCCACHE_VERSION=0.7.7
 
-RUN apt-get update && apt-get install -y software-properties-common build-essential curl make gcc libpq-dev wget
+# Bring latest postgres
+RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+RUN wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+
+RUN apt-get update && apt-get install -y software-properties-common build-essential curl make gcc libpq-dev wget postgresql
 
 # Install sccache
 RUN wget https://github.com/mozilla/sccache/releases/download/v$SCCACHE_VERSION/sccache-v$SCCACHE_VERSION-x86_64-unknown-linux-musl.tar.gz \
