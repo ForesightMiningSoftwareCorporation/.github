@@ -1,6 +1,6 @@
-ARG GITHUB_RUNNER_VERSION=2.312.0
+ARG GITHUB_RUNNER_VERSION=latest
 FROM myoung34/github-runner:$GITHUB_RUNNER_VERSION
-ARG RUST_VERSION=1.75
+ARG RUST_VERSION=1.77
 ARG SCCACHE_VERSION=0.7.7
 
 RUN apt-get update && apt-get install -y software-properties-common build-essential curl make gcc libpq-dev wget

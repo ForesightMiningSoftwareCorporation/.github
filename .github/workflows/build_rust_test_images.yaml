@@ -5,15 +5,15 @@ on:
     inputs:
       rust_version:
         description: "Rust version to install"
-        default: "1.74"
+        default: "1.77"
         type: string
       github_runner_version:
         description: "Github Runner Version"
-        default: "2.313.0"
+        default: "latest"
         type: string
       additional_tag:
         description: "Additional tag for docker building"
-        default: "rust-1.74"
+        default: "rust-1.77"
         type: string
       context:
         type: string
@@ -22,11 +22,11 @@ on:
     inputs:
       rust_version:
         description: "Rust version to install"
-        default: "1.70"
+        default: "1.77"
         type: string
       github_runner_version:
         description: "Github Runner Version"
-        default: "2.311.0"
+        default: "latest"
         type: string
       context:
         type: string
