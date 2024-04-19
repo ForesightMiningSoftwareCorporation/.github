@@ -69,6 +69,7 @@ env:
   CARGO_PROFILE_TEST_DEBUG: false
   LAUNCHER_APP_NAME: ""
   LAUNCHER_APP_FALLBACK: ""
+  SQLX_OFFLINE: true
 
 jobs:
   derive_runner:
