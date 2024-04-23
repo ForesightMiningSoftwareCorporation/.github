@@ -37,7 +37,7 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
           commit-message: "chore: update release and test pipelines"
-          branch: ci/update-ci-workflows
+          branch: ci/update-ci-workflows-${{ github.base_ref }}
           delete-branch: true
           title: "chore: update release and test pipelines"
           labels: ci
