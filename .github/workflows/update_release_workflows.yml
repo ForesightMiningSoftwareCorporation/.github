@@ -21,6 +21,7 @@ jobs:
       - id: generate_workflow
         name: Generate updated workflows
         shell: bash
+        working-directory: .
         run: |-
           template_path=".github/workflows/release.template"
 
@@ -30,14 +31,21 @@ jobs:
             template_option=""
           fi
           fslabscli generate-release-workflow --output .github/workflows/test.yml ${template_option} --test-publish-required-disabled --output-release .github/workflows/release_publish.yml
+      - id: derive_branch_name
+        name: Derive branch name
+        shell: bash
         working-directory: .
+        run: |
+          branch_name="${{ github.base_ref || github.ref }}"
+          echo "branch_name=ci/update-ci-workflows-${branch_name##*/}" >> "$GITHUB_OUTPUT"
+
       - name: Create Pull request with new ci
         id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ steps.generate_token.outputs.token }}
           commit-message: "chore: update release and test pipelines"
-          branch: ci/update-ci-workflows
+          branch: ${{ steps.derive_branch_name.outputs.branch_name }}
           delete-branch: true
           title: "chore: update release and test pipelines"
           labels: ci
