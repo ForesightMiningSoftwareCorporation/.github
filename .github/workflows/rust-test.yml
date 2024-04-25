@@ -121,9 +121,11 @@ jobs:
           sudo -u postgres createuser -s -i -d -r -l -w runner
           sudo -u postgres psql -c "ALTER ROLE runner WITH PASSWORD 'runner';"
           echo "DATABASE_URL=postgresql://runner:runner@localhost/postgres" >> "$GITHUB_ENV"
-      - name: Configure Git to use global ignore file
+      - name: Globally configure Git
         shell: bash
-        run: git config --global core.excludesfile ~/.gitignore_global
+        run: |
+          git config --global core.excludesfile ~/.gitignore_global
+          git config --global core.compression 0
       - name: "Ensure we don't track the new resources in git"
         shell: bash
         run: |
