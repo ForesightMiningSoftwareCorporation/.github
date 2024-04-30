@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.2.0-base-ubuntu20.04 AS builder
+FROM nvidia/cuda:12.4.1-base-ubuntu22.04 AS builder
 
 LABEL maintainer="Loïs Postula <lois.postula@foresightmining.com>"
 LABEL description="Orica Blast Physics Builder Image"
@@ -12,7 +12,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
   apt-get install \
   -yq --no-install-recommends \
-  software-properties-common \
+  software-properties-common
+RUN add-apt-repository ppa:graphics-drivers
+RUN apt-get update && \
+  apt-get install \
+  -yq --no-install-recommends \
   lsb-release \
   libudev-dev \
   libasound2-dev \
@@ -35,11 +39,9 @@ RUN apt-get update && \
   curl \
   gfortran \
   git \
-  protobuf-compiler
-
-
-RUN add-apt-repository ppa:graphics-drivers
-RUN apt install nvidia-driver-470 -y
+  protobuf-compiler \
+  libgtk-3-dev \
+  nvidia-driver-550
 
 # Static linking for C++ code
 RUN ln -s "/usr/bin/g++" "/usr/bin/musl-g++"
