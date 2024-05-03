@@ -1,5 +1,5 @@
 ARG GITHUB_RUNNER_VERSION=latest
-FROM myoung34/github-runner:$GITHUB_RUNNER_VERSION
+FROM ghcr.io/actions/actions-runner:$GITHUB_RUNNER_VERSION
 ARG RUST_VERSION=stable
 ARG SCCACHE_VERSION=0.7.7
 
@@ -64,3 +64,5 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | s
     && sudo apt update && sudo apt install -y gh
 
 RUN sudo rm -rf /var/lib/apt/lists/*
+
+USER root

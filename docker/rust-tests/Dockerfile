@@ -69,9 +69,17 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | s
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
     && sudo apt update && sudo apt install -y gh
 
+# Install YQ
+RUN DPKG_ARCH="$(dpkg --print-architecture)" \
+  && YQ_VERSION=$(curl -sL -H "Accept: application/vnd.github+json" https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r '.tag_name' | sed 's/^v//g') \
+  && YQ_DOWNLOAD_URL=$(curl -sL -H "Accept: application/vnd.github+json" https://api.github.com/repos/mikefarah/yq/releases/latest | jq ".assets[] | select(.name == \"yq_linux_${DPKG_ARCH}.tar.gz\")" | jq -r '.browser_download_url') \
+  && ( curl -s ${YQ_DOWNLOAD_URL} -L -o /tmp/yq.tar.gz && tar -xzf /tmp/yq.tar.gz -C /tmp && sudo mv /tmp/yq_linux_${DPKG_ARCH} /usr/local/bin/yq)
+
 RUN rustup component add clippy rustfmt
 RUN cargo install --locked cargo-deny
 RUN cargo install cargo-machete
 RUN cargo install tomlq
 
 RUN sudo rm -rf /var/lib/apt/lists/*
+
+USER root
