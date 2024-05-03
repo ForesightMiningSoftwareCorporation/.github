@@ -32,12 +32,7 @@ on:
 
 jobs:
   docker_publish:
-    runs-on:
-      [
-        self-hosted,
-        standard,
-        "${{ github.run_id }}__${{ inputs.working_directory }}__docker__${{ github.run_attempt }}",
-      ]
+    runs-on: rust-1-77-scale-set
     steps:
       - name: Checkout
         uses: actions/checkout@v4

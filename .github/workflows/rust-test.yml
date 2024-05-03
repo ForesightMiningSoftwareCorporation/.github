@@ -82,23 +82,19 @@ jobs:
         id: rust-channel
         shell: bash
         run: |
-          echo "value=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '${{ inputs.toolchain }}')" >> $GITHUB_OUTPUT
+          rust_version="$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '${{ inputs.toolchain }}')"
+          rust_version="${rust_version/./-}"
+          echo "rust_version=${rust_version}" >> $GITHUB_OUTPUT
           sanitized_working_directory="${{ inputs.working_directory }}"
           sanitized_working_directory="${sanitized_working_directory//\//_}"
           echo "sanitized_working_directory=${sanitized_working_directory}" >> "$GITHUB_OUTPUT"
     outputs:
-      rust-channel: ${{ steps.rust-channel.outputs.value }}
+      rust-channel: ${{ steps.rust-channel.outputs.rust_version }}
       sanitized_working_directory: ${{ steps.rust-channel.outputs.sanitized_working_directory }}
 
   check:
     name: Rust ${{ matrix.type }} ${{ inputs.working_directory }}
-    runs-on:
-      [
-        self-hosted,
-        "standard",
-        "${{ needs.derive_runner.outputs.rust-channel }}",
-        "${{ github.run_id }}__${{ needs.derive_runner.outputs.sanitized_working_directory }}__${{ matrix.type }}__${{ github.run_attempt }}",
-      ]
+    runs-on: "rust-${{ needs.derive_runner.outputs.rust-channel }}-scale-set"
     needs: derive_runner
     env:
       CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"

@@ -5,7 +5,7 @@ on:
     outputs:
       released:
         description: Was the crate released
-        value: 'true'
+        value: "true"
     inputs:
       required_packages:
         type: string
@@ -41,9 +41,26 @@ permissions:
   contents: read
 
 jobs:
+  derive_runner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: "rust-toolchain.toml"
+      - name: Get rust channel
+        id: rust-channel
+        shell: bash
+        run: |
+          rust_version="$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '${{ inputs.toolchain }}')"
+          rust_version="${rust_version/./-}"
+          echo "rust_version=${rust_version}" >> $GITHUB_OUTPUT
+    outputs:
+      rust-channel: ${{ steps.rust-channel.outputs.rust_version }}
   cargo_publish_public_registry:
+    needs:
+      - derive_runner
     name: Release new version to public registry
-    runs-on: "ubuntu-latest"
+    runs-on: "rust-${{ needs.derive_runner.outputs.rust-channel }}-scale-set"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
