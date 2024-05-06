@@ -42,6 +42,12 @@ jobs:
   docker_publish:
     runs-on: ${{ inputs.self_hosted_runner == 'true' && 'rust-1-77-scale-set' || 'ubuntu-latest' }}
     steps:
+      - name: Connect to VPN
+        if: ${{ inputs.self_hosted_runner != 'true' }}
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/vpn_setup@lp-orica-digital
+        with:
+          vault_auth_role: ${{ inputs.vault_auth_role }}
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -68,6 +74,7 @@ jobs:
             kv-v2/data/shipyard name | CARGO_PRIVATE_REGISTRY_NAME;
             kv-v2/data/shipyard token | CARGO_PRIVATE_REGISTRY_TOKEN;
             kv-v2/data/shipyard ssh_private_key | CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY;
+            kv-v2/data/github/ssh-keys/${{ inputs.vault_auth_role }} PRIVATE_SSH_KEYS | PRIVATE_SSH_KEYS;
       #
       # Login to registry (ACR)
       - name: Login to oreprohub
@@ -99,7 +106,7 @@ jobs:
         with:
           toolchain: ${{ inputs.toolchain }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@lp-orica-digital
         with:
           private_key: ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -108,16 +115,12 @@ jobs:
           additional_private_keys: |
             ${{ secrets.OREPROLIB_SSH_PRIVATE_KEY }}
             ${{ secrets.SPARKL_BLAST_SSH_PRIVATE_KEY }}
+            ${{ steps.secrets.outputs.PRIVATE_SSH_KEYS }}
 
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Use user-agent for private registry
-        shell: bash
-        run: |
-          echo "\"shipyard ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_TOKEN  }}\"" > ./shipyard_token
-
-      - name: Build & Push
+      - name: Build and Push
         uses: docker/build-push-action@v3
         with:
           context: ${{ inputs.docker_context == 'default-docker-context-replace-me' && inputs.working_directory || inputs.docker_context }}
@@ -132,5 +135,5 @@ jobs:
           tags: |
             ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
             ${{ inputs.registry }}/${{ inputs.image }}:latest
-          #cache-from: type=gha
-          #cache-to: type=gha,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

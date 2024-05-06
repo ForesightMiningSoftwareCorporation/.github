@@ -1,0 +1,9 @@
+name: Kill VPN Connection
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Kill VPN connection
+      shell: bash
+      run: |
+        sudo killall openvpn || true

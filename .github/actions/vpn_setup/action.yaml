@@ -1,0 +1,57 @@
+name: Setup VPN Connection using OpenVPN
+description: Connect to FMSC VPN
+
+inputs:
+  vault_auth_role:
+    type: string
+    default: ""
+    description: Vault role to use to retrieve secrets
+runs:
+  using: "composite"
+  steps:
+    - name: Retrieve vpn config from from Vault
+      id: import-secrets
+      uses: hashicorp/vault-action@v3.0.0
+      with:
+        method: jwt
+        url: https://vault.foresightmining.com:8200
+        path: github
+        role: ${{ inputs.vault_auth_role }}
+        secrets: |
+          vpn/data/github-actions config | OVPN_CONFIG ;
+    - name: Install OpenVPN
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get --assume-yes --no-install-recommends install openvpn
+
+    - name: Setup VPN config
+      shell: bash
+      run: |
+        echo "${{ steps.import-secrets.outputs.OVPN_CONFIG }}" > ovpn.config
+
+    - name: Connect VPN
+      shell: bash
+      run: |
+        sudo openvpn --config ovpn.config --log "vpn.log" --daemon
+        sudo chmod 777 vpn.log
+
+    - name: Wait for a VPN connection
+      shell: bash
+      run: |
+        end=$((SECONDS+60))
+        while [ $SECONDS -lt $end ]; do
+          if grep "Initialization Sequence Completed" vpn.log; then
+            echo "VPN is connected."
+            break
+          else
+            echo "Waiting for VPN to connect..."
+            sleep 2
+          fi
+        done
+
+    - name: Set Private Dns Resolver
+      shell: bash
+      run: |
+        echo "nameserver 172.16.243.36" |  sudo tee  /etc/resolv.conf.DNSoverride
+        sudo ln -sf /etc/resolv.conf.DNSoverride /etc/resolv.conf
