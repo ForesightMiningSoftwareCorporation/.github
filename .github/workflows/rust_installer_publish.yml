@@ -18,6 +18,10 @@ on:
         type: string
         default: "."
         description: Working directory to run the cargo command
+      self_hosted_runner:
+        type: string
+        default: "true"
+        description: Run on sel-hosted-runner
 
 jobs:
   gather_facts:

@@ -140,10 +140,14 @@ on:
         type: string
         default: "true"
         description: Should the release be reported
+      self_hosted_runner:
+        type: string
+        default: "true"
+        description: Run on sel-hosted-runner
 
 jobs:
   publish_private_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_private_registry_publish.yml@lp-orica-digital
     if: inputs.publish == 'true' && inputs.publish_private_registry == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
@@ -152,9 +156,10 @@ jobs:
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
+      self_hosted_runner: ${{ inputs.self_hosted_runner }}
     secrets: inherit
   publish_public_registry:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_public_registry_publish.yml@lp-orica-digital
     if: inputs.publish == 'true' && inputs.publish_public_registry == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
@@ -163,9 +168,10 @@ jobs:
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
+      self_hosted_runner: ${{ inputs.self_hosted_runner }}
     secrets: inherit
   publish_docker:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@lp-orica-digital
     if: inputs.publish == 'true' && inputs.publish_docker == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
@@ -174,9 +180,10 @@ jobs:
       dockerfile: ${{ inputs.dockerfile }}
       image: ${{ inputs.docker_image }}
       registry: ${{ inputs.docker_registry }}
+      self_hosted_runner: ${{ inputs.self_hosted_runner }}
     secrets: inherit
   publish_binary:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@lp-orica-digital
     if: inputs.publish == 'true' && inputs.publish_binary == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
@@ -186,21 +193,24 @@ jobs:
       sign_build: ${{ inputs.binary_sign_build }}
       application_name: ${{ inputs.binary_application_name }}
       targets: ${{ inputs.binary_targets }}
+      self_hosted_runner: ${{ inputs.self_hosted_runner }}
     secrets: inherit
   publish_installer:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_installer_publish.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/rust_installer_publish.yml@lp-orica-digital
     if: inputs.publish == 'true' && inputs.publish_installer == 'true'
     with:
       sign_build: ${{ inputs.binary_sign_build }}
       application_name: ${{ inputs.binary_application_name }}
       working_directory: ${{ inputs.working_directory }}
+      self_hosted_runner: ${{ inputs.self_hosted_runner }}
     secrets: inherit
   publish_npm_napi:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@lp-orica-digital
     if: inputs.publish == 'true' && inputs.publish_npm_napi == 'true'
     with:
       working_directory: ${{ inputs.working_directory }}
       toolchain: ${{ inputs.toolchain }}
+      self_hosted_runner: ${{ inputs.self_hosted_runner }}
     secrets: inherit
   report_release:
     needs:
@@ -210,7 +220,7 @@ jobs:
       - publish_binary
       - publish_installer
       - publish_npm_napi
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@lp-orica-digital
     if: ${{ always() && inputs.report_release == 'true' && inputs.publish == 'true' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && ((inputs.publish_private_registry == 'true' && (needs.publish_private_registry.outputs.released || 'false') == 'true') || (inputs.publish_public_registry == 'true' && (needs.publish_public_binary.outputs.released || 'false') == 'true') || (inputs.publish_docker == 'true' && (needs.publish_docker.outputs.released || 'false') == 'true') || (inputs.publish_binary == 'true' && (needs.publish_binary.outputs.released || 'false') == 'true') || (inputs.publish_npm_napi == 'true' && (needs.publish_npm_napi.outputs.released || 'false') == 'true') || (inputs.publish_installer == 'true' && (needs.publish_installer.outputs.released || 'false') == 'true'))}}
     with:
       working-directory: ${{ inputs.working_directory }}

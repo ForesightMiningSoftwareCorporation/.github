@@ -84,6 +84,10 @@ on:
         type: string
         default: "false"
         description: Should the binary bin be signed
+      self_hosted_runner:
+        type: string
+        default: "true"
+        description: Run on sel-hosted-runner
 
 env:
   CARGO_TERM_COLOR: always
