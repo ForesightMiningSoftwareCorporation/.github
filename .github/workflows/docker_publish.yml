@@ -33,6 +33,10 @@ on:
         type: string
         default: "true"
         description: Run on sel-hosted-runner
+      vault_auth_role:
+        type: string
+        default: ""
+        description: Vault role to use to retrieve secrets
 
 jobs:
   docker_publish:
@@ -46,6 +50,24 @@ jobs:
         with:
           file: "${{ inputs.working_directory }}/Cargo.toml"
           field: "package.version"
+
+      - name: Retrieve Docker Credentials from FSLABS Vault
+        id: secrets
+        uses: hashicorp/vault-action@v3.0.0
+        with:
+          method: jwt
+          url: https://vault.foresightmining.com:8200
+          path: github
+          role: ${{ inputs.vault_auth_role }}
+          secrets: |
+            kv-v2/data/docker/acr/oreprohub username | DOCKER_OREPROHUB_AZURECR_IO_USERNAME;
+            kv-v2/data/docker/acr/oreprohub password | DOCKER_OREPROHUB_AZURECR_IO_PASSWORD;
+            kv-v2/data/docker/acr/oricacrplatformfslabs001 username | DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_USERNAME;
+            kv-v2/data/docker/acr/oricacrplatformfslabs001 password | DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_PASSWORD;
+            kv-v2/data/shipyard host | CARGO_PRIVATE_REGISTRY_HOST;
+            kv-v2/data/shipyard name | CARGO_PRIVATE_REGISTRY_NAME;
+            kv-v2/data/shipyard token | CARGO_PRIVATE_REGISTRY_TOKEN;
+            kv-v2/data/shipyard ssh_private_key | CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY;
       #
       # Login to registry (ACR)
       - name: Login to oreprohub
@@ -53,16 +75,16 @@ jobs:
         if: ${{ inputs.registry == 'oreprohub.azurecr.io' }}
         with:
           registry: ${{ inputs.registry }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          username: ${{ steps.secrets.outputs.DOCKER_OREPROHUB_AZURECR_IO_USERNAME }}
+          password: ${{ steps.secrets.outputs.DOCKER_OREPROHUB_AZURECR_IO_PASSWORD }}
           logout: false
 
       - name: Login to oricacrplatformfslabs001
         uses: docker/login-action@v3
         with:
           registry: oricacrplatformfslabs001.azurecr.io
-          username: ${{ secrets.DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_USERNAME }}
-          password: ${{ secrets.DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_PASSWORD }}
+          username: ${{ steps.secrets.outputs.DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_USERNAME }}
+          password: ${{ steps.secrets.outputs.DOCKER_ORICACRPLATFORMFSLABS001_AZURECR_IO_PASSWORD }}
           logout: false
 
       - name: Login to ghcr.io
@@ -79,10 +101,10 @@ jobs:
 
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         with:
-          private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
-          host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
-          name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
-          token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+          private_key: ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
+          host: ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_HOST }}
+          name: ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_NAME }}
+          token: ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_TOKEN }}
           additional_private_keys: |
             ${{ secrets.OREPROLIB_SSH_PRIVATE_KEY }}
             ${{ secrets.SPARKL_BLAST_SSH_PRIVATE_KEY }}
@@ -93,7 +115,7 @@ jobs:
       - name: Use user-agent for private registry
         shell: bash
         run: |
-          echo "\"shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}\"" > ./shipyard_token
+          echo "\"shipyard ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_TOKEN  }}\"" > ./shipyard_token
 
       - name: Build & Push
         uses: docker/build-push-action@v3
@@ -104,9 +126,9 @@ jobs:
           ssh: default=${{ env.SSH_AUTH_SOCK }}
           secrets: |
             node_auth_token="${{ secrets.GITHUB_TOKEN }}"
-            cargo_http_user_agent="shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
-            cargo_private_registry_token="${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
-            cargo_private_registry_name="${{ secrets.CARGO_PRIVATE_REGISTRY_NAME  }}"
+            cargo_http_user_agent="shipyard ${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
+            cargo_private_registry_token="${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_TOKEN  }}"
+            cargo_private_registry_name="${{ steps.secrets.outputs.CARGO_PRIVATE_REGISTRY_NAME  }}"
           tags: |
             ${{ inputs.registry }}/${{ inputs.image }}:${{ steps.read_version.outputs.value }}
             ${{ inputs.registry }}/${{ inputs.image }}:latest

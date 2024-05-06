@@ -35,6 +35,10 @@ on:
         type: string
         default: "true"
         description: Run on sel-hosted-runner
+      vault_auth_role:
+        type: string
+        default: ""
+        description: Vault role to use to retrieve secrets
     secrets:
       github-private-keys:
         required: false
