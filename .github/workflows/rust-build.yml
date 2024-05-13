@@ -91,7 +91,9 @@ on:
       required_packages:
         type: string
         default: ""
-        description: Package that needs to be installed before Rust compilation can happens
+        description:
+          Package that needs to be installed before Rust compilation can happens
+          Deprecated, please open an issue to the infra repo if you need additional packages
       working_directory:
         type: string
         default: "."
@@ -148,7 +150,6 @@ jobs:
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
-      required_packages: ${{ inputs.required_packages }}
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
@@ -159,7 +160,6 @@ jobs:
     with:
       toolchain: ${{ inputs.toolchain }}
       additional_script: ${{ inputs.additional_script }}
-      required_packages: ${{ inputs.required_packages }}
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
@@ -180,7 +180,6 @@ jobs:
     if: inputs.publish == 'true' && inputs.publish_binary == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
-      required_packages: ${{ inputs.required_packages }}
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       sign_build: ${{ inputs.binary_sign_build }}

@@ -7,10 +7,6 @@ on:
         description: Was the binary published
         value: "true"
     inputs:
-      required_packages:
-        type: string
-        default: ""
-        description: Package that needs to be installed before Rust compilation can happens
       additional_args:
         type: string
         default: ""
