@@ -6,6 +6,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  packages: write
 
 jobs:
   build-images:
@@ -92,12 +93,13 @@ jobs:
           KUBECONFIG: kubeconfig.yaml
         run: |
           echo '${{ steps.secrets.outputs.K3S_KUBE_CONFIG }}' >> kubeconfig.yaml
-          kubectl delete imagepulljob pull-image-for-${{ matrix.image.scaleset }} | true
+          kubectl delete -n default imagepulljob pull-image-for-${{ matrix.image.scaleset }} || true
           cat - <<EOF >> pull-job.yaml
           apiVersion: apps.kruise.io/v1alpha1
           kind: ImagePullJob
           metadata:
             name: pull-image-for-${{ matrix.image.scaleset }}
+            namespace: default
           spec:
             image: ${{ matrix.image.name }}
             parallelism: 1
@@ -107,5 +109,5 @@ jobs:
               - fslabs-worker-4
               - fslabs-worker-5
           EOF
-          kubectl apply -f pull-job.yaml
-          until kubectl get imagepulljob pull-image-for-${{ matrix.image.scaleset }} -o jsonpath='{.status.message}' | grep -m 1 "job has completed"; do : ; done
+          kubectl apply -n default -f pull-job.yaml
+          until kubectl get imagepulljob -n default pull-image-for-${{ matrix.image.scaleset }} -o jsonpath='{.status.message}' | grep -m 1 "job has completed"; do : ; done
