@@ -1,55 +1,48 @@
 ARG GITHUB_RUNNER_VERSION=latest
 FROM ghcr.io/actions/actions-runner:$GITHUB_RUNNER_VERSION
-ARG RUST_VERSION=stable
+ARG RUST_VERSION=1.77
 ARG SCCACHE_VERSION=0.7.7
 
+# Ubuntu Repo Management
 RUN sudo apt-get update && sudo apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
     software-properties-common \
-    build-essential \
+    curl
+# Install GH Cli repo
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && sudo chmod 644 /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && sudo chmod 644 /etc/apt/sources.list.d/github-cli.list
+# Install kubectl repo
+RUN curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /usr/share/keyrings/kubernetes-apt-keyring.gpg \
+    && sudo chmod 644 /usr/share/keyrings/kubernetes-apt-keyring.gpg \
+    && echo 'deb [signed-by=/usr/share/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list \
+    && sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+# Install NodeJS v20 repo
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+RUN sudo apt-get update && sudo apt-get install -y -qq --no-install-recommends \
     zip \
-    make \
-    gcc \
-    libpq-dev \
     wget \
     postgresql \
     gnupg \
-    lsb-release \
-    curl \
     tar \
-    unzip \
-    zip \
-    apt-transport-https \
-    ca-certificates \
     gpg-agent \
-    software-properties-common \
-    build-essential \
-    zlib1g-dev \
-    zstd \
     gettext \
-    libcurl4-openssl-dev \
-    inetutils-ping \
     wget \
     dirmngr \
-    openssh-client \
     locales \
-    python3-pip \
-    python3-setuptools \
-    python3-venv \
-    python3 \
-    dumb-init \
     rsync \
-    libpq-dev \
-    gosu \
     pkg-config \
     moreutils \
-    jq
-
-# Install Node v20 and AWS CDK
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - \
-    && sudo apt-get install -y nodejs
+    jq \
+    nodejs \
+    gh \
+    kubectl
 
 # Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain $RUST_VERSION -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain $RUST_VERSION -y
 ENV PATH="/home/runner/.cargo/bin:${PATH}"
 
 # Install sccache
@@ -57,11 +50,6 @@ RUN wget https://github.com/mozilla/sccache/releases/download/v$SCCACHE_VERSION/
     && tar xzf sccache-v$SCCACHE_VERSION-x86_64-unknown-linux-musl.tar.gz \
     && sudo mv sccache-v$SCCACHE_VERSION-x86_64-unknown-linux-musl/sccache /usr/local/bin/sccache \
     && sudo chmod +x /usr/local/bin/sccache
-
-# Install GH CLI
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && sudo apt update && sudo apt install -y gh
 
 RUN sudo rm -rf /var/lib/apt/lists/*
 
