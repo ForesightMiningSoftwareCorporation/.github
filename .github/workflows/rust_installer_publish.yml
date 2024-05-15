@@ -98,7 +98,7 @@ jobs:
           input_version="${{ steps.read_app_version.outputs.value }}"
           path_name="${input_string// /_}"
           app_version="${input_version//./_}"
-          fallback_binary="${path_name}_${app_version}"
+          fallback_binary="${path_name}"
           app_name="${{ steps.read_app_name.outputs.value }}-${{ env.TARGET }}-${toolchain}-v${{ steps.read_app_version.outputs.value }}-signed.exe"
           launcher_name="${{ steps.read_app_name.outputs.value }}_launcher-${{ env.TARGET }}-${toolchain}-v${{ steps.read_launcher_version.outputs.value }}-signed.exe"
           installer_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.read_app_version.outputs.value }}.msi"
