@@ -151,13 +151,9 @@ jobs:
 
       - name: Additional Cache
         id: additional-cache
-        uses: tespkg/actions-cache@v1
+        uses: actions/cache@v4
         if: inputs.additional_cache_key != '' && inputs.additional_cache_path != ''
         with:
-          endpoint: ${{ vars.CI_CACHE_ENDPOINT }}
-          accessKey: ${{ secrets.CI_CACHE_ACCESS_KEY }}
-          secretKey: ${{ secrets.CI_CACHE_SECRET_KEY }}
-          bucket: ${{ vars.CI_CACHE_BUCKET }}
           path: ${{ inputs.additional_cache_path }}
           key: ${{ inputs.additional_cache_key }}-${{ github.ref_name }}
           restore-keys: |
@@ -176,13 +172,11 @@ jobs:
         run: ${{ inputs.additional_script }}
 
       - name: Cache Dependencies
-        uses: mozilla-actions/sccache-action@v0.0.4
-        env:
-          SSCACHE_BUCKET: ${{ vars.CI_CACHE_BUCKET }}
-          SSCACHE_REGION: "auto"
-          SSCACHE_ENDPOINT: "https://${{ vars.CI_CACHE_ENDPOINT }}"
-          AWS_ACCESS_KEY: ${{ secrets.CI_CACHE_ACCESS_KEY }}
-          AWS_SECRET_KEY: ${{ secrets.CI_CACHE_SECRET_KEY }}
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "${{ github.job }}-${{ matrix.type }}"
+          workspaces: ${{ inputs.working_directory }}
+          env-vars: ""
 
       - name: Get crate name
         id: name
