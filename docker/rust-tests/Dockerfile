@@ -48,6 +48,7 @@ RUN sudo apt-get update && sudo apt-get install -y \
     libasound2-dev \
     libxcb-composite0-dev \
     libgtk-3-dev \
+    protobuf-compiler \
     jq
 
 # Install Node v20 and AWS CDK
