@@ -19,6 +19,10 @@ on:
         default: "."
         description: Working directory to run the cargo command
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   gather_facts:
     runs-on: ubuntu-latest
@@ -243,141 +247,16 @@ jobs:
 
       - run: npm install adm-zip
       - name: Trigger signer workflow
-        uses: actions/github-script@v7
+        uses: ForesightMiningSoftwareCorporation/action-trigger-signer-workflow@main
         id: signer-workflow
+        if: inputs.sign_build == 'true'
         with:
-          github-token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
-          script: |
-            const AdmZip = require('adm-zip');
-            const fs = require('fs');
-            const MAX_RETRY=7;
+          token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
+          signer_repository: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
+          sas_url: ${{ steps.sas-url.outputs.sas }}
+          artifact_to_sign: ${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}
+          blob_dir: ${{ needs.gather_facts.outputs.INSTALLER_BLOB_DIR }}
 
-            const RETRY_TIMEOUT_S = 5 ;
-            const now = new Date();
-
-            const wait = (ms) => new Promise((res) => setTimeout(res, ms));
-
-            const callWithRetry = async (fn, max_retry = MAX_RETRY, retry_timeout = RETRY_TIMEOUT_S * 1000, depth = 0) => {
-                try {
-                    const out = await fn();
-                    if (out === undefined || out === null || (Array.isArray(out) && out.length === 0)) {
-                        await wait(retry_timeout);
-                        return callWithRetry(fn, max_retry, retry_timeout, depth + 1);
-                    }
-                    return out;
-                } catch(e) {
-                    if (depth > max_retry) {
-                        throw e;
-                    }
-                    await wait(retry_timeout);
-                    return callWithRetry(fn, max_retry, retry_timeout, depth + 1);
-                }
-            }
-
-            const getWorkflowId = async (workflow_name) => {
-                const _fetchWorkflow = async () => {
-                    const workflows = await github.rest.actions.listWorkflowRuns({
-                        owner: gh_info[0],
-                        repo: gh_info[1],
-                        workflow_id: "sign_file.yaml",
-                        created: `>${now.toISOString()}`,
-                    });
-                    return workflows.data.workflow_runs.find(w => w.name === workflow_name);
-                };
-                const workflow = await callWithRetry(_fetchWorkflow);
-                return workflow && workflow.id;
-            }
-
-            const workflow_final_status = [
-                "completed",
-                "cancelled",
-                "failure",
-                "neutral",
-                "skipped",
-                "stale",
-                "success",
-                "timed_out",
-            ]
-
-            const waitForWorkflowRunCompletion = async (run_id) => {
-                const _waitForWorkflowRunCompletion = async () => {
-                  const workflow = await github.rest.actions.getWorkflowRun({
-                      owner: gh_info[0],
-                      repo: gh_info[1],
-                      run_id,
-                  });
-                    if (workflow && workflow_final_status.includes(workflow.data.status)) {
-                        return workflow.data;
-                    }
-                    return null;
-                };
-                return await callWithRetry(_waitForWorkflowRunCompletion, 60, 60);
-            }
-
-            const getWorkflowArtifact = async (run_id, artifact_name) => {
-               const _getWorkflowArtifact = async () => {
-                   const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-                       owner: gh_info[0],
-                       repo: gh_info[1],
-                       run_id,
-                   })
-                   if (!artifacts) return null;
-                   return artifacts.data.artifacts.find(a => a.name === artifact_name);
-               }
-               return await callWithRetry(_getWorkflowArtifact);
-            }
-
-            const downloadArtifact = async (artifact_id, download_path) => {
-               const zip = await github.rest.actions.downloadArtifact({
-                   owner: gh_info[0],
-                   repo: gh_info[1],
-                   artifact_id,
-                   archive_format: "zip"
-               });
-               fs.mkdirSync(download_path, { recursive: true });
-               const adm = new AdmZip(Buffer.from(zip.data));
-               adm.extractAllTo(download_path, true);
-            } 
-
-            // Get data
-            const gh_info = "${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}".split("/");
-            const artifact_sas = "${{ steps.sas-url.outputs.sas }}";
-            const artifact_name = "${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}";
-            const gh_artifact_name = "signed_artifacts";
-            const temp_dir = String.raw`${{ runner.temp }}`;
-            const dir_separator = temp_dir.indexOf("\\") == -1 ? "/" : "\\";
-            const blob_dir = String.raw`${{ needs.gather_facts.outputs.INSTALLER_BLOB_DIR }}`.replace("/", "\\");
-            const download_path = `${temp_dir}${dir_separator}signed_artifacts${dir_separator}${blob_dir}`;
-            const repository = "${{ github.repository }}";
-            const run_id = "${{ github.run_id }}";
-
-            // 1. Dispatch the workflow
-            await github.rest.actions.createWorkflowDispatch({
-                owner: gh_info[0],
-                repo: gh_info[1],
-                workflow_id: "sign_file.yaml",
-                ref: "main",
-                inputs: {
-                    artifact_sas: artifact_sas,
-                    artifact_name: artifact_name,
-                    source_repository: repository,
-                    source_run_id: run_id
-                }
-            });
-            // 2. Get the workflow id
-            const workflow_id = await getWorkflowId(`Sign ${artifact_name} ${repository} ${run_id}`);
-            // 3. Wait for the workflow_completion
-            const completed_workflow = await waitForWorkflowRunCompletion(workflow_id);
-            // 4. Load workflow artifact
-            const artifact = await getWorkflowArtifact(workflow_id, gh_artifact_name);
-            // 5. Download artifact
-            await downloadArtifact(artifact.id, download_path);
-            return {
-                status: completed_workflow.status,
-                conclusion: completed_workflow.conclusion,
-                url: completed_workflow.url,
-                id: completed_workflow.id,
-            }
       - name: Generate signed artifacts checksum windows
         shell: pwsh
         run: |
