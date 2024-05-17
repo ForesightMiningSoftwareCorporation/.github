@@ -151,17 +151,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
           env-vars: ""
           save-if: ${{ github.ref == 'refs/heads/main' }}
-
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ needs.derive_info.outputs.toolchain }}
-
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
@@ -172,13 +169,11 @@ jobs:
             ${{ secrets.FSE_SSH_PRIVATE_KEY }}
             ${{ secrets.BEVY_CLIPMAP_SSH_PRIVATE_KEY }}
             ${{ secrets.DAG_TABLES_SSH_PRIVATE_KEY }}
-
       - name: Force Static Link on linux
         shell: bash
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
           echo RUSTFLAGS="-C target-feature=+crt-static" >> $GITHUB_ENV
-
       - name: Build Binary
         shell: bash
         working-directory: ${{ inputs.working_directory }}
@@ -187,7 +182,6 @@ jobs:
           CARGO_TARGET_DIR: target
           LAUNCHER_APP_NAME: ${{ needs.derive_info.outputs.LAUNCHER_APP_NAME }}
           LAUNCHER_APP_FALLBACK: ${{ needs.derive_info.outputs.LAUNCHER_APP_FALLBACK }}
-
       - name: Copy to bin artifact folder
         shell: bash
         if: matrix.target == 'x86_64-unknown-linux-gnu'
@@ -197,7 +191,6 @@ jobs:
           mkdir -p $artifacts_dir
           cp target/${{ matrix.target }}/${{ inputs.profile }}/${{ needs.derive_info.outputs.package }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain }}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}
           sha512sum $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain }}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} | awk '{ print $1 }' >> $artifacts_dir/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha-512.txt
-
       - name: Copy to bin folder windows
         if: matrix.target == 'x86_64-pc-windows-msvc'
         shell: pwsh
@@ -207,7 +200,6 @@ jobs:
           Copy-Item target\${{ matrix.target }}\${{ inputs.profile }}\${{ needs.derive_info.outputs.package }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} $Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}
           $hash = Get-FileHash "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}" -Algorithm SHA512
           echo $hash.Hash >> "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha512.txt"
-
       - name: Azure Blob Upload
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
@@ -215,14 +207,12 @@ jobs:
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/bin_output
           delete_if_exists: true
-
       - name: Generate Expiry for SAS Url
         if: inputs.sign_build == 'true'
         shell: bash
         id: sas-expiry
         run: |
           echo "expiry=$(date -u -d "120 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
-
       - name: Generate SAS Url for binary signing
         if: inputs.sign_build == 'true'
         shell: bash
@@ -230,7 +220,6 @@ jobs:
         run: |
           sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
           echo "sas=$sas" >> $GITHUB_OUTPUT
-
       - name: Retrieve signing secret from Vault
         if: inputs.sign_build == 'true'
         id: import-signing-secrets
@@ -243,10 +232,8 @@ jobs:
           secrets: |
             kv-v2/data/whirlpool/signer PAT_TOKEN | WHIRLPOOL_SIGNER_PAT_TOKEN ;
             kv-v2/data/whirlpool/signer REPOSITORY | WHIRLPOOL_SIGNER_REPOSITORY ;
-
       - run: npm install adm-zip
         if: inputs.sign_build == 'true'
-
       - name: Trigger signer workflow
         uses: actions/github-script@v7
         id: signer-workflow
@@ -382,14 +369,12 @@ jobs:
                 url: completed_workflow.url,
                 id: completed_workflow.id,
             }
-
       - name: Generate signed artifacts checksum windows
         if: inputs.sign_build == 'true'
         shell: pwsh
         run: |
           $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}" -Algorithm SHA512
           echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed-sha512.txt"
-
       - name: Upload signed artifacts to Azure Blob Upload
         if: inputs.sign_build == 'true'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
@@ -398,14 +383,12 @@ jobs:
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/signed_artifacts
           delete_if_exists: true
-
       - name: Upload bin to github artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-binaries-unsigned-${{ matrix.target }}
           path: ${{ runner.temp }}/bin_output
           overwrite: true
-
       - name: Upload signed bin to github artifacts
         if: inputs.sign_build == 'true'
         uses: actions/upload-artifact@v4

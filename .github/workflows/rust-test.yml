@@ -127,15 +127,12 @@ jobs:
         run: |
           echo "output.txt" >> ~/.gitignore_global
           echo "deny.toml" >> ~/.gitignore_global
-
       - name: "Update rustup only if version is different thant toolchain"
         shell: bash
         run: |
           rustup set auto-self-update disable
-
       - name: Checkout
         uses: actions/checkout@v4
-
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
@@ -148,7 +145,6 @@ jobs:
             ${{ secrets.DAG_TABLES_SSH_PRIVATE_KEY }}
             ${{ secrets.VOLUMESIGHT_SSH_PRIVATE_KEY }}
             ${{ secrets.SPARKL_BLAST_SSH_PRIVATE_KEY }}
-
       - name: Additional Cache
         id: additional-cache
         uses: actions/cache@v4
@@ -159,25 +155,21 @@ jobs:
           restore-keys: |
             ${{ inputs.additional_cache_key }}-${{ github.base_ref }}
             ${{ inputs.additional_cache_key }}
-
       - name: Additional Cache Miss Command
         if: steps.additional-cache.outputs.cache-hit == 'false'
         shell: bash
         run: ${{ inputs.additional_cache_miss }}
-
       - name: Additional Script
         if: ${{ inputs.additional_script != '' }}
         shell: bash
         working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.additional_script }}
-
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: "${{ github.job }}-${{ matrix.type }}"
           workspaces: ${{ inputs.working_directory }}
           env-vars: ""
-
       - name: Get crate name
         id: name
         if: always()
@@ -185,7 +177,6 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
         run: |
           echo "value=$(yq -p toml '.package.name' < Cargo.toml)" >> $GITHUB_OUTPUT
-
       - name: Set start time as env variable
         id: start_time
         run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
@@ -198,7 +189,6 @@ jobs:
         with:
           command: ${{ inputs.custom_cargo_commands }}
           working_directory: ${{ inputs.working_directory }}
-
       - name: fmt
         id: fmt
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
@@ -207,7 +197,6 @@ jobs:
         with:
           command: "cargo fmt --verbose -- --check"
           working_directory: ${{ inputs.working_directory }}
-
       - name: check
         id: check
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
@@ -216,7 +205,6 @@ jobs:
         with:
           command: "cargo check ${{ inputs.additional_args }}" # todo: feed back the `workspace
           working_directory: ${{ inputs.working_directory }}
-
       - name: clippy
         id: clippy
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
@@ -225,7 +213,6 @@ jobs:
         with:
           command: "cargo clippy ${{ inputs.additional_args }} -- -D warnings"
           working_directory: ${{ inputs.working_directory }}
-
       - name: doc
         id: doc
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
@@ -234,7 +221,6 @@ jobs:
         with:
           command: "RUSTDOCFLAGS='-D warnings' cargo doc --no-deps"
           working_directory: ${{ inputs.working_directory }}
-
       - name: Copy Default deny if not exists
         shell: bash
         working-directory: ${{ inputs.working_directory }}
@@ -243,7 +229,6 @@ jobs:
           if [ ! -f deny.toml ]; then
             curl -o deny.toml https://raw.githubusercontent.com/ForesightMiningSoftwareCorporation/github/main/deny.toml
           fi
-
       - name: deny-license
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-license
@@ -252,7 +237,6 @@ jobs:
         with:
           command: "cargo deny check licenses"
           working_directory: ${{ inputs.working_directory }}
-
       - name: deny-bans
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-bans
@@ -261,7 +245,6 @@ jobs:
         with:
           command: "cargo deny check bans"
           working_directory: ${{ inputs.working_directory }}
-
       - name: deny-advisories
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-advisories
@@ -270,7 +253,6 @@ jobs:
         with:
           command: "cargo deny check advisories"
           working_directory: ${{ inputs.working_directory }}
-
       - name: deny-sources
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: deny-sources
@@ -279,7 +261,6 @@ jobs:
         with:
           command: "cargo deny check sources"
           working_directory: ${{ inputs.working_directory }}
-
       - name: dependencies
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: dependencies
@@ -288,7 +269,6 @@ jobs:
         with:
           command: "cargo machete"
           working_directory: ${{ inputs.working_directory }}
-
       - name: publish-dryrun
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: publish-dryrun
@@ -297,7 +277,6 @@ jobs:
         with:
           command: "cargo package"
           working_directory: ${{ inputs.working_directory }}
-
       - name: tests
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: tests
@@ -305,7 +284,6 @@ jobs:
         with:
           command: "cargo test ${{ inputs.fail_fast == 'false' && '--no-fail_fast' || '' }} ${{ inputs.additional_args }}"
           working_directory: ${{ inputs.working_directory }}
-
       - name: miri
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/shell-with-output@v2
         id: miri
@@ -314,7 +292,6 @@ jobs:
         with:
           command: "cargo miri test ${{ inputs.fail_fast == 'false' && '--keep-going' || '' }} ${{ inputs.additional_args }}"
           working_directory: ${{ inputs.working_directory }}
-
       - name: Write output to file
         shell: bash
         if: always()

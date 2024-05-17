@@ -61,17 +61,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
           env-vars: ""
           save-if: ${{ github.ref == 'refs/heads/main' }}
-
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
-
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
@@ -81,22 +78,18 @@ jobs:
           additional_private_keys: |
             ${{ secrets.FSE_SSH_PRIVATE_KEY }}
             ${{ secrets.VOLUMESIGHT_SSH_PRIVATE_KEY }}
-
       - name: Additional Script
         if: inputs.additional_script != ''
         run: ${{ inputs.additional_script }}
         shell: bash
-
       - name: Update Packages
         if: inputs.required_packages != ''
         run: sudo apt-get update -yq && sudo apt-get install -yq --no-install-recommends ${{ inputs.required_packages }}
-
       - name: Run custom cargo command
         if: inputs.custom_cargo_commands != ''
         shell: bash
         working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.custom_cargo_commands }}
-
       - name: Publish to private registry
         shell: bash
         working-directory: ${{ inputs.working_directory }}
