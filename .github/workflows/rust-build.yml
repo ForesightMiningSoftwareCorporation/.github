@@ -165,7 +165,7 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
     secrets: inherit
   publish_docker:
-    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@v2
+    uses: ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@orepro3d
     if: inputs.publish == 'true' && inputs.publish_docker == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
