@@ -82,6 +82,8 @@ jobs:
           additional_private_keys: |
             ${{ secrets.OREPROLIB_SSH_PRIVATE_KEY }}
             ${{ secrets.SPARKL_BLAST_SSH_PRIVATE_KEY }}
+            ${{ secrets.OREPRO_API_CLIENT_SSH_KEY }}
+            ${{ secrets.OREPRO_ESLINT_CONFIG_SSH_KEY }}
 
       # - name: Set up Docker Buildx
       #   uses: docker/setup-buildx-action@v2
