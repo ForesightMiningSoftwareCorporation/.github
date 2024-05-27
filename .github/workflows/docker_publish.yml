@@ -32,7 +32,7 @@ on:
 
 jobs:
   docker_publish:
-    runs-on: rust-1-77-scale-set
+    runs-on: rust-1-76-scale-set
     steps:
       - name: Checkout
         uses: actions/checkout@v4
