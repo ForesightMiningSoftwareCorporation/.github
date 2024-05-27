@@ -65,4 +65,4 @@ runs:
       with:
         check-latest: true
         registry-url: https://npm.pkg.github.com/
-        scope: "@ForesightMiningSoftwareCorporation"
+        scope: "@${{ github.repository_owner }}"
