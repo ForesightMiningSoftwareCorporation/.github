@@ -11,8 +11,12 @@ on:
         description: Subdirectory to treat as repo root
       toolchain:
         type: string
-        default: "1.73"
+        default: "1.76"
         description: Rust toolchain to install
+      with_napi:
+        type: string
+        default: "true"
+        description: "Should napi be used to deploy bindings"
 
 jobs:
   derive_info:
@@ -36,6 +40,7 @@ jobs:
 
   build_artifacts_rust:
     name: Build napi artifacts
+    if: "${{inputs.with_napi == 'true'}}"
     needs:
       - derive_info
     strategy:
@@ -86,6 +91,7 @@ jobs:
   create_release_npm:
     name: Publish NPM Packages
     runs-on: "ubuntu-latest"
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     outputs:
       released: ${{ steps.publish.outputs.released }}
     needs:

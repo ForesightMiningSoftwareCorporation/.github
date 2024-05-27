@@ -142,6 +142,10 @@ on:
         type: string
         default: "true"
         description: Should the release be reported
+      with_napi:
+        type: string
+        default: "true"
+        description: "Should napi be used to deploy bindings"
 
 jobs:
   publish_private_registry:
@@ -200,6 +204,7 @@ jobs:
     with:
       working_directory: ${{ inputs.working_directory }}
       toolchain: ${{ inputs.toolchain }}
+      with_napi: ${{ inputs.with_napi }}
     secrets: inherit
   report_release:
     needs:
