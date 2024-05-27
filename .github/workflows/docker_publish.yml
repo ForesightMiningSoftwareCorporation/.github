@@ -73,7 +73,7 @@ jobs:
         with:
           toolchain: ${{ inputs.toolchain }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v2
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}

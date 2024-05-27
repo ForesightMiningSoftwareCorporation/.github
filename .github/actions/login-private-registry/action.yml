@@ -54,6 +54,8 @@ runs:
         echo "  insteadOf = https://github.com/foresightminingsoftwarecorporation" >> $HOME/.gitconfig
         echo '[url "ssh://git@github.com/orica-digital"]' >> $HOME/.gitconfig
         echo "  insteadOf = https://github.com/orica-digital" >> $HOME/.gitconfig
+        echo '[url "ssh://git@github.com/orica-digital"]' >> $HOME/.gitconfig
+        echo "  insteadOf = https://git@github.com/orica-digital" >> $HOME/.gitconfig
     - name: Login to private registry
       shell: bash
       run: cargo login --registry ${{ inputs.name }} ${{ inputs.token }}
