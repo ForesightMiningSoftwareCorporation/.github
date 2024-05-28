@@ -12,7 +12,7 @@ on:
         description: Name of the application
       sign_build:
         type: string
-        default: "false"
+        default: "true"
         description: Should the installer be signed
       working_directory:
         type: string

@@ -128,7 +128,7 @@ on:
         description: Force the publish test to be marked as non required
       binary_sign_build:
         type: string
-        default: "false"
+        default: "true"
         description: Should the binary bin be signed
       binary_application_name:
         type: string
