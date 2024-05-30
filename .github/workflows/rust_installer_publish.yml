@@ -43,6 +43,7 @@ jobs:
       PATH_NAME: ${{ steps.path_name.outputs.path_name }}
       EXPIRY: ${{ steps.path_name.outputs.expiry }}
       UPGRADE_CODE: ${{ steps.upgrade_code.outputs.value }}
+      GUID_PREFIX: ${{ steps.guid_prefix.outputs.value }}
       PACKAGE: ${{ steps.read_app_name.outputs.value }}
     steps:
       - name: Checkout
@@ -124,6 +125,12 @@ jobs:
         with:
           file: "${{ inputs.working_directory }}/Cargo.toml"
           field: "package.metadata.fslabs.publish.binary.installer.${{ steps.channel.outputs.release_channel }}.upgrade_code"
+      - uses: SebRollen/toml-action@v1.0.2
+        name: Guid Prefix
+        id: guid_prefix
+        with:
+          file: "${{ inputs.working_directory }}/Cargo.toml"
+          field: "package.metadata.fslabs.publish.binary.installer.${{ steps.channel.outputs.release_channel }}.guid_prefix"
   generate_wxs:
     runs-on: ubuntu-latest
     needs:
@@ -166,6 +173,12 @@ jobs:
         with:
           find: "{{UPGRADE_CODE}}"
           replace: ${{ needs.gather_facts.outputs.UPGRADE_CODE }}
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
+      - name: Replace GUID_PREFIX
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: "{{GUID_PREFIX}}"
+          replace: ${{ needs.gather_facts.outputs.GUID_PREFIX }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - uses: actions/upload-artifact@v4
         with:
