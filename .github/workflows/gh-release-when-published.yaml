@@ -25,7 +25,7 @@ on:
         type: string
         default: "false"
         description: "Was the crate released as installer"
-      working-directory:
+      working_directory:
         type: string
         default: "."
         description: "The working directory"
@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            ${{ inputs.working-directory }}/Cargo.toml
+            ${{ inputs.working_directory }}/Cargo.toml
 
       - id: derive_info
         name: Derive info
