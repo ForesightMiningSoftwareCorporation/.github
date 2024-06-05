@@ -47,9 +47,33 @@ jobs:
         name: Derive info
         shell: bash
         run: |
-          echo package=$(yq -p toml '.package.name' < ${{ inputs.working-directory }}/Cargo.toml) >> $GITHUB_OUTPUT
-          echo version=$(yq -p toml '.package.version' < ${{ inputs.working-directory }}/Cargo.toml) >> $GITHUB_OUTPUT
-
+          PACKAGE=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/Cargo.toml)
+          VERSION=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/Cargo.toml)
+          PACKAGE_REF=$PACKAGE
+          VERSION_REF=$VERSION
+          if [[ $PACKAGE == *_launcher ]]; then
+            PACKAGE_REF=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/../Cargo.toml)
+            VERSION_REF=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/../Cargo.toml)
+          fi
+          if [[ $PACKAGE == *_installer ]]; then
+            PACKAGE_REF=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/../Cargo.toml)
+            VERSION_REF=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/../Cargo.toml)
+          fi
+          if [[ $GITHUB_REF == refs/heads/main ]] ; then
+            RELEASE_CHANNEL=nightly
+          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-alpha-$VERSION_REF" ]] ; then
+            RELEASE_CHANNEL=alpha
+          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-beta-$VERSION_REF" ]] ; then
+            RELEASE_CHANNEL=beta
+          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-prod-$VERSION_REF" ]] ; then
+            RELEASE_CHANNEL=prod
+          else
+            echo "No matching release channel found for $GITHUB_REF, check that the version in Cargo.toml matches the tag."
+            exit 1
+          fi
+          echo release_channel=${RELEASE_CHANNEL} >> $GITHUB_OUTPUT
+          echo package=${PACKAGE} >> $GITHUB_OUTPUT
+          echo version=${VERSION} >> $GITHUB_OUTPUT
       - id: generate_token
         name: Generate token
         uses: tibdex/github-app-token@v2.1.0
@@ -63,7 +87,7 @@ jobs:
         with:
           github_token: "${{ steps.generate_token.outputs.token }}"
           custom_tag: "${{ steps.derive_info.outputs.version }}"
-          tag_prefix: "${{ steps.derive_info.outputs.package }}-"
+          tag_prefix: "${{ steps.derive_info.outputs.package }}-${{ steps.derive_info.outputs.release_channel }}"
 
       - name: Generate Private Registry url
         id: private_registry_url
@@ -91,7 +115,7 @@ jobs:
 
       - name: Download artifacts
         id: download_artifacts
-        if: inputs.binary_release == 'true'
+        if: inputs.binary_release == 'true' || inputs.installer_release == 'true'
         uses: actions/download-artifact@v4
         with:
           pattern: release-binaries-*
@@ -112,7 +136,7 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          name: ${{ steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.version }}
+          name: ${{ steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.release_channel }} - ${{ steps.derive_info.outputs.version }}
           artifacts: "binaries/${{ steps.derive_info.outputs.package }}/**/*"
           skipIfReleaseExists: true
           body: |
@@ -132,4 +156,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_EMBEDS: '[{"title": "Release", "url": "${{steps.release.outputs.html_url}}"}]'
         with:
-          args: "Version ${{ steps.derive_info.outputs.version }} of ${{ steps.derive_info.outputs.package }} has been released"
+          args: "${{ steps.derive_info.outputs.release_channel }} version ${{ steps.derive_info.outputs.version }} of ${{ steps.derive_info.outputs.package }} has been released"
