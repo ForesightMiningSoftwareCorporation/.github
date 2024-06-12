@@ -49,6 +49,7 @@ RUN sudo apt-get update && sudo apt-get install -y \
     libxcb-composite0-dev \
     libgtk-3-dev \
     protobuf-compiler \
+    librust-atk-dev \
     jq
 
 # Install Node v20 and AWS CDK
