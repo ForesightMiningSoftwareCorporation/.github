@@ -49,18 +49,22 @@ jobs:
           - name: ubuntu-latest-16-cores
             arch: x86_64-unknown-linux-musl
             ext: ""
-            docker_image: ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:latest
+            docker_image: ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:main
+            additional_packages: ""
           - name: ubuntu-latest-16-cores
             arch: x86_64-unknown-linux-gnu
             ext: ""
             docker_image: ""
+            additional_packages: "librust-atk-dev libgtk-3-dev libglib2.0-dev"
           - name: windows-latest-16-cores-custom
             arch: x86_64-pc-windows-msvc
             ext: .exe
             docker_image: ""
+            additional_packages: ""
           - name: macos-latest-xlarge
             arch: aarch64-apple-darwin
             docker_image: ""
+            additional_packages: ""
     runs-on: ${{ matrix.os.name }}
     steps:
       - name: Git checkout
@@ -84,9 +88,10 @@ jobs:
           npm_token: ${{ secrets.GH_REGISTRY_PACKAGES }}
           shipyard: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           shipyard_token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
-          working-directory: ${{ inputs.working_directory }}
+          working_directory: ${{ inputs.working_directory }}
           bin: ${{ needs.derive_info.outputs.name }}
           version: ${{ needs.derive_info.outputs.current_version }}
+          additional_packages: ${{ matrix.os.additional_packages }}
 
   create_release_npm:
     name: Publish NPM Packages
