@@ -50,7 +50,9 @@ RUN sudo apt-get update && sudo apt-get install -y \
     libgtk-3-dev \
     protobuf-compiler \
     librust-atk-dev \
-    jq
+    jq \
+    libclang-dev \
+    clang
 
 # Install Node v20 and AWS CDK
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - \
