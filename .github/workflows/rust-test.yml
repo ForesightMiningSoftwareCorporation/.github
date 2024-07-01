@@ -139,7 +139,7 @@ jobs:
         if: inputs.service_database == 'true'
         shell: bash
         run: |
-          echo "DATABASE_URL=postgresql://postgres:postgres@postgres/postgres" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost/postgres" >> "$GITHUB_ENV"
       - name: Globally configure Git
         shell: bash
         run: |
