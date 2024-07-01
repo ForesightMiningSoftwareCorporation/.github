@@ -60,7 +60,11 @@ on:
       service_database:
         type: string
         default: "false"
-        description: "Should a database be deployed alongside for testing"
+        description: "Should Postgres be deployed alongside for testing"
+      service_azurite:
+        type: string
+        default: "false"
+        description: "Should Azurite emulator be deployed alongside for testing"
 
 env:
   CARGO_TERM_COLOR: never
@@ -107,8 +111,18 @@ jobs:
           - type: miri
             toolchain: ${{ inputs.nightly_toolchain }}
       fail-fast: ${{ inputs.fail_fast == 'true' }}
+    services:
+      azurite:
+        # Hack for conditionally enabling the service:
+        # https://github.com/actions/runner/issues/822
+        image: ${{ (inputs.service_azurite) && 'mcr.microsoft.com/azure-storage/azurite' || '' }}
+        ports:
+          - 10000:10000 # BLOB
+          - 10001:10001 # Queue
+          - 10002:10002 # Table
+        options: --health-cmd "nc -z 127.0.0.1 10000"
     steps:
-      - name: Set DATABASE_URL
+      - name: Start Postgres
         if: inputs.service_database == 'true'
         shell: bash
         run: |
