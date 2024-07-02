@@ -1,6 +1,10 @@
 on:
   workflow_call:
     inputs:
+      check_changed_outcome:
+        type: string
+        default: "success"
+        description: "Result of the check workspace command"
       run_type:
         type: string
         default: "checks"
@@ -36,4 +40,5 @@ jobs:
             --github-event-name=${{ github.event_name }} \
             --github-issue-number=${{ github.event.number || 0 }} \
             --github-repo=${{ github.repository }} \
+            --check-changed-outcome=${{ inputs.check_changed_outcome }} \
             --hide-previous-pr-comment
