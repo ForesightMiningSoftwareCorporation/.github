@@ -121,6 +121,9 @@ jobs:
           - 10001:10001 # Queue
           - 10002:10002 # Table
         options: --health-cmd "nc -z 127.0.0.1 10000"
+        credentials:
+          username: ${{ secrets.FSLABS_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.FSLABS_DOCKERHUB_PASSWORD }}
       postgres:
         # Hack for conditionally enabling the service:
         # https://github.com/actions/runner/issues/822
@@ -132,6 +135,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        credentials:
+          username: ${{ secrets.FSLABS_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.FSLABS_DOCKERHUB_PASSWORD }}
         ports:
           - 5432:5432
     steps:
