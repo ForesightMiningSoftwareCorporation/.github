@@ -185,7 +185,7 @@ jobs:
             ${{ inputs.additional_cache_key }}-${{ github.base_ref }}
             ${{ inputs.additional_cache_key }}
       - name: Additional Cache Miss Command
-        if: steps.additional-cache.outputs.cache-hit == 'false'
+        if: steps.additional-cache.outputs.cache-hit != 'true'
         shell: bash
         run: ${{ inputs.additional_cache_miss }}
       - name: Additional Script
