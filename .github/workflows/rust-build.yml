@@ -191,7 +191,7 @@ jobs:
       targets: ${{ inputs.binary_targets }}
     secrets: inherit
   publish_installer:
-    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/rust_installer_publish.yml@v2"
+    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/rust_installer_publish.yml@lp/true-nightly-installer"
     if: inputs.publish == 'true' && inputs.publish_installer == 'true'
     with:
       sign_build: ${{ inputs.binary_sign_build }}

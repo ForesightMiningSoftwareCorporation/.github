@@ -224,7 +224,7 @@ jobs:
             local app_name=$1
             local version_prefix="${2/./\\.}.*"
 
-            local blobs=$(az storage blob list --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} ---prefix "$app_name/${{ needs.gather_facts.outputs.RELEASE_CHANNEL }} /$app_name" --query "[].name" -o tsv)
+            local blobs=$(az storage blob list --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} ---prefix "$app_name/${{ needs.gather_facts.outputs.RELEASE_CHANNEL }}/$app_name" --query "[].name" -o tsv)
 
             declare -A blob_versions
 
