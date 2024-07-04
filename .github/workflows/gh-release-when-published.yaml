@@ -160,7 +160,7 @@ jobs:
             ${{ steps.tag_version.outputs.changelog }}
 
       - name: Send Discord Notification
-        if: (success() || failure()) && env.DISCORD_WEBHOOK != ''
+        if: success() && env.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
