@@ -45,6 +45,7 @@ jobs:
       UPGRADE_CODE: ${{ steps.upgrade_code.outputs.value }}
       GUID_PREFIX: ${{ steps.guid_prefix.outputs.value }}
       PACKAGE: ${{ steps.read_app_name.outputs.value }}
+      RELEASE_CHANNEL: ${{ steps.channel.outputs.release_channel }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -197,7 +198,7 @@ jobs:
         with:
           name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
           path: ${{ inputs.working_directory }}/installer
-      - name: Download Launcher and Application
+      - name: Download Launcher, Application and SubApps
         shell: bash
         working-directory: ${{ inputs.working_directory }}
         run: |
@@ -205,6 +206,44 @@ jobs:
           mkdir -p $out
           az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.LAUNCHER_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}_launcher.exe
           az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.APP_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}.exe
+          # Get the subapps information
+          SUB_APPS_OUTPUT=$(yq ".package.metadata.fslabs.publish.binary.installer.sub_apps" ${{ inputs.working_directory }}/Cargo.toml -oj)
+          if [ "$SUB_APPS_OUTPUT" == "null" ]; then
+            SUB_APPS_OUTPUT="{}"
+          fi
+
+          # Function to extract semver
+          extract_semver() {
+            echo "$1" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+'
+          }
+
+          get_latest_blob() {
+            local app_name=$1
+            local version_prefix="${2/./\\.}.*"
+
+            local blobs=$(az storage blob list --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} ---prefix "$app_name/${{ needs.gather_facts.outputs.RELEASE_CHANNEL }} /$app_name" --query "[].name" -o tsv)
+
+            declare -A blob_versions
+
+            for blob in $blobs; do
+              local version=$(extract_semver "$blob")
+              if [[ -n $version ]] && [[ "$version" =~ $version_prefix ]] && [[ "$blob" =~ .*signed\.exe ]]; then
+                blob_versions[$version]=$blob
+              fi
+            done
+            # Sort versions and get the latest one
+            local latest_version=$(printf "%s\n" "${!blob_versions[@]}" | sort -V | tail -n 1)
+            echo "${blob_versions[$latest_version]}"
+
+          }
+
+          echo $SUB_APPS_OUTPUT | jq -r 'to_entries[] | "\(.key):\(.value.version)"' | while IFS=: read -r key prefix_version; do
+            latest_blob=$(get_latest_blob $key "$prefix_version")
+            if [[ -n $latest_blob ]]; then
+              az storage blob download  --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name $latest_blob --file $out/$key.exe
+            fi
+          done
+
       - name: Install Wix Toolset
         working-directory: ${{ inputs.working_directory }}/installer
         shell: bash
