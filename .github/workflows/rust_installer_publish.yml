@@ -198,6 +198,11 @@ jobs:
         with:
           name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
           path: ${{ inputs.working_directory }}/installer
+      - name: Subapps info
+        id: subapps
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq ".package.metadata.fslabs.publish.binary.installer.sub_apps" ${{ inputs.working_directory }}/Cargo.toml -oj
       - name: Download Launcher, Application and SubApps
         shell: bash
         working-directory: ${{ inputs.working_directory }}
@@ -207,7 +212,7 @@ jobs:
           az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.LAUNCHER_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}_launcher.exe
           az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.APP_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}.exe
           # Get the subapps information
-          SUB_APPS_OUTPUT=$(yq ".package.metadata.fslabs.publish.binary.installer.sub_apps" ${{ inputs.working_directory }}/Cargo.toml -oj)
+          SUB_APPS_OUTPUT="${{ steps.subapps.outputs.result }}
           if [ "$SUB_APPS_OUTPUT" == "null" ]; then
             SUB_APPS_OUTPUT="{}"
           fi
