@@ -115,10 +115,19 @@ jobs:
 
       - name: Download artifacts
         id: download_artifacts
-        if: inputs.binary_release == 'true' || inputs.installer_release == 'true'
+        if: inputs.binary_release == 'true'
         uses: actions/download-artifact@v4
         with:
           pattern: release-binaries-*
+          path: binaries
+          merge-multiple: true
+
+      - name: Download installer artifacts
+        id: download_installer_artifacts
+        if: inputs.installer_release == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-installer-signed
           path: binaries
           merge-multiple: true
 
@@ -145,6 +154,7 @@ jobs:
             * Public Registry: ${{ steps.pubic_registry_url.outputs.value || 'NA' }}
             * Docker: ${{ steps.docker_registry_url.outputs.value || 'NA' }}
             * Binary: ${{ inputs.binary_release == 'true' && 'See artifacts' || 'NA' }}
+            * Installer: ${{ inputs.installer_release == 'true' && 'See artifacts' || 'NA' }}
             * NPM Napi: ${{ steps.npm_napi_url.outputs.value || 'NA' }}
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}

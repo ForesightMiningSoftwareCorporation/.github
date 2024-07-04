@@ -322,3 +322,11 @@ jobs:
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/signed_artifacts
           delete_if_exists: true
+
+      - name: Upload signed bin to github artifacts
+        if: inputs.sign_build == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-installer-signed
+          path: ${{ runner.temp }}/signed_artifacts
+          overwrite: true
