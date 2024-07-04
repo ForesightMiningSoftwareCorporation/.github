@@ -110,7 +110,7 @@ jobs:
           launcher_name="${{ steps.read_app_name.outputs.value }}_launcher-${{ env.TARGET }}-${toolchain}-v${{ steps.read_launcher_version.outputs.value }}-signed.exe"
           installer_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.read_app_version.outputs.value }}.msi"
           installer_signed_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.read_app_version.outputs.value }}-signed.msi"
-          subapps=$(yq ".package.metadata.fslabs.publish.binary.installer.sub_apps" ${{ inputs.working_directory }}/Cargo.toml -oj | jq -c .)
+          subapps=$(yq ".package.metadata.fslabs.publish.binary.installer.sub_apps" -r ${{ inputs.working_directory }}/Cargo.toml -oj | jq -c .)
           echo "path_name=$path_name" >> $GITHUB_OUTPUT
           echo "fallback_binary=$fallback_binary" >> $GITHUB_OUTPUT
           echo "app_name=$app_name" >> $GITHUB_OUTPUT
@@ -122,7 +122,7 @@ jobs:
           echo "installer_blob_name=${{ steps.read_app_name.outputs.value }}_installer/${{ steps.channel.outputs.release_channel }}/$installer_name" >> $GITHUB_OUTPUT
           echo "installer_blob_dir=${{ steps.read_app_name.outputs.value }}_installer/${{ steps.channel.outputs.release_channel }}" >> $GITHUB_OUTPUT
           echo "expiry=$(date -u -d "120 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
-          echo "subapps=\"$subapps\"" >> $GITHUB_OUTPUT
+          echo subapps="\"${subapps//\"/\\\"}\"" >> $GITHUB_OUTPUT
       - uses: SebRollen/toml-action@v1.0.2
         name: Upgrade Code
         id: upgrade_code
@@ -210,7 +210,7 @@ jobs:
           az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.LAUNCHER_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}_launcher.exe
           az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.APP_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}.exe
           # Get the subapps information
-          SUB_APPS_OUTPUT="${{ needs.gather_facts.outputs.SUBAPPS.outputs.result }}"
+          SUB_APPS_OUTPUT=${{ needs.gather_facts.outputs.SUBAPPS }}
           if [ "$SUB_APPS_OUTPUT" == "null" ]; then
             SUB_APPS_OUTPUT="{}"
           fi
