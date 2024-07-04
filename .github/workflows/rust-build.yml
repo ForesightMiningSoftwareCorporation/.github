@@ -180,7 +180,7 @@ jobs:
       registry: ${{ inputs.docker_registry }}
     secrets: inherit
   publish_binary:
-    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@v2"
+    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@lp/true-nightly-installer"
     if: inputs.publish == 'true' && inputs.publish_binary == 'true'
     with:
       toolchain: ${{ inputs.toolchain }}
@@ -214,7 +214,7 @@ jobs:
       - publish_binary
       - publish_installer
       - publish_npm_napi
-    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@v2"
+    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/gh-release-when-published.yaml@lp/true-nightly-installer"
     if: ${{ always() && inputs.report_release == 'true' && inputs.publish == 'true' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && ((inputs.publish_private_registry == 'true' && (needs.publish_private_registry.outputs.released || 'false') == 'true') || (inputs.publish_public_registry == 'true' && (needs.publish_public_binary.outputs.released || 'false') == 'true') || (inputs.publish_docker == 'true' && (needs.publish_docker.outputs.released || 'false') == 'true') || (inputs.publish_binary == 'true' && (needs.publish_binary.outputs.released || 'false') == 'true') || (inputs.publish_npm_napi == 'true' && (needs.publish_npm_napi.outputs.released || 'false') == 'true') || (inputs.publish_installer == 'true' && (needs.publish_installer.outputs.released || 'false') == 'true'))}}
     with:
       working_directory: ${{ inputs.working_directory }}
