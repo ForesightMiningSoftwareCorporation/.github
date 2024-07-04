@@ -116,7 +116,7 @@ jobs:
             PACKAGE_REF=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/../Cargo.toml)
             VERSION_REF=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/../Cargo.toml)
           fi
-          if [[ $GITHUB_REF == refs/heads/main ]] ; then
+          if [[ $GITHUB_REF == refs/heads/nightly-installer ]] ; then
             RELEASE_CHANNEL=nightly
             RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-alpha-$VERSION_REF" ]] ; then

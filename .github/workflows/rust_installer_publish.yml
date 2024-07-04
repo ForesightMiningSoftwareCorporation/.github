@@ -75,7 +75,7 @@ jobs:
           PACKAGE=${{ steps.read_app_name.outputs.value }}
           VERSION=${{ steps.read_app_version.outputs.value }}
           RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
-          if [[ $GITHUB_REF == refs/heads/main ]] ; then
+          if [[ $GITHUB_REF == refs/heads/nightly-installer ]] ; then
             RELEASE_CHANNEL=nightly
             RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-alpha-$VERSION" ]] ; then
