@@ -226,17 +226,25 @@ jobs:
 
             local blobs=$(az storage blob list --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --prefix "$app_name/${{ needs.gather_facts.outputs.RELEASE_CHANNEL }}/$app_name" --query "[].name" -o tsv)
 
-            declare -A blob_versions
+            local versions=()
+            local blob_list=()
 
             for blob in $blobs; do
               local version=$(extract_semver "$blob")
               if [[ -n $version ]] && [[ "$version" =~ $version_prefix ]] && [[ "$blob" =~ .*signed\.exe ]]; then
-                blob_versions[$version]=$blob
+                versions+=("$version")
+                blob_list+=("$blob")
               fi
             done
             # Sort versions and get the latest one
-            local latest_version=$(printf "%s\n" "${!blob_versions[@]}" | sort -V | tail -n 1)
-            echo "${blob_versions[$latest_version]}"
+            local latest_version=$(printf "%s\n" "${versions[@]}" | sort -V | tail -n 1)
+             # Find the blob corresponding to the latest version
+            for i in "${!versions[@]}"; do
+              if [[ "${versions[$i]}" == "$latest_version" ]]; then
+                echo "${blob_list[$i]}"
+                return
+              fi
+            done
 
           }
 
