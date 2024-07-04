@@ -87,7 +87,7 @@ jobs:
         with:
           github_token: "${{ steps.generate_token.outputs.token }}"
           custom_tag: "${{ steps.derive_info.outputs.version }}"
-          tag_prefix: "${{ steps.derive_info.outputs.package }}-${{ steps.derive_info.outputs.release_channel }}"
+          tag_prefix: "${{ steps.derive_info.outputs.package }}-${{ steps.derive_info.outputs.release_channel }}-"
 
       - name: Generate Private Registry url
         id: private_registry_url
