@@ -184,7 +184,7 @@ jobs:
           echo $SUB_APPS_OUTPUT | jq -r 'to_entries[] | "\(.key):\(.value.version)"' | while IFS=: read -r key prefix_version; do
             latest_blob=$(get_latest_blob $key "$prefix_version")
             if [[ -n $latest_blob ]]; then
-              echo "az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name $latest_blob --file $out/$key.exe" >> $GITHUB_OUTPUT
+              echo "az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name $latest_blob --file target/x86_64-pc-windows-msvc/release/$key.exe" >> $GITHUB_OUTPUT
             fi
           done
           echo 'EOF' >> $GITHUB_OUTPUT
@@ -309,7 +309,7 @@ jobs:
 
       - name: Retrieve signing secret from Vault
         id: import-signing-secrets
-        uses: hashicorp/vault-action@v2.7.3
+        uses: hashicorp/vault-action@v3.0.0
         with:
           method: jwt
           url: ${{ vars.VAULT_ADDR }}
