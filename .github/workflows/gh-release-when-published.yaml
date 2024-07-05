@@ -87,7 +87,7 @@ jobs:
         with:
           github_token: "${{ steps.generate_token.outputs.token }}"
           custom_tag: "${{ steps.derive_info.outputs.version }}"
-          tag_prefix: "${{ steps.derive_info.outputs.package }}-${{ steps.derive_info.outputs.release_channel }}-"
+          tag_prefix: "${{ inputs.installer_release == 'true' && format('{0}-installer', steps.derive_info.outputs.package) || steps.derive_info.outputs.package }}-${{ steps.derive_info.outputs.release_channel }}-"
 
       - name: Generate Private Registry url
         id: private_registry_url
@@ -145,7 +145,7 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          name: ${{ steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.release_channel }} - ${{ steps.derive_info.outputs.version }}
+          name: ${{ inputs.installer_release == 'true' && format('{0}-installer', steps.derive_info.outputs.package) || steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.release_channel }} - ${{ steps.derive_info.outputs.version }}
           artifacts: "binaries/${{ steps.derive_info.outputs.package }}/**/*"
           skipIfReleaseExists: true
           body: |
@@ -169,14 +169,14 @@ jobs:
           raw_releases[public_registry]="${{ steps.public_registry_url.outputs.value || 'na' }}|${{ steps.tag_version.outputs.new_tag }}"
           raw_releases[docker]="${{ steps.docker_registry_url.outputs.value || 'na' }}|${{ steps.docker_registry_url.outputs.value }}"
           raw_releases[binary]="${{ inputs.binary_release == 'true' && 'GH Release' || 'na' }}|${{ steps.release.outputs.html_url }}"
-          raw_releases[binary]="${{ inputs.installer_release == 'true' && 'GH Release' || 'na' }}|${{ steps.release.outputs.html_url }}"
+          raw_releases[installer]="${{ inputs.installer_release == 'true' && 'GH Release' || 'na' }}|${{ steps.release.outputs.html_url }}"
           raw_releases[npm]="${{ steps.npm_napi_url.outputs.value || 'na' }}|${{ steps.tag_version.outputs.new_tag }}"
 
           release_links=()
 
           for release_type in "${!raw_releases[@]}"; do
               IFS=\| read -r release_link release <<< "${raw_releases[$release_type]}"
-              if [[ "$release" != "na" ]]; then
+              if [[ "release_link" != "na" ]]; then
                 release_links+=( "{\"name\": \"${release_type/_/ }\", \"value\": \"[$release_link](${release})\"}" )
               fi
           done
@@ -187,6 +187,6 @@ jobs:
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"thumbnail": {"url": "https://avatars.githubusercontent.com/u/83515353?s=200&v=4"}, "title": "${{ steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.release_channel }} - ${{ steps.derive_info.outputs.version }}", "url": "${{steps.release.outputs.html_url}}", "author": {"name": "${{ github.actor }}", "url": "https://github.com/${{ github.actor }}", "icon_url": "https://github.com/${{ github.actor }}.png"}, "fields": ${{ steps.links.outputs.fields }}}]'
+          DISCORD_EMBEDS: '[{"thumbnail": {"url": "https://avatars.githubusercontent.com/u/83515353?s=200&v=4"}, "title": "${{ steps.tag_version.outputs.new_tag }}", "url": "${{steps.release.outputs.html_url}}", "author": {"name": "${{ github.actor }}", "url": "https://github.com/${{ github.actor }}", "icon_url": "https://github.com/${{ github.actor }}.png"}, "fields": ${{ steps.links.outputs.fields }}}]'
         with:
           args: "Crate release"
