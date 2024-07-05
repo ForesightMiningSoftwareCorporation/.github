@@ -89,10 +89,10 @@ jobs:
           PACKAGE=${{ steps.read_app_name.outputs.value }}
           VERSION=${{ steps.read_app_version.outputs.value }}
           RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
-          if [[ $GITHUB_REF == refs/heads/nightly-installer ]] ; then
+          if [[ $GITHUB_REF == refs/heads/main ]] ; then
             RELEASE_CHANNEL=nightly
             RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
-            VERSION_REF=$(date +"%Y-%m-%d")
+            VERSION=$(date +"%Y-%m-%d")
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-alpha-$VERSION" ]] ; then
             RELEASE_CHANNEL=alpha
             RELEASE_APP_NAME="${{ inputs.application_name }} Alpha"
@@ -108,6 +108,7 @@ jobs:
           fi
           echo release_channel=${RELEASE_CHANNEL} >> $GITHUB_OUTPUT
           echo release_app_name=${RELEASE_APP_NAME} >> $GITHUB_OUTPUT
+          echo version=${VERSION} >> $GITHUB_OUTPUT
       - name: Derive path name
         id: path_name
         shell: bash
@@ -117,14 +118,14 @@ jobs:
         run: |
           toolchain=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '$DEFAULT_TOOLCHAIN')
           input_string="${{ steps.channel.outputs.release_app_name }}"
-          input_version="${{ steps.read_app_version.outputs.value }}"
+          input_version="${{ steps.channel.outputs.version }}"
           path_name="${input_string// /_}"
           app_version="${input_version//./_}"
           fallback_binary="${path_name}"
-          app_name="${{ steps.read_app_name.outputs.value }}-${{ env.TARGET }}-${toolchain}-v${{ steps.read_app_version.outputs.value }}-signed.exe"
+          app_name="${{ steps.read_app_name.outputs.value }}-${{ env.TARGET }}-${toolchain}-v${{ steps.channel.outputs.version }}-signed.exe"
           launcher_name="${{ steps.read_app_name.outputs.value }}_launcher-${{ env.TARGET }}-${toolchain}-v${{ steps.read_launcher_version.outputs.value }}-signed.exe"
-          installer_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.read_app_version.outputs.value }}.msi"
-          installer_signed_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.read_app_version.outputs.value }}-signed.msi"
+          installer_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.channel.outputs.version }}.msi"
+          installer_signed_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.channel.outputs.version }}-signed.msi"
           echo "path_name=$path_name" >> $GITHUB_OUTPUT
           echo "fallback_binary=$fallback_binary" >> $GITHUB_OUTPUT
           echo "app_name=$app_name" >> $GITHUB_OUTPUT
