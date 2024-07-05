@@ -92,6 +92,7 @@ jobs:
           if [[ $GITHUB_REF == refs/heads/nightly-installer ]] ; then
             RELEASE_CHANNEL=nightly
             RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
+            VERSION_REF=$(date +"%Y-%m-%d")
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-alpha-$VERSION" ]] ; then
             RELEASE_CHANNEL=alpha
             RELEASE_APP_NAME="${{ inputs.application_name }} Alpha"
