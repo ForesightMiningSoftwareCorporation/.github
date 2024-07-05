@@ -176,7 +176,7 @@ jobs:
 
           for release_type in "${!raw_releases[@]}"; do
               IFS=\| read -r release_link release <<< "${raw_releases[$release_type]}"
-              if [[ "release_link" != "na" ]]; then
+              if [[ "$release_link" != "na" ]]; then
                 release_links+=( "{\"name\": \"${release_type/_/ }\", \"value\": \"[$release_link](${release})\"}" )
               fi
           done
