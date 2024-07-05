@@ -89,7 +89,7 @@ jobs:
           PACKAGE=${{ steps.read_app_name.outputs.value }}
           VERSION=${{ steps.read_app_version.outputs.value }}
           RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
-          if [[ $GITHUB_REF == refs/heads/nightly-installer ]] ; then
+          if [[ $GITHUB_REF == refs/heads/nightly-main ]] ; then
             RELEASE_CHANNEL=nightly
             RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
             VERSION_REF=$(date +"%Y-%m-%d")
