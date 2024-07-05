@@ -66,7 +66,7 @@ jobs:
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-beta-$VERSION_REF" ]] ; then
             RELEASE_CHANNEL=beta
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-prod-$VERSION_REF" ]] ; then
-            RELEASE_CHANNEL=prod
+            RELE  ASE_CHANNEL=prod
           else
             echo "No matching release channel found for $GITHUB_REF, check that the version in Cargo.toml matches the tag."
             exit 1
@@ -159,11 +159,34 @@ jobs:
             ## Changelog
             ${{ steps.tag_version.outputs.changelog }}
 
+      - name: Construct discord embed links
+        shell: bash
+        id: links
+        run: |
+          declare -A raw_releases=()
+
+          raw_releases[private_registry]="${{ steps.private_registry_url.outputs.value || 'na' }}|${{ steps.tag_version.outputs.new_tag }}"
+          raw_releases[public_registry]="${{ steps.public_registry_url.outputs.value || 'na' }}|${{ steps.tag_version.outputs.new_tag }}"
+          raw_releases[docker]="${{ steps.docker_registry_url.outputs.value || 'na' }}|${{ steps.docker_registry_url.outputs.value }}"
+          raw_releases[binary]="${{ inputs.binary_release == 'true' && 'GH Release' || 'na' }}|${{ steps.release.outputs.html_url }}"
+          raw_releases[binary]="${{ inputs.installer_release == 'true' && 'GH Release' || 'na' }}|${{ steps.release.outputs.html_url }}"
+          raw_releases[npm]="${{ steps.npm_napi_url.outputs.value || 'na' }}|${{ steps.tag_version.outputs.new_tag }}"
+
+          release_links=()
+
+          for release_type in "${!raw_releases[@]}"; do
+              IFS=\| read -r release_link release <<< "${raw_releases[$release_type]}"
+              if [[ "$release" != "na" ]]; then
+                release_links+=( "{\"name\": \"${release_type/_/ }\", \"value\": \"[$release_link](${release})\"}" )
+              fi
+          done
+          echo fields=$(jq -c -n '$ARGS.positional' --jsonargs "${release_links[@]}") >> $GITHUB_OUTPUT
+
       - name: Send Discord Notification
         if: success() && env.DISCORD_WEBHOOK != ''
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: '[{"title": "Release", "url": "${{steps.release.outputs.html_url}}"}]'
+          DISCORD_EMBEDS: '[{"thumbnail": {"url": "https://avatars.githubusercontent.com/u/83515353?s=200&v=4"}, "title": "${{ steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.release_channel }} - ${{ steps.derive_info.outputs.version }}", "url": "${{steps.release.outputs.html_url}}", "author": {"name": "${{ github.actor }}", "url": "https://github.com/${{ github.actor }}", "icon_url": "https://github.com/${{ github.actor }}.png"}, "fields": ${{ steps.links.outputs.fields }}}]'
         with:
-          args: "${{ steps.derive_info.outputs.release_channel }} version ${{ steps.derive_info.outputs.version }} of ${{ steps.derive_info.outputs.package }} has been released"
+          args: "Crate release"

@@ -223,7 +223,7 @@ jobs:
       - name: Retrieve signing secret from Vault
         if: inputs.sign_build == 'true'
         id: import-signing-secrets
-        uses: hashicorp/vault-action@v2.7.3
+        uses: hashicorp/vault-action@v3.0.0
         with:
           method: jwt
           url: ${{ vars.VAULT_ADDR }}
