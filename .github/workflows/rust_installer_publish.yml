@@ -165,7 +165,7 @@ jobs:
             local app_name=$1
             local version_prefix="${2/./\\.}.*"
 
-            local blobs=$(az storage blob list --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --prefix "$app_name/${{ needs.gather_facts.outputs.RELEASE_CHANNEL }}/$app_name" --query "[].name" -o tsv)
+            local blobs=$(az storage blob list --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --prefix "$app_name/${{ steps.channel.outputs.release_channel }}/$app_name" --query "[].name" -o tsv)
 
             declare -A blob_versions
 
@@ -180,15 +180,14 @@ jobs:
             echo "${blob_versions[$latest_version]}"
           }
 
-          echo 'subapps=<<EOF' >> $GITHUB_OUTPUT
+          echo 'subapps<<EOF' >> $GITHUB_OUTPUT
           echo $SUB_APPS_OUTPUT | jq -r 'to_entries[] | "\(.key):\(.value.version)"' | while IFS=: read -r key prefix_version; do
             latest_blob=$(get_latest_blob $key "$prefix_version")
             if [[ -n $latest_blob ]]; then
-              echo "az storage blob download  --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name $latest_blob --file $out/$key.exe" >> $GITHUB_OUTPUT
+              echo "az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name $latest_blob --file $out/$key.exe" >> $GITHUB_OUTPUT
             fi
           done
           echo 'EOF' >> $GITHUB_OUTPUT
-
   generate_wxs:
     runs-on: ubuntu-latest
     needs:
@@ -258,11 +257,13 @@ jobs:
       - name: Download Launcher, Application and SubApps
         shell: bash
         working-directory: ${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
         run: |
           out=target/x86_64-pc-windows-msvc/release
           mkdir -p $out
-          az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.LAUNCHER_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}_launcher.exe
-          az storage blob download --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.APP_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}.exe
+          az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.LAUNCHER_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}_launcher.exe
+          az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.APP_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}.exe
           ${{ needs.gather_facts.outputs.SUBAPPS }}
 
       - name: Install Wix Toolset
