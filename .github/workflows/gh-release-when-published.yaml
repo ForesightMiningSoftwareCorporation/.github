@@ -147,7 +147,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: ${{ inputs.installer_release == 'true' && format('{0}-installer', steps.derive_info.outputs.package) || steps.derive_info.outputs.package }} - ${{ steps.derive_info.outputs.release_channel }} - ${{ steps.derive_info.outputs.version }}
-          artifacts: "binaries/${{ steps.derive_info.outputs.package }}/**/*"
+          artifacts: "binaries/${{ format(((inputs.installer_release == 'true')  && '{0}_installer' || '{0}'),  steps.derive_info.outputs.package) }}/**/*"
           skipIfReleaseExists: true
           body: |
             ## Releases
