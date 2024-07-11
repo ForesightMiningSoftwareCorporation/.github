@@ -92,6 +92,7 @@ jobs:
           github_token: "${{ steps.generate_token.outputs.token }}"
           custom_tag: "${{ steps.derive_info.outputs.version }}"
           tag_prefix: "${{ inputs.installer_release == 'true' && format('{0}-installer', steps.derive_info.outputs.package) || steps.derive_info.outputs.package }}-${{ steps.derive_info.outputs.release_channel }}-"
+          dry_run: "${{ steps.derive_info.outputs.release_channel == 'nightly' && 'false' || 'true' }}"
 
       - name: Generate Private Registry url
         id: private_registry_url
