@@ -201,13 +201,25 @@ jobs:
           Copy-Item target\${{ matrix.target }}\${{ inputs.profile }}\${{ needs.derive_info.outputs.package }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} $Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}
           $hash = Get-FileHash "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}" -Algorithm SHA512
           echo $hash.Hash >> "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha512.txt"
-      - name: Azure Blob Upload
+
+      - name: Upload unsigned artifacts to Prod Azure Blob Upload
+        #if: needs.derive_info.outputs.release_channel == 'prod'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/bin_output
           delete_if_exists: true
+
+      - name: Upload unsigned artifacts to Dev Azure Blob Upload
+        #if: needs.derive_info.outputs.release_channel == 'dev'
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
+        with:
+          container_name: ${{ vars.DEV_ARTIFACTS_CONTAINER }}
+          connection_string: ${{ secrets.DEV_ARTIFACTS_CONNECTION_STRING }}
+          source_folder: ${{ runner.temp }}/signed_artifacts
+          delete_if_exists: true
+
       - name: Generate Expiry for SAS Url
         if: inputs.sign_build == 'true'
         shell: bash
@@ -253,20 +265,14 @@ jobs:
         run: |
           $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }}" -Algorithm SHA512
           echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ needs.derive_info.outputs.package }}\${{ needs.derive_info.outputs.release_channel }}\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-signed-sha512.txt"
-      - name: Upload signed artifacts to Azure Blob Upload
-        if: inputs.sign_build == 'true'
-        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
-        with:
-          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
-          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
-          source_folder: ${{ runner.temp }}/signed_artifacts
-          delete_if_exists: true
+
       - name: Upload bin to github artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-binaries-unsigned-${{ matrix.target }}
           path: ${{ runner.temp }}/bin_output
           overwrite: true
+
       - name: Upload signed bin to github artifacts
         if: inputs.sign_build == 'true'
         uses: actions/upload-artifact@v4
@@ -274,3 +280,30 @@ jobs:
           name: release-binaries-signed-${{ matrix.target }}
           path: ${{ runner.temp }}/signed_artifacts
           overwrite: true
+
+      - name: Upload signed artifacts to Dev Azure Blob Upload
+        if: inputs.sign_build == 'true' #&& needs.derive_info.outputs.release_channel == 'dev'
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
+        with:
+          container_name: ${{ vars.DEV_ARTIFACTS_CONTAINER }}
+          connection_string: ${{ secrets.DEV_ARTIFACTS_CONNECTION_STRING }}
+          source_folder: ${{ runner.temp }}/signed_artifacts
+          delete_if_exists: true
+
+      #- name: Upload signed artifacts to Staging Azure Blob Upload
+      #  if: inputs.sign_build == 'true' #&& needs.derive_info.outputs.release_channel == 'staging'
+      #  uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
+      #  with:
+      #    container_name: ${{ vars.STAGING_ARTIFACTS_CONTAINER }}
+      #    connection_string: ${{ secrets.STAGING_ARTIFACTS_CONNECTION_STRING }}
+      #    source_folder: ${{ runner.temp }}/signed_artifacts
+      #    delete_if_exists: true
+
+      - name: Upload signed artifacts to Prod Azure Blob Upload
+        if: inputs.sign_build == 'true' #&& needs.derive_info.outputs.release_channel == 'prod'
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
+        with:
+          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
+          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
+          source_folder: ${{ runner.temp }}/signed_artifacts
+          delete_if_exists: true
