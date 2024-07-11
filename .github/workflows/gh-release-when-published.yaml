@@ -59,9 +59,12 @@ jobs:
             PACKAGE_REF=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/../Cargo.toml)
             VERSION_REF=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/../Cargo.toml)
           fi
+          DATED_NIGHTLY=${{ (inputs.binary_release == 'true' && inputs.installer_release == 'true') && true || false }}
           if [[ $GITHUB_REF == refs/heads/main ]] ; then
             RELEASE_CHANNEL=nightly
-            VERSION=$(date +"%Y-%m-%d")
+            if [ "$DATED_NIGHTLY" = true ] ; then
+              VERSION=$(date +"%Y-%m-%d")
+            fi
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-alpha-$VERSION_REF" ]] ; then
             RELEASE_CHANNEL=alpha
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-beta-$VERSION_REF" ]] ; then
