@@ -217,7 +217,7 @@ jobs:
         with:
           container_name: ${{ vars.DEV_ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.DEV_ARTIFACTS_CONNECTION_STRING }}
-          source_folder: ${{ runner.temp }}/signed_artifacts
+          source_folder: ${{ runner.temp }}/bin_output
           delete_if_exists: true
 
       - name: Generate Expiry for SAS Url
@@ -233,6 +233,7 @@ jobs:
         run: |
           sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.derive_info.outputs.package }}/${{ needs.derive_info.outputs.release_channel }}/${{ needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}${{ fromJson(needs.derive_info.outputs.matrix)[matrix.target].extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
           echo "sas=$sas" >> $GITHUB_OUTPUT
+
       - name: Retrieve signing secret from Vault
         if: inputs.sign_build == 'true'
         id: import-signing-secrets
