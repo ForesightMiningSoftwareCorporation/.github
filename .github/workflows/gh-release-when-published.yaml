@@ -59,7 +59,7 @@ jobs:
             PACKAGE_REF=$(yq -p toml '.package.name' < ${{ inputs.working_directory }}/../Cargo.toml)
             VERSION_REF=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/../Cargo.toml)
           fi
-          DATED_NIGHTLY=${{ (inputs.binary_release == 'true' && inputs.installer_release == 'true') && true || false }}
+          DATED_NIGHTLY=${{ (inputs.binary_release == 'true' || inputs.installer_release == 'true') && true || false }}
           if [[ $GITHUB_REF == refs/heads/main ]] ; then
             RELEASE_CHANNEL=nightly
             if [ "$DATED_NIGHTLY" = true ] ; then
