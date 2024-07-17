@@ -30,7 +30,7 @@ jobs:
       WORKING_DIRECTORY: ${{ steps.working_directory.outputs.working_directory }}
       CHANNEL: ${{ steps.channel.outputs.release_channel }}
       LAUNCHER_APP_NAME: ${{ steps.channel.outputs.release_app_name }}
-      APP_VERSION: ${{ steps.read_app_version.outputs.value }}
+      APP_VERSION: ${{ steps.channel.outputs.version }}
       APP_NAME: ${{ steps.path_name.outputs.app_name }}
       APP_BLOB_NAME: ${{ steps.path_name.outputs.application_blob_name }}
       LAUNCHER_VERSION: ${{ steps.read_launcher_version.outputs.value }}
