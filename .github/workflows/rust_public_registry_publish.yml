@@ -27,6 +27,10 @@ on:
         type: string
         default: ""
         description: Cusom cargo commands that will be run after login
+      package_detail:
+        type: string
+        default: "{}"
+        description: "Json encoded string of the package detail as computed by fslabscli"
 
 env:
   CARGO_TERM_COLOR: always

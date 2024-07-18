@@ -18,6 +18,10 @@ on:
         type: string
         default: "."
         description: Working directory to run the cargo command
+      package_detail:
+        type: string
+        default: "{}"
+        description: "Json encoded string of the package detail as computed by fslabscli"
 
 permissions:
   id-token: write
