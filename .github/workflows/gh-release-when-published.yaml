@@ -63,7 +63,7 @@ jobs:
           if [[ $GITHUB_REF == refs/heads/main ]] ; then
             RELEASE_CHANNEL=nightly
             if [ "$DATED_NIGHTLY" = true ] ; then
-              VERSION=$(date +"%Y-%m-%d")
+              VERSION=$(date +"%Y.%-m.%d")
             fi
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-alpha-$VERSION_REF" ]] ; then
             RELEASE_CHANNEL=alpha
