@@ -194,7 +194,6 @@ jobs:
       working_directory: ${{ inputs.working_directory }}
       additional_args: ${{ inputs.additional_args }}
       sign_build: ${{ inputs.binary_sign_build }}
-      application_name: ${{ inputs.binary_application_name }}
       targets: ${{ inputs.binary_targets }}
       package_detail: ${{ inputs.package_detail }}
     secrets: inherit

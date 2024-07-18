@@ -31,7 +31,6 @@ jobs:
   gather_facts:
     runs-on: ubuntu-latest
     outputs:
-      WORKING_DIRECTORY: ${{ steps.working_directory.outputs.working_directory }}
       CHANNEL: ${{ steps.channel.outputs.release_channel }}
       LAUNCHER_APP_NAME: ${{ steps.channel.outputs.release_app_name }}
       APP_VERSION: ${{ steps.channel.outputs.version }}
@@ -73,19 +72,6 @@ jobs:
         with:
           file: "${{ inputs.working_directory }}/launcher/Cargo.toml"
           field: "package.version"
-      - name: Sanitize woring Directory
-        id: working_directory
-        shell: bash
-        run: |
-          input_wd="${{ inputs.working_directory }}"
-          if [ "$input_wd" = "." ]; then
-            output_wd=""
-          elif [[ "$input_wd" != *"/" ]]; then
-            output_wd="${input_wd}/"
-          else
-            output_wd="$input_wd"
-          fi
-          echo "working_directory=${output_wd}" >> $GITHUB_OUTPUT
       - name: Derive Release Channel
         id: channel
         shell: bash
@@ -206,47 +192,47 @@ jobs:
         with:
           find: "{{FALLBACK_BINARY}}"
           replace: ${{ needs.gather_facts.outputs.FALLBACK_BINARY }}
-          include: "${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs"
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_PATH_NAME
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_PATH_NAME}}"
           replace: ${{ needs.gather_facts.outputs.PATH_NAME }}
-          include: "${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs"
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_CRATE_NAME
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_CRATE_NAME}}"
           replace: ${{ needs.gather_facts.outputs.PACKAGE }}
-          include: "${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs"
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_NAME
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_NAME}}"
           replace: ${{ needs.gather_facts.outputs.LAUNCHER_APP_NAME }}
-          include: "${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs"
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_VERSION
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_VERSION}}"
           replace: ${{ needs.gather_facts.outputs.APP_VERSION }}
-          include: "${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs"
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace UPGRADE_CODE
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{UPGRADE_CODE}}"
           replace: ${{ needs.gather_facts.outputs.UPGRADE_CODE }}
-          include: "${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs"
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace GUID_PREFIX
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{GUID_PREFIX}}"
           replace: ${{ needs.gather_facts.outputs.GUID_PREFIX }}
-          include: "${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs"
+          include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
-          path: ${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer/installer.wxs
+          path: ${{ inputs.working_directory }}/installer/installer.wxs
   package_installer:
     runs-on: windows-latest
     needs:
@@ -259,10 +245,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
-          path: ${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}installer
+          path: ${{ inputs.working_directory }}/installer
       - name: Download Launcher, Application and SubApps
         shell: bash
-        working-directory: ${{ needs.gather_facts.outputs.WORKING_DIRECTORY }}
+        working-directory: ${{ inputs.working_directory }}/
         env:
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
         run: |
