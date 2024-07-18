@@ -39,6 +39,10 @@ on:
         type: string
         default: "false"
         description: Should the binary bin be signed
+      package_detail:
+        type: string
+        default: "{}"
+        description: "Json encoded string of the package detail as computed by fslabscli"
   workflow_call:
     outputs:
       released:
@@ -76,6 +80,10 @@ on:
         type: string
         default: "false"
         description: Should the binary bin be signed
+      package_detail:
+        type: string
+        default: "{}"
+        description: "Json encoded string of the package detail as computed by fslabscli"
 
 env:
   CARGO_TERM_COLOR: always
@@ -203,7 +211,6 @@ jobs:
           echo $hash.Hash >> "$Out\${{  needs.derive_info.outputs.package }}-${{ matrix.target }}-${{ needs.derive_info.outputs.toolchain}}-v${{ needs.derive_info.outputs.version }}-sha512.txt"
 
       - name: Upload unsigned artifacts to Prod Azure Blob Upload
-        #if: needs.derive_info.outputs.release_channel == 'prod'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
@@ -212,7 +219,6 @@ jobs:
           delete_if_exists: true
 
       - name: Upload unsigned artifacts to Dev Azure Blob Upload
-        #if: needs.derive_info.outputs.release_channel == 'dev'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.DEV_ARTIFACTS_CONTAINER }}
@@ -290,15 +296,6 @@ jobs:
           connection_string: ${{ secrets.DEV_ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/signed_artifacts
           delete_if_exists: true
-
-      #- name: Upload signed artifacts to Staging Azure Blob Upload
-      #  if: inputs.sign_build == 'true' #&& needs.derive_info.outputs.release_channel == 'staging'
-      #  uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
-      #  with:
-      #    container_name: ${{ vars.STAGING_ARTIFACTS_CONTAINER }}
-      #    connection_string: ${{ secrets.STAGING_ARTIFACTS_CONNECTION_STRING }}
-      #    source_folder: ${{ runner.temp }}/signed_artifacts
-      #    delete_if_exists: true
 
       - name: Upload signed artifacts to Prod Azure Blob Upload
         if: inputs.sign_build == 'true' #&& needs.derive_info.outputs.release_channel == 'prod'

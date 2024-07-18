@@ -29,6 +29,10 @@ on:
         type: string
         default: "oreprohub.azurecr.io"
         description: "Docker registry"
+      package_detail:
+        type: string
+        default: "{}"
+        description: "Json encoded string of the package detail as computed by fslabscli"
 
 jobs:
   docker_publish:

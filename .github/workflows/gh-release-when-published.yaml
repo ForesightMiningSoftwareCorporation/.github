@@ -29,6 +29,10 @@ on:
         type: string
         default: "."
         description: "The working directory"
+      package_detail:
+        type: string
+        default: "{}"
+        description: "Json encoded string of the package detail as computed by fslabscli"
 
 env:
   DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"

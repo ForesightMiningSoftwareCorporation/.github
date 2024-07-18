@@ -146,6 +146,10 @@ on:
         type: string
         default: "true"
         description: "Should napi be used to deploy bindings"
+      package_detail:
+        type: string
+        default: "{}"
+        description: "Json encoded string of the package detail as computed by fslabscli"
 
 jobs:
   publish_private_registry:
