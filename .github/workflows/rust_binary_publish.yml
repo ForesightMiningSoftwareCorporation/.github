@@ -7,6 +7,27 @@ on:
         description: Was the binary published
         value: "true"
     inputs:
+      package:
+        description: Name of the package
+        type: string
+      version:
+        description: Version of the package
+        type: string
+      release_channel:
+        description: Release channel of the package
+        type: string
+      launcher_app_name:
+        description: Launcher app name
+        type: string
+        default: ""
+      launcher_fallback_app_name:
+        description: Launcher app fallback name
+        type: string
+        default: ""
+      toolchain:
+        description: Toolchain to use for making the build
+        type: string
+        default: "1.76"
       targets:
         description: Binaries Targets
         type: string
@@ -15,10 +36,6 @@ on:
         type: string
         default: ""
         description: Additional arguments to pass to the cargo command
-      profile:
-        type: string
-        default: "release"
-        description: Cargo build profile to use
       working_directory:
         type: string
         default: "."
@@ -61,7 +78,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{  fromJson(inputs.package_detail).toolchain }}
+          toolchain: ${{  inputs.toolchain }}
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
@@ -80,29 +97,29 @@ jobs:
       - name: Build Binary
         shell: bash
         working-directory: ${{ inputs.working_directory }}
-        run: cargo build --profile ${{ inputs.profile }} --target=${{ matrix.target }} --features ${{fromJson(inputs.package_detail).publish.release_channel}} ${{ inputs.additional_args }}
+        run: cargo build --profile release --target=${{ matrix.target }} --features ${{inputs.release_channel}} ${{ inputs.additional_args }}
         env:
           CARGO_TARGET_DIR: target
-          LAUNCHER_APP_NAME: ${{  fromJson(inputs.package_detail).publish_detail.binary.name }}
-          LAUNCHER_APP_FALLBACK: ${{  fromJson(inputs.package_detail).publish_detail.binary.fallback_name }}
+          LAUNCHER_APP_NAME: ${{ inputs.launcher_app_name }}
+          LAUNCHER_APP_FALLBACK: ${{  inputs.launcher_fallback_app_name }}
       - name: Copy to bin artifact folder
         shell: bash
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         working-directory: ${{ inputs.working_directory }}
         run: |
-          artifacts_dir=${{ runner.temp }}/bin_output/${{  fromJson(inputs.package_detail).package }}/${{ fromJson(inputs.package_detail).publish.release_channel }}
+          artifacts_dir=${{ runner.temp }}/bin_output/${{  inputs.package }}/${{ inputs.release_channel }}
           mkdir -p $artifacts_dir
-          cp target/${{ matrix.target }}/${{ inputs.profile }}/${{  fromJson(inputs.package_detail).package }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} $artifacts_dir/${{  fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain }}-v${{  fromJson(inputs.package_detail).version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }}
-          sha512sum $artifacts_dir/${{  fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain }}-v${{  fromJson(inputs.package_detail).version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} | awk '{ print $1 }' >> $artifacts_dir/${{  fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}-sha-512.txt
+          cp target/${{ matrix.target }}/release/${{  inputs.package }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} $artifacts_dir/${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain }}-v${{  inputs.version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }}
+          sha512sum $artifacts_dir/${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain }}-v${{  inputs.version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} | awk '{ print $1 }' >> $artifacts_dir/${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-sha-512.txt
       - name: Copy to bin folder windows
         if: matrix.target == 'x86_64-pc-windows-msvc'
         shell: pwsh
         working-directory: ${{ inputs.working_directory }}
         run: |
-          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{  fromJson(inputs.package_detail).package }}\${{ fromJson(inputs.package_detail).publish.release_channel }}" -ItemType "directory"
-          Copy-Item target\${{ matrix.target }}\${{ inputs.profile }}\${{  fromJson(inputs.package_detail).package }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} $Out\${{   fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }}
-          $hash = Get-FileHash "$Out\${{   fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }}" -Algorithm SHA512
-          echo $hash.Hash >> "$Out\${{   fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}-sha512.txt"
+          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{  inputs.package }}\${{ inputs.release_channel }}" -ItemType "directory"
+          Copy-Item target\${{ matrix.target }}\release\${{  inputs.package }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} $Out\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }}
+          $hash = Get-FileHash "$Out\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }}" -Algorithm SHA512
+          echo $hash.Hash >> "$Out\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-sha512.txt"
 
       - name: Upload unsigned artifacts to Prod Azure Blob Upload
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
@@ -131,7 +148,7 @@ jobs:
         shell: bash
         id: sas-url
         run: |
-          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{  fromJson(inputs.package_detail).package }}/${{ fromJson(inputs.package_detail).publish.release_channel }}/${{  fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
+          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{  inputs.package }}/${{ inputs.release_channel }}/${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
           echo "sas=$sas" >> $GITHUB_OUTPUT
 
       - name: Retrieve signing secret from Vault
@@ -158,15 +175,15 @@ jobs:
           token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
           signer_repository: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
           sas_url: ${{ steps.sas-url.outputs.sas }}
-          artifact_to_sign: "${{  fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}"
-          blob_dir: "${{  fromJson(inputs.package_detail).package }}/${{ fromJson(inputs.package_detail).publish.release_channel }}"
+          artifact_to_sign: "${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}"
+          blob_dir: "${{  inputs.package }}/${{ inputs.release_channel }}"
 
       - name: Generate signed artifacts checksum windows
         if: inputs.sign_build == 'true'
         shell: pwsh
         run: |
-          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{  fromJson(inputs.package_detail).package }}\${{ fromJson(inputs.package_detail).publish.release_channel }}\${{   fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}" -Algorithm SHA512
-          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{  fromJson(inputs.package_detail).package }}\${{ fromJson(inputs.package_detail).publish.release_channel }}\${{   fromJson(inputs.package_detail).package }}-${{ matrix.target }}-${{  fromJson(inputs.package_detail).toolchain}}-v${{  fromJson(inputs.package_detail).version }}-signed-sha512.txt"
+          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{  inputs.package }}\${{ inputs.release_channel }}\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}" -Algorithm SHA512
+          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{  inputs.package }}\${{ inputs.release_channel }}\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed-sha512.txt"
 
       - name: Upload bin to github artifacts
         uses: actions/upload-artifact@v4
@@ -184,7 +201,7 @@ jobs:
           overwrite: true
 
       - name: Upload signed artifacts to Dev Azure Blob Upload
-        if: inputs.sign_build == 'true' #&& fromJson(inputs.package_detail).publish.release_channel == 'dev'
+        if: inputs.sign_build == 'true' #&& inputs.release_channel == 'dev'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.DEV_ARTIFACTS_CONTAINER }}
@@ -193,7 +210,7 @@ jobs:
           delete_if_exists: true
 
       - name: Upload signed artifacts to Prod Azure Blob Upload
-        if: inputs.sign_build == 'true' #&& fromJson(inputs.package_detail).publish.release_channel == 'prod'
+        if: inputs.sign_build == 'true' #&& inputs.release_channel == 'prod'
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
