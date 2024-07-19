@@ -43,6 +43,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
   CARGO_HTTP_USER_AGENT: "shipyard ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}"
+  DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"
 
 jobs:
   cargo_publish_registry:
@@ -59,7 +60,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.toolchain }}
+      - name: Login to public Registry
+        if: inputs.public_release == 'true'
+        shell: bash
+        run: |
+          cargo login ${{ secrets.CARGO_PUBLIC_REGISTRY_TOKEN }}
       - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v1
+        if: inputs.public_release != 'true'
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
@@ -68,6 +75,25 @@ jobs:
           additional_private_keys: |
             ${{ secrets.FSE_SSH_PRIVATE_KEY }}
             ${{ secrets.VOLUMESIGHT_SSH_PRIVATE_KEY }}
+      - name: Generate token
+        if: inputs.public_release == 'true'
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.ACTIONS_APPROVERS_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_APPROVERS_APP_PRIVATE_KEY }}
+      - name: Tell people about the release
+        if: env.DISCORD_WEBHOOK != '' && inputs.public_release == 'true'
+        uses: Ilshidur/action-discord@master
+        with:
+          args: "Version ${{ steps.read_version.outputs.value }} of ${{ steps.read_name.outputs.value }} is waiting for approval to be published to the public registry crates.io"
+      - name: Approve Release
+        if: inputs.public_release == 'true'
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ steps.generate_token.outputs.token }}
+          approvers: "Publishers"
+          minimum-approvals: 1
       - name: Additional Script
         if: inputs.additional_script != ''
         run: ${{ inputs.additional_script }}
@@ -81,6 +107,12 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
         run: ${{ inputs.custom_cargo_commands }}
       - name: Publish to private registry
+        if: inputs.public_release != 'true'
         shell: bash
         working-directory: ${{ inputs.working_directory }}
         run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }} ${{ inputs.additional_args }}
+      - name: Publish to public registry
+        if: inputs.public_release == 'true'
+        shell: bash
+        working-directory: ${{ inputs.working_directory }}
+        run: cargo publish
