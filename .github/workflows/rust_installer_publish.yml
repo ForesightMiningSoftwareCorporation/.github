@@ -124,7 +124,7 @@ jobs:
       - name: Move to own folder
         shell: pwsh
         run: |
-          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ inputs.package }}_installer\${{ fromJson(inputs.package_detail).publish.release_channel }}" -ItemType "directory"
+          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ inputs.package }}_installer\${{ inputs.release_channel }}" -ItemType "directory"
           Copy-Item ${{ inputs.working_directory }}\installer\${{ inputs.installer_name }} $Out\${{ inputs.installer_name }}
           $hash = Get-FileHash "$Out\${{ inputs.installer_name }}" -Algorithm SHA512
           echo $hash.Hash >> "$Out\${{ inputs.installer_name }}-sha512.txt"
