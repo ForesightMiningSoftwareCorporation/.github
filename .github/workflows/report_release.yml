@@ -56,20 +56,17 @@ jobs:
             VERSION_REF=$(yq -p toml '.package.version' < ${{ inputs.working_directory }}/../Cargo.toml)
           fi
           DATED_NIGHTLY=${{ (inputs.binary_release == 'true' || inputs.installer_release == 'true') && true || false }}
-          if [[ $GITHUB_REF == refs/heads/main ]] ; then
-            RELEASE_CHANNEL=nightly
-            if [ "$DATED_NIGHTLY" = true ] ; then
-              VERSION=$(date +"%Y.%-m.%d")
-            fi
-          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-alpha-$VERSION_REF" ]] ; then
+          if [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-alpha-$VERSION_REF" ]] ; then
             RELEASE_CHANNEL=alpha
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-beta-$VERSION_REF" ]] ; then
             RELEASE_CHANNEL=beta
           elif [[ $GITHUB_REF == "refs/tags/$PACKAGE_REF-prod-$VERSION_REF" ]] ; then
             RELEASE_CHANNEL=prod
           else
-            echo "No matching release channel found for $GITHUB_REF, check that the version in Cargo.toml matches the tag."
-            exit 1
+            RELEASE_CHANNEL=nightly
+            if [ "$DATED_NIGHTLY" = true ] ; then
+              VERSION=$(date +"%Y.%-m.%d")
+            fi
           fi
           echo release_channel=${RELEASE_CHANNEL} >> $GITHUB_OUTPUT
           echo package=${PACKAGE} >> $GITHUB_OUTPUT

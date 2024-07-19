@@ -15,7 +15,7 @@ on:
         type: string
         default: "1.76"
         description: Rust toolchain to install
-      runner:
+      ci_runner:
         type: string
         default: "rust-1-76-scale-set"
       working_directory:
@@ -48,7 +48,7 @@ env:
 jobs:
   cargo_publish_registry:
     name: Release new version to private registry
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ inputs.ci_runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

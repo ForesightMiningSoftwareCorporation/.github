@@ -18,6 +18,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/fslabscli-action@v1
         with:
           token: ${{ steps.generate_token.outputs.token }}
+          version: ${{ vars.FSLABSCLI_VERSION }}
       - id: generate_workflow
         name: Generate updated workflows
         shell: bash
@@ -30,7 +31,7 @@ jobs:
           else
             template_option=""
           fi
-          fslabscli generate-release-workflow --output .github/workflows/test.yml ${template_option} --test-publish-required-disabled --output-release .github/workflows/release_publish.yml
+          fslabscli generate-release-workflow --test-publish-required-disabled --fslabscli-version ${{ vars.FSLABSCLI_VERSION }} ${template_option}
       - id: generate_wix_files
         name: Generate release wix files
         shell: bash
