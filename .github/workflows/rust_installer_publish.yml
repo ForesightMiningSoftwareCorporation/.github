@@ -17,18 +17,18 @@ on:
         description: Upgrade code
         type: string
       guid_prefix:
-        description:  Guid Prefix
+        description: Guid Prefix
         type: string
       sas_expiry:
-        description:  Sas Expiry
+        description: Sas Expiry
         type: string
       sub_apps_download_script:
-        description:  Sub-apps download script
+        description: Sub-apps download script
         type: string
       release_channel:
         description: Release channel of the package
         type: string
-      aplication_name:
+      application_name:
         description: Application name
         type: string
         default: ""
@@ -36,9 +36,6 @@ on:
         description: Application fallback name
         type: string
         default: ""
-      application_name:
-        description: Name of the application
-        type: string
       launcher_blob_dir:
         description: Name of the launcher blob to download
         type: string
@@ -51,7 +48,13 @@ on:
       package_name:
         description: Name of the package blob to download
         type: string
-      installer_blob_name:
+      installer_blob_dir:
+        description: Name of the installer blob to upload
+        type: string
+      installer_name:
+        description: Name of the installer blob to upload
+        type: string
+      installer_signed_name:
         description: Name of the installer blob to upload
         type: string
       sign_build:
@@ -62,8 +65,8 @@ on:
         description: Working directory to run the cargo command
         type: string
         default: "."
-      release_channel:
-        description: Working directory to run the cargo command
+      toolchain:
+        description: Toolchain
         type: string
         default: "."
 
