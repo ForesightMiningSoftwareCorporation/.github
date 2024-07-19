@@ -1,14 +1,10 @@
 on:
   workflow_call:
     inputs:
-      private_registry_release:
+      registry_release:
         type: string
         default: "false"
-        description: "Was the crate released on the private registry"
-      public_registry_release:
-        type: string
-        default: "false"
-        description: "Was the crate released on the public registry"
+        description: "Was the crate released on a registry"
       docker_release:
         type: string
         default: "false"
@@ -29,10 +25,6 @@ on:
         type: string
         default: "."
         description: "The working directory"
-      package_detail:
-        type: string
-        default: "{}"
-        description: "Json encoded string of the package detail as computed by fslabscli"
 
 env:
   DISCORD_WEBHOOK: "${{ secrets.DISCORD_WEBHOOK }}"
@@ -98,22 +90,6 @@ jobs:
           tag_prefix: "${{ inputs.installer_release == 'true' && format('{0}-installer', steps.derive_info.outputs.package) || steps.derive_info.outputs.package }}-${{ steps.derive_info.outputs.release_channel }}-"
           dry_run: "${{ steps.derive_info.outputs.release_channel == 'nightly' && 'false' || 'true' }}"
 
-      - name: Generate Private Registry url
-        id: private_registry_url
-        if: inputs.private_registry_release == 'true'
-        shell: bash
-        run: |
-          url="https://shipyard.rs/${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}/crates/${{ steps.derive_info.outputs.package }}/${{ steps.derive_info.outputs.version }}"
-          echo "value=$url" >> $GITHUB_OUTPUT
-
-      - name: Generate Public Registry url
-        id: public_registry_url
-        if: inputs.public_registry_release == 'true'
-        shell: bash
-        run: |
-          url="https://crates.io/crates/${{ steps.derive_info.outputs.package }}/${{ steps.derive_info.outputs.version }}"
-          echo "value=$url" >> $GITHUB_OUTPUT
-
       - name: Generate Docker URL
         id: docker_registry_url
         if: inputs.docker_release == 'true'
@@ -159,8 +135,6 @@ jobs:
           skipIfReleaseExists: true
           body: |
             ## Releases
-            * Private Registry: ${{ steps.private_registry_url.outputs.value || 'NA' }}
-            * Public Registry: ${{ steps.pubic_registry_url.outputs.value || 'NA' }}
             * Docker: ${{ steps.docker_registry_url.outputs.value || 'NA' }}
             * Binary: ${{ inputs.binary_release == 'true' && 'See artifacts' || 'NA' }}
             * Installer: ${{ inputs.installer_release == 'true' && 'See artifacts' || 'NA' }}
@@ -174,8 +148,6 @@ jobs:
         run: |
           declare -A raw_releases=()
 
-          raw_releases[private_registry]="${{ steps.private_registry_url.outputs.value || 'na' }}|${{ steps.tag_version.outputs.new_tag }}"
-          raw_releases[public_registry]="${{ steps.public_registry_url.outputs.value || 'na' }}|${{ steps.tag_version.outputs.new_tag }}"
           raw_releases[docker]="${{ steps.docker_registry_url.outputs.value || 'na' }}|${{ steps.docker_registry_url.outputs.value }}"
           raw_releases[binary]="${{ inputs.binary_release == 'true' && 'GH Release' || 'na' }}|${{ steps.release.outputs.html_url }}"
           raw_releases[installer]="${{ inputs.installer_release == 'true' && 'GH Release' || 'na' }}|${{ steps.release.outputs.html_url }}"
