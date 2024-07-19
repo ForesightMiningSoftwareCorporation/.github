@@ -13,8 +13,11 @@ on:
         description: Additional arguments to pass to the cargo command
       toolchain:
         type: string
-        default: "1.73"
+        default: "1.76"
         description: Rust toolchain to install
+      runner:
+        type: string
+        default: "rust-1-76-scale-set"
       working_directory:
         type: string
         default: "."
@@ -44,7 +47,7 @@ env:
 jobs:
   cargo_publish_registry:
     name: Release new version to private registry
-    runs-on: "rust-${{ inputs.toolchain }}-scale-set"
+    runs-on: ${{ inputs.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
