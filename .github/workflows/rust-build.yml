@@ -174,38 +174,6 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       package_detail: ${{ inputs.package_detail }}
     secrets: inherit
-  publish_docker:
-    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/docker_publish.yml@package_detail"
-    if: inputs.publish == 'true' && inputs.publish_docker == 'true'
-    with:
-      toolchain: ${{ inputs.toolchain }}
-      working_directory: ${{ inputs.working_directory }}
-      docker_context: ${{ inputs.docker_context }}
-      dockerfile: ${{ inputs.dockerfile }}
-      image: ${{ inputs.docker_image }}
-      registry: ${{ inputs.docker_registry }}
-      package_detail: ${{ inputs.package_detail }}
-    secrets: inherit
-  publish_binary:
-    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/rust_binary_publish.yml@package_detail"
-    if: inputs.publish == 'true' && inputs.publish_binary == 'true'
-    with:
-      toolchain: ${{ inputs.toolchain }}
-      working_directory: ${{ inputs.working_directory }}
-      additional_args: ${{ inputs.additional_args }}
-      sign_build: ${{ inputs.binary_sign_build }}
-      targets: ${{ inputs.binary_targets }}
-      package_detail: ${{ inputs.package_detail }}
-    secrets: inherit
-  publish_installer:
-    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/rust_installer_publish.yml@package_detail"
-    if: inputs.publish == 'true' && inputs.publish_installer == 'true'
-    with:
-      sign_build: ${{ inputs.binary_sign_build }}
-      application_name: ${{ inputs.binary_application_name }}
-      working_directory: ${{ inputs.working_directory }}
-      package_detail: ${{ inputs.package_detail }}
-    secrets: inherit
   publish_npm_napi:
     uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@package_detail"
     if: inputs.publish == 'true' && inputs.publish_npm_napi == 'true'
