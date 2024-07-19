@@ -80,48 +80,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Replace FALLBACK_BINARY
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "{{FALLBACK_BINARY}}"
-          replace: ${{ inputs.application_fallback_name }}
-          include: "${{ inputs.working_directory }}/installer/installer.wxs"
-      - name: Replace APP_PATH_NAME
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "{{APP_PATH_NAME}}"
-          replace: ${{ inputs.application_fallback_name }}
-          include: "${{ inputs.working_directory }}/installer/installer.wxs"
-      - name: Replace APP_CRATE_NAME
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "{{APP_CRATE_NAME}}"
-          replace: ${{ inputs.package }}
-          include: "${{ inputs.working_directory }}/installer/installer.wxs"
-      - name: Replace APP_NAME
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "{{APP_NAME}}"
-          replace: ${{ inputs.application_name }}
-          include: "${{ inputs.working_directory }}/installer/installer.wxs"
-      - name: Replace APP_VERSION
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "{{APP_VERSION}}"
-          replace: ${{ inputs.version }}
-          include: "${{ inputs.working_directory }}/installer/installer.wxs"
-      - name: Replace UPGRADE_CODE
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "{{UPGRADE_CODE}}"
-          replace: ${{ inputs.upgrade_code }}
-          include: "${{ inputs.working_directory }}/installer/installer.wxs"
-      - name: Replace GUID_PREFIX
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "{{GUID_PREFIX}}"
-          replace: ${{ inputs.guid_prefix }}
-          include: "${{ inputs.working_directory }}/installer/installer.wxs"
+      - name: Replace in installer.wxs
+        shell: pwsh
+        run: |
+          $filePath = '${{ inputs.working_directory }}/installer/installer.wxs'
+          (Get-Content $filePath) -replace '{{FALLBACK_BINARY}}', '${{ inputs.application_fallback_name }}' | Set-Content $filePath
+          (Get-Content $filePath) -replace '{{APP_PATH_NAME}}', '${{ inputs.application_fallback_name }}' | Set-Content $filePath
+          (Get-Content $filePath) -replace '{{APP_CRATE_NAME}}', '${{ inputs.package }}' | Set-Content $filePath
+          (Get-Content $filePath) -replace '{{APP_NAME}}', '${{ inputs.application_name }}' | Set-Content $filePath
+          (Get-Content $filePath) -replace '{{APP_VERSION}}', '${{ inputs.version }}' | Set-Content $filePath
+          (Get-Content $filePath) -replace '{{UPGRADE_CODE}}', '${{ inputs.upgrade_code }}' | Set-Content $filePath
+          (Get-Content $filePath) -replace '{{GUID_PREFIX}}', '${{ inputs.guid_prefix }}' | Set-Content $filePath
       - name: Download Launcher, Application and SubApps
         shell: bash
         working-directory: ${{ inputs.working_directory }}/
