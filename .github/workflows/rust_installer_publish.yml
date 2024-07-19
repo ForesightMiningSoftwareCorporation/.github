@@ -7,183 +7,73 @@ on:
         description: Was the installer published
         value: "true"
     inputs:
-      application_name:
+      package:
+        description: Name of the package
         type: string
+      version:
+        description: Version of the package
+        type: string
+      upgrade_code:
+        description: Upgrade code
+        type: string
+      guid_prefix:
+        description:  Guid Prefix
+        type: string
+      sas_expiry:
+        description:  Sas Expiry
+        type: string
+      sub_apps_download_script:
+        description:  Sub-apps download script
+        type: string
+      release_channel:
+        description: Release channel of the package
+        type: string
+      aplication_name:
+        description: Application name
+        type: string
+        default: ""
+      application_fallback_name:
+        description: Application fallback name
+        type: string
+        default: ""
+      application_name:
         description: Name of the application
+        type: string
+      launcher_blob_dir:
+        description: Name of the launcher blob to download
+        type: string
+      launcher_name:
+        description: Name of the launcher blob to download
+        type: string
+      package_blob_dir:
+        description: Name of the package blob to download
+        type: string
+      package_name:
+        description: Name of the package blob to download
+        type: string
+      installer_blob_name:
+        description: Name of the installer blob to upload
+        type: string
       sign_build:
         type: string
         default: "true"
         description: Should the installer be signed
       working_directory:
+        description: Working directory to run the cargo command
         type: string
         default: "."
+      release_channel:
         description: Working directory to run the cargo command
-      package_detail:
         type: string
-        default: "{}"
-        description: "Json encoded string of the package detail as computed by fslabscli"
+        default: "."
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  gather_facts:
-    runs-on: ubuntu-latest
-    outputs:
-      CHANNEL: ${{ steps.channel.outputs.release_channel }}
-      LAUNCHER_APP_NAME: ${{ steps.channel.outputs.release_app_name }}
-      APP_VERSION: ${{ steps.channel.outputs.version }}
-      APP_NAME: ${{ steps.path_name.outputs.app_name }}
-      APP_BLOB_NAME: ${{ steps.path_name.outputs.application_blob_name }}
-      LAUNCHER_VERSION: ${{ steps.read_launcher_version.outputs.value }}
-      LAUNCHER_NAME: ${{ steps.path_name.outputs.launcher_name }}
-      LAUNCHER_BLOB_NAME: ${{ steps.path_name.outputs.launcher_blob_name }}
-      INSTALLER_NAME: ${{ steps.path_name.outputs.installer_name }}
-      INSTALLER_SIGNED_NAME: ${{ steps.path_name.outputs.installer_signed_name }}
-      INSTALLER_BLOB_NAME: ${{ steps.path_name.outputs.installer_blob_name }}
-      INSTALLER_BLOB_DIR: ${{ steps.path_name.outputs.installer_blob_dir }}
-      FALLBACK_BINARY: ${{ steps.path_name.outputs.fallback_binary }}
-      PATH_NAME: ${{ steps.path_name.outputs.path_name }}
-      EXPIRY: ${{ steps.path_name.outputs.expiry }}
-      UPGRADE_CODE: ${{ steps.upgrade_code.outputs.value }}
-      GUID_PREFIX: ${{ steps.guid_prefix.outputs.value }}
-      PACKAGE: ${{ steps.read_app_name.outputs.value }}
-      RELEASE_CHANNEL: ${{ steps.channel.outputs.release_channel }}
-      SUBAPPS: ${{ steps.extract_subapps.outputs.subapps }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: SebRollen/toml-action@v1.0.2
-        name: Read App name
-        id: read_app_name
-        with:
-          file: "${{ inputs.working_directory }}/Cargo.toml"
-          field: "package.name"
-      - uses: SebRollen/toml-action@v1.0.2
-        name: Read App Version
-        id: read_app_version
-        with:
-          file: "${{ inputs.working_directory }}/Cargo.toml"
-          field: "package.version"
-      - uses: SebRollen/toml-action@v1.0.2
-        name: Read Launcher Version
-        id: read_launcher_version
-        with:
-          file: "${{ inputs.working_directory }}/launcher/Cargo.toml"
-          field: "package.version"
-      - name: Derive Release Channel
-        id: channel
-        shell: bash
-        run: |
-          PACKAGE=${{ steps.read_app_name.outputs.value }}
-          VERSION=${{ steps.read_app_version.outputs.value }}
-          RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
-          if [[ $GITHUB_REF == refs/heads/main ]] ; then
-            RELEASE_CHANNEL=nightly
-            RELEASE_APP_NAME="${{ inputs.application_name }} Nightly"
-            VERSION=$(date +"%Y.%-m.%d")
-          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-alpha-$VERSION" ]] ; then
-            RELEASE_CHANNEL=alpha
-            RELEASE_APP_NAME="${{ inputs.application_name }} Alpha"
-          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-beta-$VERSION" ]] ; then
-            RELEASE_CHANNEL=beta
-            RELEASE_APP_NAME="${{ inputs.application_name }} Beta"
-          elif [[ $GITHUB_REF == "refs/tags/$PACKAGE-prod-$VERSION" ]] ; then
-            RELEASE_CHANNEL=prod
-            RELEASE_APP_NAME="${{ inputs.application_name }}"
-          else
-            echo "No matching release channel found for $GITHUB_REF, check that the version in Cargo.toml matches the tag."
-            exit 1
-          fi
-          echo release_channel=${RELEASE_CHANNEL} >> $GITHUB_OUTPUT
-          echo release_app_name=${RELEASE_APP_NAME} >> $GITHUB_OUTPUT
-          echo version=${VERSION} >> $GITHUB_OUTPUT
-      - name: Derive path name
-        id: path_name
-        shell: bash
-        env:
-          DEFAULT_TOOLCHAIN: stable
-          TARGET: x86_64-pc-windows-msvc
-        run: |
-          toolchain=$(yq -p toml '.toolchain.channel' < rust-toolchain.toml || echo '$DEFAULT_TOOLCHAIN')
-          input_string="${{ steps.channel.outputs.release_app_name }}"
-          input_version="${{ steps.channel.outputs.version }}"
-          path_name="${input_string// /_}"
-          app_version="${input_version//./_}"
-          fallback_binary="${path_name}"
-          app_name="${{ steps.read_app_name.outputs.value }}-${{ env.TARGET }}-${toolchain}-v${{ steps.channel.outputs.version }}-signed.exe"
-          launcher_name="${{ steps.read_app_name.outputs.value }}_launcher-${{ env.TARGET }}-${toolchain}-v${{ steps.read_launcher_version.outputs.value }}-signed.exe"
-          installer_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.channel.outputs.version }}.msi"
-          installer_signed_name="${path_name}.${{ steps.read_launcher_version.outputs.value }}-${{ steps.channel.outputs.version }}-signed.msi"
-          echo "path_name=$path_name" >> $GITHUB_OUTPUT
-          echo "fallback_binary=$fallback_binary" >> $GITHUB_OUTPUT
-          echo "app_name=$app_name" >> $GITHUB_OUTPUT
-          echo "launcher_name=$launcher_name" >> $GITHUB_OUTPUT
-          echo "installer_name=$installer_name" >> $GITHUB_OUTPUT
-          echo "installer_signed_name=$installer_signed_name" >> $GITHUB_OUTPUT
-          echo "application_blob_name=${{ steps.read_app_name.outputs.value }}/${{ steps.channel.outputs.release_channel }}/$app_name" >> $GITHUB_OUTPUT
-          echo "launcher_blob_name=${{ steps.read_app_name.outputs.value }}_launcher/${{ steps.channel.outputs.release_channel }}/$launcher_name" >> $GITHUB_OUTPUT
-          echo "installer_blob_name=${{ steps.read_app_name.outputs.value }}_installer/${{ steps.channel.outputs.release_channel }}/$installer_name" >> $GITHUB_OUTPUT
-          echo "installer_blob_dir=${{ steps.read_app_name.outputs.value }}_installer/${{ steps.channel.outputs.release_channel }}" >> $GITHUB_OUTPUT
-          echo "expiry=$(date -u -d "120 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
-      - uses: SebRollen/toml-action@v1.0.2
-        name: Upgrade Code
-        id: upgrade_code
-        with:
-          file: "${{ inputs.working_directory }}/Cargo.toml"
-          field: "package.metadata.fslabs.publish.binary.installer.${{ steps.channel.outputs.release_channel }}.upgrade_code"
-      - uses: SebRollen/toml-action@v1.0.2
-        name: Guid Prefix
-        id: guid_prefix
-        with:
-          file: "${{ inputs.working_directory }}/Cargo.toml"
-          field: "package.metadata.fslabs.publish.binary.installer.${{ steps.channel.outputs.release_channel }}.guid_prefix"
-      - name: Executables to download
-        id: extract_subapps
-        shell: bash
-        run: |
-          # Get the subapps information
-          SUB_APPS_OUTPUT=$(yq ".package.metadata.fslabs.publish.binary.installer.sub_apps" -r ${{ inputs.working_directory }}/Cargo.toml -oj | jq -c .)
-          if [ "$SUB_APPS_OUTPUT" == "null" ]; then
-            SUB_APPS_OUTPUT="{}"
-          fi
-          # Function to extract semver
-          extract_semver() {
-            echo "$1" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+'
-          }
-
-          get_latest_blob() {
-            local app_name=$1
-            local version_prefix="${2/./\\.}.*"
-
-            local blobs=$(az storage blob list --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --prefix "$app_name/${{ steps.channel.outputs.release_channel }}/$app_name" --query "[].name" -o tsv)
-
-            declare -A blob_versions
-
-            for blob in $blobs; do
-              local version=$(extract_semver "$blob")
-              if [[ -n $version ]] && [[ "$version" =~ $version_prefix ]] && [[ "$blob" =~ .*signed\.exe ]]; then
-                blob_versions[$version]=$blob
-              fi
-            done
-            # Sort versions and get the latest one
-            local latest_version=$(printf "%s\n" "${!blob_versions[@]}" | sort -V | tail -n 1)
-            echo "${blob_versions[$latest_version]}"
-          }
-
-          echo 'subapps<<EOF' >> $GITHUB_OUTPUT
-          echo $SUB_APPS_OUTPUT | jq -r 'to_entries[] | "\(.key):\(.value.version)"' | while IFS=: read -r key prefix_version; do
-            latest_blob=$(get_latest_blob $key "$prefix_version")
-            if [[ -n $latest_blob ]]; then
-              echo "az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name $latest_blob --file target/x86_64-pc-windows-msvc/release/$key.exe" >> $GITHUB_OUTPUT
-            fi
-          done
-          echo 'EOF' >> $GITHUB_OUTPUT
-  generate_wxs:
-    runs-on: ubuntu-latest
-    needs:
-      - gather_facts
+  build_and_sign_installer:
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -191,61 +81,44 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{FALLBACK_BINARY}}"
-          replace: ${{ needs.gather_facts.outputs.FALLBACK_BINARY }}
+          replace: ${{ inputs.application_fallback_name }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_PATH_NAME
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_PATH_NAME}}"
-          replace: ${{ needs.gather_facts.outputs.PATH_NAME }}
+          replace: ${{ inputs.application_fallback_name }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_CRATE_NAME
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_CRATE_NAME}}"
-          replace: ${{ needs.gather_facts.outputs.PACKAGE }}
+          replace: ${{ inputs.package }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_NAME
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_NAME}}"
-          replace: ${{ needs.gather_facts.outputs.LAUNCHER_APP_NAME }}
+          replace: ${{ inputs.application_name }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace APP_VERSION
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{APP_VERSION}}"
-          replace: ${{ needs.gather_facts.outputs.APP_VERSION }}
+          replace: ${{ inputs.version }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace UPGRADE_CODE
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{UPGRADE_CODE}}"
-          replace: ${{ needs.gather_facts.outputs.UPGRADE_CODE }}
+          replace: ${{ inputs.upgrade_code }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
       - name: Replace GUID_PREFIX
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "{{GUID_PREFIX}}"
-          replace: ${{ needs.gather_facts.outputs.GUID_PREFIX }}
+          replace: ${{ inputs.guid_prefix }}
           include: "${{ inputs.working_directory }}/installer/installer.wxs"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
-          path: ${{ inputs.working_directory }}/installer/installer.wxs
-  package_installer:
-    runs-on: windows-latest
-    needs:
-      - gather_facts
-      - generate_wxs
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Download WXS
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.gather_facts.outputs.PATH_NAME }}-installer.wxs
-          path: ${{ inputs.working_directory }}/installer
       - name: Download Launcher, Application and SubApps
         shell: bash
         working-directory: ${{ inputs.working_directory }}/
@@ -254,9 +127,9 @@ jobs:
         run: |
           out=target/x86_64-pc-windows-msvc/release
           mkdir -p $out
-          az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.LAUNCHER_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}_launcher.exe
-          az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.APP_BLOB_NAME }} --file $out/${{ needs.gather_facts.outputs.PACKAGE }}.exe
-          ${{ needs.gather_facts.outputs.SUBAPPS }}
+          az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ inputs.launcher_blob_dir }}/${{ inputs.launcher_name }}  --file $out/${{ inputs.package }}_launcher.exe
+          az storage blob download --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ inputs.package_blob_dir }}/${{ inputs.package_name }}  --file $out/${{ inputs.package }}.exe
+          ${{ inputs.sub_apps_download_script }}
 
       - name: Install Wix Toolset
         working-directory: ${{ inputs.working_directory }}/installer
@@ -274,15 +147,15 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working_directory }}/installer
         run: |
-          ./wix311-binaries/light -sice:ICE91 -ext WixUIExtension -cultures:en-us installer.wixobj -out ${{ needs.gather_facts.outputs.INSTALLER_NAME }}
+          ./wix311-binaries/light -sice:ICE91 -ext WixUIExtension -cultures:en-us installer.wixobj -out ${{ inputs.installer_name }}
 
       - name: Move to own folder
         shell: pwsh
         run: |
-          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ needs.gather_facts.outputs.PACKAGE }}_installer\${{ fromJson(inputs.package_detail).publish.release_channel }}" -ItemType "directory"
-          Copy-Item ${{ inputs.working_directory }}\installer\${{ needs.gather_facts.outputs.INSTALLER_NAME }} $Out\${{ needs.gather_facts.outputs.INSTALLER_NAME }}
-          $hash = Get-FileHash "$Out\${{ needs.gather_facts.outputs.INSTALLER_NAME }}" -Algorithm SHA512
-          echo $hash.Hash >> "$Out\${{ needs.gather_facts.outputs.INSTALLER_NAME }}-sha512.txt"
+          $Out = New-Item -Path "${{ runner.temp }}\bin_output\${{ inputs.package }}_installer\${{ fromJson(inputs.package_detail).publish.release_channel }}" -ItemType "directory"
+          Copy-Item ${{ inputs.working_directory }}\installer\${{ inputs.installer_name }} $Out\${{ inputs.installer_name }}
+          $hash = Get-FileHash "$Out\${{ inputs.installer_name }}" -Algorithm SHA512
+          echo $hash.Hash >> "$Out\${{ inputs.installer_name }}-sha512.txt"
 
       - name: Upload unsigned installer to azure
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
@@ -296,7 +169,7 @@ jobs:
         shell: bash
         id: sas-url
         run: |
-          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ needs.gather_facts.outputs.INSTALLER_BLOB_NAME }} --permissions r --expiry ${{ needs.gather_facts.outputs.EXPIRY }} --https-only --full-uri --output tsv)
+          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{ inputs.installer_blob_dir }}/${{ inputs.installer_name }}  --permissions r --expiry ${{ inputs.sas_expiry }} --https-only --full-uri --output tsv)
           echo "sas=$sas" >> $GITHUB_OUTPUT
 
       - name: Retrieve signing secret from Vault
@@ -321,13 +194,13 @@ jobs:
           signer_repository: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
           sas_url: ${{ steps.sas-url.outputs.sas }}
           artifact_to_sign: ${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}
-          blob_dir: ${{ needs.gather_facts.outputs.INSTALLER_BLOB_DIR }}
+          blob_dir: ${{ inputs.installer_blob_dir }}
 
       - name: Generate signed artifacts checksum windows
         shell: pwsh
         run: |
-          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ needs.gather_facts.outputs.INSTALLER_BLOB_DIR }}\${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}" -Algorithm SHA512
-          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ needs.gather_facts.outputs.INSTALLER_BLOB_DIR }}\${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}-sha512.txt"
+          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ inputs.installer_blob_dir }}\${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}" -Algorithm SHA512
+          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ inputs.installer_blob_dir }}\${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}-sha512.txt"
 
       - name: Upload signed artifacts to Azure Blob Upload
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
