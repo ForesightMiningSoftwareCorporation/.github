@@ -174,15 +174,6 @@ jobs:
       custom_cargo_commands: ${{ inputs.custom_cargo_commands }}
       package_detail: ${{ inputs.package_detail }}
     secrets: inherit
-  publish_npm_napi:
-    uses: "ForesightMiningSoftwareCorporation/github/.github/workflows/npm-napi-release.yml@package_detail"
-    if: inputs.publish == 'true' && inputs.publish_npm_napi == 'true'
-    with:
-      working_directory: ${{ inputs.working_directory }}
-      toolchain: ${{ inputs.toolchain }}
-      with_napi: ${{ inputs.with_napi }}
-      package_detail: ${{ inputs.package_detail }}
-    secrets: inherit
   report_release:
     needs:
       - publish_private_registry
