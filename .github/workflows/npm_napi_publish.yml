@@ -5,6 +5,9 @@ on:
         description: Was the crate released
         value: ${{ jobs.create_release_npm.outputs.released }}
     inputs:
+      package:
+        description: Name of the package
+        type: string
       working_directory:
         type: string
         default: ""
@@ -94,6 +97,9 @@ jobs:
       - derive_info
       - build_artifacts_rust
     steps:
+      - name: Set start time as env variable
+        id: start_time
+        run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
       - name: Git checkout
         uses: actions/checkout@v4
 
@@ -141,3 +147,34 @@ jobs:
           fi
           echo "released=$released" >> $GITHUB_OUTPUT
         working-directory: ${{ inputs.working_directory }}
+
+      - name: Write outputs to file
+        shell: bash
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          tee -a ${{ inputs.package }}-npm-napi-publish.json <<EOF
+          {
+            "name": "${{ inputs.package }}",
+            "start_time": "${{ steps.start_time.outputs.value }}",
+            "end_time": "$(date +'%s')000",
+            "working_directory": "${{ inputs.working_directory }}",
+            "type": npm-napi-publish",
+            "server_url": "${{ github.server_url }}",
+            "repository": "${{ github.repository }}",
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "actor": "${{ github.actor }}",
+            "event_name": "${{ github.event_name }}",
+            "outputs": {
+              "released": {
+                "value": true,
+              }
+            }
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fslabs__publishing__${{ github.run_id }}__${{ github.run_attempt }}__${{ inputs.package }}-npm-napi-publish
+          path: ${{ runner.temp }}/${{ inputs.package }}-npm-napi-publish.json

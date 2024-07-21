@@ -50,6 +50,9 @@ jobs:
     name: Release new version to private registry
     runs-on: ${{ inputs.ci_runner }}
     steps:
+      - name: Set start time as env variable
+        id: start_time
+        run: echo "value=$(date +'%s')000" >> $GITHUB_OUTPUT
       - name: Checkout
         uses: actions/checkout@v4
       - name: Cache Dependencies
@@ -116,3 +119,33 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.working_directory }}
         run: cargo publish
+      - name: Write outputs to file
+        shell: bash
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          tee -a ${{ inputs.package }}-rust-registry-publish.json <<EOF
+          {
+            "name": "${{ inputs.package }}",
+            "start_time": "${{ steps.start_time.outputs.value }}",
+            "end_time": "$(date +'%s')000",
+            "working_directory": "${{ inputs.working_directory }}",
+            "type": "rust-registry-publish",
+            "server_url": "${{ github.server_url }}",
+            "repository": "${{ github.repository }}",
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "actor": "${{ github.actor }}",
+            "event_name": "${{ github.event_name }}",
+            "outputs": {
+              "released": {
+                "value": true,
+              }
+            }
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fslabs__publishing__${{ github.run_id }}__${{ github.run_attempt }}__${{ inputs.package }}-rust-registry-publish
+          path: ${{ runner.temp }}/${{ inputs.package }}-rust-registry-publish.json
