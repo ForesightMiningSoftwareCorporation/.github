@@ -160,7 +160,6 @@ jobs:
           path: github
           role: whirlpool-installer
           secrets: |
-            kv-v2/data/whirlpool/signer PAT_TOKEN | WHIRLPOOL_SIGNER_PAT_TOKEN ;
             kv-v2/data/whirlpool/signer APP_ID | WHIRLPOOL_SIGNER_APP_ID ;
             kv-v2/data/whirlpool/signer APP_PRIVATE_KEY | WHIRLPOOL_SIGNER_APP_PRIVATE_KEY ;
             kv-v2/data/whirlpool/signer APP_INSTALLATION_ID | WHIRLPOOL_SIGNER_APP_INSTALLATION_ID ;
@@ -180,8 +179,7 @@ jobs:
         id: signer-workflow
         if: inputs.sign_build == 'true'
         with:
-          #token: ${{ steps.generate_token.outputs.token }}
-          token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
+          token: ${{ steps.generate_token.outputs.token }}
           signer_repository: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
           sas_url: ${{ steps.sas-url.outputs.sas }}
           artifact_to_sign: "${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}"
