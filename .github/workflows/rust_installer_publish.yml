@@ -168,14 +168,14 @@ jobs:
           token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
           signer_repository: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
           sas_url: ${{ steps.sas-url.outputs.sas }}
-          artifact_to_sign: ${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}
+          artifact_to_sign: ${{ inputs.installer_signed_name }}
           blob_dir: ${{ inputs.installer_blob_dir }}
 
       - name: Generate signed artifacts checksum windows
         shell: pwsh
         run: |
-          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ inputs.installer_blob_dir }}\${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}" -Algorithm SHA512
-          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ inputs.installer_blob_dir }}\${{ needs.gather_facts.outputs.INSTALLER_SIGNED_NAME }}-sha512.txt"
+          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{ inputs.installer_blob_dir }}\${{ inputs.installer_signed_name }}" -Algorithm SHA512
+          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{ inputs.installer_blob_dir }}\${{ inputs.installer_signed_name }}-sha512.txt"
 
       - name: Upload signed artifacts to Azure Blob Upload
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2.2.1
