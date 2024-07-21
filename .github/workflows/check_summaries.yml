@@ -35,6 +35,7 @@ jobs:
         run: |
           fslabscli summaries \
             -w ${{ steps.download.outputs.download-path }} \
+            --run-type=${{ inputs.run_type }} \
             --output $GITHUB_STEP_SUMMARY \
             --github-token=${{ steps.generate_token.outputs.token }} \
             --github-event-name=${{ github.event_name }} \
