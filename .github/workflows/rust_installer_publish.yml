@@ -156,16 +156,26 @@ jobs:
           path: github
           role: whirlpool-installer
           secrets: |
-            kv-v2/data/whirlpool/signer PAT_TOKEN | WHIRLPOOL_SIGNER_PAT_TOKEN ;
+            kv-v2/data/whirlpool/signer APP_ID | WHIRLPOOL_SIGNER_APP_ID ;
+            kv-v2/data/whirlpool/signer APP_PRIVATE_KEY | WHIRLPOOL_SIGNER_APP_PRIVATE_KEY ;
+            kv-v2/data/whirlpool/signer APP_INSTALLATION_ID | WHIRLPOOL_SIGNER_APP_INSTALLATION_ID ;
             kv-v2/data/whirlpool/signer REPOSITORY | WHIRLPOOL_SIGNER_REPOSITORY ;
 
-      - run: npm install adm-zip
+      - id: generate_token
+        name: Generate token
+        uses: tibdex/github-app-token@v2.1.0
+        with:
+          app_id: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_APP_ID }}
+          private_key: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_APP_PRIVATE_KEY }}
+          installation_retrieval_mode: id
+          installation_retrieval_payload: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_APP_INSTALLATION_ID }}
+
       - name: Trigger signer workflow
         uses: ForesightMiningSoftwareCorporation/action-trigger-signer-workflow@main
         id: signer-workflow
         if: inputs.sign_build == 'true'
         with:
-          token: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_PAT_TOKEN }}
+          token: ${{ steps.generate_token.outputs.token }}
           signer_repository: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
           sas_url: ${{ steps.sas-url.outputs.sas }}
           artifact_to_sign: ${{ inputs.installer_signed_name }}
