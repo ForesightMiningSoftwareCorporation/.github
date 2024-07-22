@@ -71,7 +71,7 @@ runs:
 
     - name: Install Linux Packages
       if: ${{ steps.check-version-exists.outputs.exists == 'false' && inputs.additional_packages != '' && startsWith(inputs.runner_os, 'ubuntu-latest') }}
-      run: sudo apt-get install -yq --no-install-recommends ${{ inputs.additional_packages }}
+      run: sudo apt-get update && sudo apt-get install -yq --no-install-recommends ${{ inputs.additional_packages }}
       shell: bash
       working-directory: ${{ inputs.working_directory }}
 

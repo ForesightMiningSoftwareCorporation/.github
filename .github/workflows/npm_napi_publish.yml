@@ -72,7 +72,7 @@ jobs:
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
 
       - name: Build rust package
-        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-napi-artifact@v2
+        uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-napi-artifact@v3.0.0
         with:
           runner_os: ${{ matrix.os.name }}
           runner_arch: ${{ matrix.os.arch }}
