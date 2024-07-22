@@ -243,9 +243,7 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}",
             "outputs": {
-              "released": {
-                "value": true,
-              }
+              "released": true
             }
           }
           EOF
