@@ -21,7 +21,7 @@ jobs:
       - name: Build & Push
         uses: docker/build-push-action@v3
         with:
-          context: docker/napi_builder
+          context: docker/napi
           push: true
           tags: |
             ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:latest
