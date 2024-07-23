@@ -8,6 +8,9 @@ on:
       package:
         description: Name of the package
         type: string
+      version:
+        description: Version of the package
+        type: string
       working_directory:
         type: string
         default: ""
@@ -167,7 +170,8 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}",
             "outputs": {
-              "released": true
+              "released": ${{ steps.publish.outcome == 'success' && true || false }},
+              "version": "${{ inputs.version }}"
             }
           }
           EOF

@@ -218,12 +218,14 @@ jobs:
 
       - name: Upload signed artifacts to Prod Azure Blob Upload
         if: inputs.sign_build == 'true' #&& inputs.release_channel == 'prod'
+        id: upload
         uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
         with:
           container_name: ${{ vars.ARTIFACTS_CONTAINER }}
           connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
           source_folder: ${{ runner.temp }}/signed_artifacts
           delete_if_exists: true
+
       - name: Write outputs to file
         shell: bash
         if: always()
@@ -243,7 +245,8 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}",
             "outputs": {
-              "released": true
+              "released": ${{ steps.upload.outcome == 'success' && true || false }},
+              "version": "${{ inputs.version }}"
             }
           }
           EOF

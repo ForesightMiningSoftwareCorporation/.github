@@ -8,6 +8,9 @@ on:
       package:
         description: Name of the package
         type: string
+      version:
+        description: Version of the package
+        type: string
       working_directory:
         type: string
         description: "Binary to build"
@@ -105,6 +108,7 @@ jobs:
 
       - name: Build & Push
         uses: docker/build-push-action@v3
+        id: push
         with:
           context: ${{ inputs.context == 'default-docker-context-replace-me' && inputs.working_directory || inputs.context }}
           push: true
@@ -132,7 +136,7 @@ jobs:
             "start_time": "${{ steps.start_time.outputs.value }}",
             "end_time": "$(date +'%s')000",
             "working_directory": "${{ inputs.working_directory }}",
-            "type": docker-publish",
+            "type": "docker-publish",
             "server_url": "${{ github.server_url }}",
             "repository": "${{ github.repository }}",
             "run_id": "${{ github.run_id }}",
@@ -140,7 +144,8 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}",
             "outputs": {
-              "released": true
+              "released": ${{ steps.push.outcome == 'success' && true || false }},
+              "version": "${{ inputs.version }}"
             }
           }
           EOF

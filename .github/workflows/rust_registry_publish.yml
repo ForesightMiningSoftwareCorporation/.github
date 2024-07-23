@@ -10,6 +10,9 @@ on:
       package:
         description: Name of the package
         type: string
+      version:
+        description: Version of the package
+        type: string
       additional_args:
         type: string
         default: ""
@@ -114,11 +117,13 @@ jobs:
         run: ${{ inputs.custom_cargo_commands }}
       - name: Publish to private registry
         if: inputs.public_release != 'true'
+        id: private_release
         shell: bash
         working-directory: ${{ inputs.working_directory }}
         run: cargo publish --registry ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }} ${{ inputs.additional_args }}
       - name: Publish to public registry
         if: inputs.public_release == 'true'
+        id: public_release
         shell: bash
         working-directory: ${{ inputs.working_directory }}
         run: cargo publish
@@ -141,7 +146,8 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}",
             "outputs": {
-              "released": true
+              "released": ${{ (steps.public_release.outcome == 'success' && true || false) || (steps.private_release.outcome == 'success' && true || false) }},
+              "version": "${{ inputs.version }}"
             }
           }
           EOF

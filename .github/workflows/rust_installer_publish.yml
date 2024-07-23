@@ -197,6 +197,7 @@ jobs:
 
       - name: Upload signed bin to github artifacts
         if: inputs.sign_build == 'true'
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: release-installer-signed
@@ -221,7 +222,8 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}",
             "outputs": {
-              "released": true
+              "released": ${{ steps.upload.outcome == 'success' && true || false }},
+              "version": "${{ inputs.version }}"
             }
           }
           EOF
