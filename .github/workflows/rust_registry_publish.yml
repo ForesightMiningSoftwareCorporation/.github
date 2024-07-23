@@ -10,6 +10,9 @@ on:
       package:
         description: Name of the package
         type: string
+      version:
+        description: Version of the package
+        type: string
       additional_args:
         type: string
         default: ""
@@ -141,7 +144,8 @@ jobs:
             "actor": "${{ github.actor }}",
             "event_name": "${{ github.event_name }}",
             "outputs": {
-              "released": true
+              "released": true,
+              "version": "${{ inputs.version }}"
             }
           }
           EOF
