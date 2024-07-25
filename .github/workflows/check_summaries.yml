@@ -9,6 +9,9 @@ on:
         type: string
         default: "checks"
         description: "Type of run (`checks` or `publishing`)"
+      fslabscli_version:
+        type: string
+        description: "Fslabscli version"
 jobs:
   results:
     name: ${{ inputs.run_type }} summaries
@@ -24,6 +27,7 @@ jobs:
         uses: ForesightMiningSoftwareCorporation/fslabscli-action@v1
         with:
           token: ${{ steps.generate_token.outputs.token }}
+          version: ${{ inputs.fslabscli_version }}
       - uses: actions/download-artifact@v4
         id: download
         with:
