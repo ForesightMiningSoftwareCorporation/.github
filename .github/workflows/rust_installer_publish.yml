@@ -224,7 +224,8 @@ jobs:
             "event_name": "${{ github.event_name }}",
             "outputs": {
               "released": ${{ steps.upload.outcome == 'success' && true || false }},
-              "version": "${{ inputs.version }}"
+              "version": "${{ inputs.version }}",
+              "sha": "${{ github.sha }}"
             }
           }
           EOF
