@@ -201,9 +201,10 @@ jobs:
         id: upload
         uses: actions/upload-artifact@v4
         with:
-          name: release-installer-signed
+          name: release-installer-signed-${{ inputs.package }}
           path: ${{ runner.temp }}/signed_artifacts
           overwrite: true
+
       - name: Write outputs to file
         shell: bash
         if: always()

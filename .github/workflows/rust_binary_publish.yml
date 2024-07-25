@@ -193,18 +193,11 @@ jobs:
           $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{  inputs.package }}\${{ inputs.release_channel }}\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}" -Algorithm SHA512
           echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{  inputs.package }}\${{ inputs.release_channel }}\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed-sha512.txt"
 
-      - name: Upload bin to github artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-binaries-unsigned-${{ matrix.target }}
-          path: ${{ runner.temp }}/bin_output
-          overwrite: true
-
       - name: Upload signed bin to github artifacts
         if: inputs.sign_build == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: release-binaries-signed-${{ matrix.target }}
+          name: release-binaries-signed-${{ inputs.package }}-${{ matrix.target }}
           path: ${{ runner.temp }}/signed_artifacts
           overwrite: true
 
