@@ -31,7 +31,7 @@ jobs:
           else
             template_option=""
           fi
-          fslabscli generate-release-workflow --test-publish-required-disabled --fslabscli-version ${{ vars.FSLABSCLI_VERSION }} ${template_option}
+          fslabscli generate-release-workflow --test-publish-required-disabled --fslabscli-version ${{ vars.FSLABSCLI_VERSION }} --build-workflow-version ${{ vars.BUILD_WORKFLOW_VERSION }} ${template_option}
       - id: generate_wix_files
         name: Generate release wix files
         shell: bash
