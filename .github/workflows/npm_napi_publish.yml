@@ -67,12 +67,15 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v4
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v2
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v3.2.0
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+          cos_username: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_USERNAME }}
+          cos_password: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_PASSWORD }}
+          cos_tenant: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_TENANT }}
 
       - name: Build rust package
         uses: ForesightMiningSoftwareCorporation/github/.github/actions/build-napi-artifact@v3.0.0
@@ -129,12 +132,15 @@ jobs:
         run: yarn artifacts
         working-directory: ${{ inputs.working_directory }}
 
-      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v2
+      - uses: ForesightMiningSoftwareCorporation/github/.github/actions/login-private-registry@v3.2.0
         with:
           private_key: ${{ secrets.CARGO_PRIVATE_REGISTRY_SSH_PRIVATE_KEY }}
           host: ${{ secrets.CARGO_PRIVATE_REGISTRY_HOST }}
           name: ${{ secrets.CARGO_PRIVATE_REGISTRY_NAME }}
           token: ${{ secrets.CARGO_PRIVATE_REGISTRY_TOKEN }}
+          cos_username: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_USERNAME }}
+          cos_password: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_PASSWORD }}
+          cos_tenant: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_TENANT }}
 
       - name: Publish
         id: publish

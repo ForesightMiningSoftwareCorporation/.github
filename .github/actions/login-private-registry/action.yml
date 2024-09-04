@@ -15,6 +15,15 @@ inputs:
   additional_private_keys:
     default: ""
     description: "Additional private keys to add to the ssh-agent"
+  cos_username:
+    default: ""
+    description: "Username to connect to cos"
+  cos_password:
+    default: ""
+    description: "Password to connect to cos"
+  cos_tenant:
+    default: ""
+    description: "Tenant to connect to cos"
   host:
     default: ""
     description: "DEPRECATED"
@@ -56,10 +65,16 @@ runs:
         echo "  insteadOf = https://github.com/orica-digital" >> $HOME/.gitconfig
         echo '[url "ssh://git@github.com/orica-digital"]' >> $HOME/.gitconfig
         echo "  insteadOf = https://git@github.com/orica-digital" >> $HOME/.gitconfig
-    - name: Login to private registry
+    - name: Login to shipyard private registry
       shell: bash
       run: cargo login --registry ${{ inputs.name }} ${{ inputs.token }}
 
+    - name: Login to orica cosmos private registry
+      shell: bash
+      if: inputs.cos_username != '' && inputs.cos_password != '' && inputs.cos_tenant != ''
+      run:
+        az login --service-principal --username ${{ inputs.cos_username }} --password ${{ inputs.cos_password }} --tenant ${{ inputs.cos_tenant }}
+        az account get-access-token --query "join(' ', ['Bearer', accessToken])" --output tsv | cargo login --registry cos
     - name: Login to our private npm registry
       uses: actions/setup-node@v4
       with:
