@@ -47,6 +47,7 @@ jobs:
           cos_username: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_USERNAME }}
           cos_password: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_PASSWORD }}
           cos_tenant: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_TENANT }}
+          cos_subscription: ${{ secrets.CARGO_COS_PRIVATE_REGISTRY_SUBSCRIPTION }}
       - name: Run UpdateCli Autodiscovery
         shell: bash
         run: |
