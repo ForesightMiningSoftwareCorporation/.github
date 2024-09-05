@@ -78,11 +78,11 @@ runs:
       with:
         creds: '{"clientId": "${{ inputs.cos_username }}", "clientSecret": "${{ inputs.cos_password }}", "tenantId": "${{ inputs.cos_tenant }}", "subscriptionId": "${{ inputs.cos_subscription }}"}'
     - name: Login to orica cosmos private registry
-      uses: azure/cli@v2
+      shell: bash
       if: inputs.cos_username != '' && inputs.cos_password != '' && inputs.cos_tenant != '' && inputs.cos_subscription != ''
-      with:
-        inlineScript: |
-          az account get-access-token --query "join(' ', ['Bearer', accessToken])" --output tsv | cargo login --registry cos
+      run: |
+        az login --service-principal --username ${{ inputs.cos_username }} --password ${{ inputs.cos_password }} --tenant ${{ inputs.cos_tenant }}
+        az account get-access-token --query "join(' ', ['Bearer', accessToken])" --output tsv | cargo login --registry cos
     - name: Login to our private npm registry
       uses: actions/setup-node@v4
       with:

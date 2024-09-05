@@ -3,7 +3,17 @@ FROM ghcr.io/actions/actions-runner:$GITHUB_RUNNER_VERSION
 ARG RUST_VERSION=1.77
 ARG SCCACHE_VERSION=0.7.7
 
-
+RUN sudo apt-get update && sudo apt-get install -y \
+    apt-transport-https ca-certificates curl gnupg lsb-release
+RUN sudo mkdir -p /etc/apt/keyrings
+RUN curl -sLS https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/microsoft.gpg > /dev/null
+RUN sudo chmod go+r /etc/apt/keyrings/microsoft.gpg
+RUN AZ_DIST=$(lsb_release -cs) echo 'Types: deb\n\
+URIs: https://packages.microsoft.com/repos/azure-cli/\n\
+Suites: jammy\n\
+Components: main\n\
+Architectures: amd64\n\
+Signed-by: /etc/apt/keyrings/microsoft.gpg' | sudo tee /etc/apt/sources.list.d/azure-cli.sources
 RUN sudo apt-get update && sudo apt-get install -y \
     software-properties-common \
     build-essential \
@@ -52,6 +62,7 @@ RUN sudo apt-get update && sudo apt-get install -y \
     librust-atk-dev \
     jq \
     libclang-dev \
+    azure-cli \
     clang
 
 # Install Node v20 and AWS CDK
@@ -78,6 +89,8 @@ RUN DPKG_ARCH="$(dpkg --print-architecture)" \
   && YQ_VERSION=$(curl -sL -H "Accept: application/vnd.github+json" https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r '.tag_name' | sed 's/^v//g') \
   && YQ_DOWNLOAD_URL=$(curl -sL -H "Accept: application/vnd.github+json" https://api.github.com/repos/mikefarah/yq/releases/latest | jq ".assets[] | select(.name == \"yq_linux_${DPKG_ARCH}.tar.gz\")" | jq -r '.browser_download_url') \
   && ( curl -s ${YQ_DOWNLOAD_URL} -L -o /tmp/yq.tar.gz && tar -xzf /tmp/yq.tar.gz -C /tmp && sudo mv /tmp/yq_linux_${DPKG_ARCH} /usr/local/bin/yq)
+
+# Install
 
 RUN rustup component add clippy rustfmt
 RUN cargo install --locked cargo-deny
