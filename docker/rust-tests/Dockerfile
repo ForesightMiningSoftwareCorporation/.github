@@ -91,7 +91,7 @@ RUN DPKG_ARCH="$(dpkg --print-architecture)" \
   && ( curl -s ${YQ_DOWNLOAD_URL} -L -o /tmp/yq.tar.gz && tar -xzf /tmp/yq.tar.gz -C /tmp && sudo mv /tmp/yq_linux_${DPKG_ARCH} /usr/local/bin/yq)
 
 # Install
-
+RUN rustup default ${RUST_VERSION}
 RUN rustup component add clippy rustfmt
 RUN cargo install --locked cargo-deny
 RUN cargo install cargo-machete
