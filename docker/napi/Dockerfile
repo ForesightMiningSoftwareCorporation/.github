@@ -8,7 +8,6 @@ ENV PATH="/aarch64-linux-musl-cross/bin:/usr/local/cargo/bin/rustup:/root/.cargo
 
 RUN apk add --update --no-cache nodejs yarn bash clang wget cmake git openssh make perl pkgconfig openssl-dev curl gcc musl-dev linux-headers eudev-dev alsa-lib-dev libxcb-dev gtk+3.0-dev
 
-
 WORKDIR /tmp
 
 RUN curl -fLO "https://www.openssl.org/source/openssl-1.1.1m.tar.gz"

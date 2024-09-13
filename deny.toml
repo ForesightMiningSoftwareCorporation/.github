@@ -1,8 +1,5 @@
 [licenses]
-allow-osi-fsf-free = "neither"
-copyleft = "warn"
-default = "deny"
-unlicensed = "allow"
+version = 2
 allow = [
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
