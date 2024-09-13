@@ -46,7 +46,7 @@ jobs:
           - name: ubuntu-latest-16-cores
             arch: x86_64-unknown-linux-musl
             ext: ""
-            docker_image: ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:main
+            docker_image: ghcr.io/foresightminingsoftwarecorporation/napi-rs-docker-builder:latest
             additional_packages: ""
           - name: ubuntu-latest-16-cores
             arch: x86_64-unknown-linux-gnu
