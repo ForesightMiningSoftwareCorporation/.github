@@ -147,12 +147,29 @@ jobs:
         id: sas-expiry
         run: |
           echo "expiry=$(date -u -d "120 minutes" '+%Y-%m-%dT%H:%MZ')" >> $GITHUB_OUTPUT
+
       - name: Generate SAS Url for binary signing
         if: inputs.sign_build == 'true'
         shell: bash
         id: sas-url
         run: |
           sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{  inputs.package }}/${{ inputs.release_channel }}/${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}${{ fromJson(inputs.targets_config)[matrix.target].extension }} --permissions r --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
+          echo "sas=$sas" >> $GITHUB_OUTPUT
+
+      - name: Generate SAS Url for binary signing upload
+        if: inputs.sign_build == 'true'
+        shell: bash
+        id: sas-upload-url
+        run: |
+          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{  inputs.package }}/${{ inputs.release_channel }}/${{  inputs.package }}-${{ matrix.target }}-${{ inputs.toolchain }}-v${{ inputs.version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }} --permissions w --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
+          echo "sas=$sas" >> $GITHUB_OUTPUT
+
+      - name: Generate SAS Url for checksum binary signing upload
+        if: inputs.sign_build == 'true'
+        shell: bash
+        id: sas-sha-upload-url
+        run: |
+          sas=$(az storage blob generate-sas --connection-string "${{ secrets.ARTIFACTS_CONNECTION_STRING }}" --container-name ${{ vars.ARTIFACTS_CONTAINER }} --name ${{  inputs.package }}/${{ inputs.release_channel }}/${{  inputs.package }}-${{ matrix.target }}-${{ inputs.toolchain }}-v${{ inputs.version }}-signed-sha512.txt --permissions w --expiry ${{ steps.sas-expiry.outputs.expiry }} --https-only --full-uri --output tsv)
           echo "sas=$sas" >> $GITHUB_OUTPUT
 
       - name: Retrieve signing secret from Vault
@@ -187,42 +204,10 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           signer_repository: ${{ steps.import-signing-secrets.outputs.WHIRLPOOL_SIGNER_REPOSITORY }}
           sas_url: ${{ steps.sas-url.outputs.sas }}
+          sas_upload_url: ${{ steps.sas-upload-url.outputs.sas }}
+          sas_sha_upload_url: ${{ steps.sas-sha-upload-url.outputs.sas }}
           artifact_to_sign: "${{  inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}"
           blob_dir: "${{  inputs.package }}/${{ inputs.release_channel }}"
-
-      - name: Generate signed artifacts checksum windows
-        if: inputs.sign_build == 'true'
-        shell: pwsh
-        run: |
-          $hash = Get-FileHash "${{ runner.temp }}\signed_artifacts\${{  inputs.package }}\${{ inputs.release_channel }}\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed${{ fromJson(inputs.targets_config)[matrix.target].extension }}" -Algorithm SHA512
-          echo $hash.Hash >> "${{ runner.temp }}\signed_artifacts\${{  inputs.package }}\${{ inputs.release_channel }}\${{   inputs.package }}-${{ matrix.target }}-${{  inputs.toolchain}}-v${{  inputs.version }}-signed-sha512.txt"
-
-      - name: Upload signed bin to github artifacts
-        if: inputs.sign_build == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-binaries-signed-${{ inputs.package }}-${{ matrix.target }}
-          path: ${{ runner.temp }}/signed_artifacts
-          overwrite: true
-
-      - name: Upload signed artifacts to Dev Azure Blob Upload
-        if: inputs.sign_build == 'true' #&& inputs.release_channel == 'dev'
-        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
-        with:
-          container_name: ${{ vars.DEV_ARTIFACTS_CONTAINER }}
-          connection_string: ${{ secrets.DEV_ARTIFACTS_CONNECTION_STRING }}
-          source_folder: ${{ runner.temp }}/signed_artifacts
-          delete_if_exists: true
-
-      - name: Upload signed artifacts to Prod Azure Blob Upload
-        if: inputs.sign_build == 'true' #&& inputs.release_channel == 'prod'
-        id: upload
-        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.1.0
-        with:
-          container_name: ${{ vars.ARTIFACTS_CONTAINER }}
-          connection_string: ${{ secrets.ARTIFACTS_CONNECTION_STRING }}
-          source_folder: ${{ runner.temp }}/signed_artifacts
-          delete_if_exists: true
 
       - name: Write outputs to file
         shell: bash
@@ -250,8 +235,3 @@ jobs:
             }
           }
           EOF
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: fslabs__publishing__${{ github.run_id }}__${{ github.run_attempt }}__${{ inputs.package }}-rust-binary-publish
-          path: ${{ runner.temp }}/${{ inputs.package }}-rust-binary-publish.json
