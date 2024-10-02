@@ -22,6 +22,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: docker/orica_server_builder
+          file: Dockerfile_versioned
           push: true
           build-args: |
             RUST_VERSION=1.80
