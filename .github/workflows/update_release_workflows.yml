@@ -60,7 +60,6 @@ jobs:
             Release workflows needs updating
           team-reviewers: Infra
           add-paths: |
-            .github/workflows/test.yml
             .github/workflows/release_publish.yml
       - name: Mark PR as auto-mergeable
         if: steps.cpr.outputs.pull-request-operation == 'created'
